@@ -1,0 +1,11 @@
+module:
+  name: github.com/foomo/redirects
+  path: ./
+
+targets:
+  redirect:
+    services:
+      /services/redirects/redirect: Redirect
+    package: github.com/foomo/redirects/redirect
+    tsrpc:
+      - Redirect
