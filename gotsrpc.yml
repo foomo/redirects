@@ -5,7 +5,7 @@ module:
 targets:
   redirect:
     services:
-      /services/redirects/redirect: Redirect
-    package: github.com/foomo/redirects/redirect
+      /services/redirects/redirect: RedirectionService
+    package: github.com/foomo/redirects/services/redirect
     tsrpc:
-      - Redirect
+      - RedirectionService
