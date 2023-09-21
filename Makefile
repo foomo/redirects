@@ -21,7 +21,7 @@
 .PHONY: doc
 ## Run tests
 doc:
-	@open "http://localhost:6060/pkg/github.com/foomo/contentfulvalidation/"
+	@open "http://localhost:6060/pkg/github.com/foomo/redirects/"
 	@godoc -http=localhost:6060 -play
 
 .PHONY: test
