@@ -6,6 +6,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// Potentially add Nats to service (still not sure)
 type Redirection struct {
 	l     *zap.Logger
 	store RedirectsStore
@@ -23,23 +24,27 @@ func NewRedirectionService(l *zap.Logger, p *keelmongo.Persistor) (*Redirection,
 	}, nil
 }
 
-func CreateRedirectsFromContentserverexport(old, new map[string]*content.RepoNode) error {
+func (rs *Redirection) CreateRedirectsFromContentserverexport(old, new map[string]*content.RepoNode) error {
 	// TODO: Implement
 	return nil
 }
-func Search(dimension, id, path string) ([]*RedirectDefinition, error) {
+
+func (rs *Redirection) Search(dimension, id, path string) ([]*RedirectDefinition, error) {
 	// TODO: Implement
 	return nil, nil
 }
-func Create(def *RedirectDefinition) error {
+
+func (rs *Redirection) Create(def *RedirectDefinition) error {
 	// TODO: Implement
 	return nil
 }
-func Delete(id string) error {
+
+func (rs *Redirection) Delete(id string) error {
 	// TODO: Implement
 	return nil
 }
-func Update(def *RedirectDefinition) error {
+
+func (rs *Redirection) Update(def *RedirectDefinition) error {
 	// TODO: Implement
 	return nil
 }
