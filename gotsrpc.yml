@@ -3,9 +3,9 @@ module:
   path: ./
 
 targets:
-  redirect:
+  redirectdefinition:
     services:
-      /services/redirects/redirect: RedirectionService
-    package: github.com/foomo/redirects/services/redirect
+      /services/redirects/redirectdefinition: RedirectDefinitionService
+    package: github.com/foomo/redirects/domain/redirectdefinition/service
     tsrpc:
-      - RedirectionService
+      - RedirectDefinitionService

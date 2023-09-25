@@ -1,7 +1,8 @@
-package redirectdefinition
+package redirectrepository
 
 import (
 	"context"
+	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
 
 	keelmongo "github.com/foomo/keel/persistence/mongo"
 	"go.mongodb.org/mongo-driver/bson"
@@ -10,32 +11,15 @@ import (
 	"go.uber.org/zap"
 )
 
-type RedirectSource string
-type RedirectID string
-type RedirectTarget string
-type RedirectRequest string
-type RedirectResponse string
-type RedirectCode int
-
-const (
-	RedirectCodePermanent RedirectCode = 301
-	RedirectCodeTemporary RedirectCode = 307 // will this be needed?
+type (
+	RSI interface {
+		Find(ctx context.Context, id string) (*redirectstore.RedirectDefinition, error)
+	}
+	BaseRedirectsDefinition struct {
+		l          *zap.Logger
+		collection *keelmongo.Collection
+	}
 )
-
-type RedirectDefinition struct {
-	ID             RedirectID     `json:"id" bson:"id"`
-	Source         RedirectSource `json:"source" bson:"source"`
-	Target         RedirectTarget `json:"target" bson:"target"`
-	Code           RedirectCode   `json:"code" bson:"code"`
-	RespectParams  bool           `json:"respectparams" bson:"respectparams"`
-	TransferParams bool           `json:"transferparams" bson:"transferparams"`
-}
-
-type RedirectsDefinitionRepository struct {
-	l          *zap.Logger
-	persistor  *keelmongo.Persistor
-	collection *keelmongo.Collection
-}
 
 func NewRedirectsStore(l *zap.Logger, persistor *keelmongo.Persistor) (rs *RedirectsDefinitionRepository, err error) {
 	collection, cErr := persistor.Collection(

@@ -1,16 +1,9 @@
-package redirection
+package redirectstore
 
 type RedirectSource string
 type RedirectID string
 type RedirectTarget string
 type RedirectRequest string
-type RedirectResponse string
-type RedirectCode int
-
-const (
-	RedirectCodePermanent RedirectCode = 301
-	RedirectCodeTemporary RedirectCode = 307 // will this be needed?
-)
 
 type RedirectDefinition struct {
 	ID             RedirectID     `json:"id" bson:"id"`
@@ -21,20 +14,4 @@ type RedirectDefinition struct {
 	TransferParams bool           `json:"transferparams" bson:"transferparams"`
 }
 
-type Redirect struct {
-	Response RedirectResponse
-	Code     RedirectCode
-}
-
-func (r RedirectCode) Valid() bool {
-	switch r {
-	case
-		RedirectCodePermanent:
-		return true
-	case
-		RedirectCodeTemporary: // will this be needed
-		return true
-	default:
-		return false
-	}
-}
+type RedirectDefinitions map[RedirectID]*RedirectDefinition
