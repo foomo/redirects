@@ -3,6 +3,7 @@ package redirectdefinition
 import (
 	"github.com/foomo/contentserver/content"
 	keelmongo "github.com/foomo/keel/persistence/mongo"
+	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
 	"go.uber.org/zap"
 )
 
@@ -22,12 +23,12 @@ func (rs *Service) CreateRedirectsFromContentserverexport(old, new map[string]*c
 	return nil
 }
 
-func (rs *Service) Search(dimension, id, path string) ([]*RedirectDefinition, error) {
+func (rs *Service) Search(dimension, id, path string) ([]*redirectstore.RedirectDefinition, error) {
 	// TODO: Implement
 	return nil, nil
 }
 
-func (rs *Service) Create(def *RedirectDefinition) error {
+func (rs *Service) Create(def *redirectstore.RedirectDefinition) error {
 	// TODO: Implement
 	return nil
 }
@@ -37,7 +38,7 @@ func (rs *Service) Delete(id string) error {
 	return nil
 }
 
-func (rs *Service) Update(def *RedirectDefinition) error {
+func (rs *Service) Update(def *redirectstore.RedirectDefinition) error {
 	// TODO: Implement
 	return nil
 }

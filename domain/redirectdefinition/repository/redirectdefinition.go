@@ -2,6 +2,7 @@ package redirectrepository
 
 import (
 	"context"
+
 	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
 
 	keelmongo "github.com/foomo/keel/persistence/mongo"
@@ -15,7 +16,7 @@ type (
 	RSI interface {
 		Find(ctx context.Context, id string) (*redirectstore.RedirectDefinition, error)
 	}
-	BaseRedirectsDefinition struct {
+	RedirectsDefinitionRepository struct {
 		l          *zap.Logger
 		collection *keelmongo.Collection
 	}
@@ -39,12 +40,11 @@ func NewRedirectsStore(l *zap.Logger, persistor *keelmongo.Persistor) (rs *Redir
 	}
 	return &RedirectsDefinitionRepository{
 		l:          l,
-		persistor:  persistor,
 		collection: collection}, nil
 }
 
-func (rs RedirectsDefinitionRepository) Find(ctx context.Context, id string) (*RedirectDefinition, error) {
-	var result RedirectDefinition
+func (rs RedirectsDefinitionRepository) Find(ctx context.Context, id string) (*redirectstore.RedirectDefinition, error) {
+	var result redirectstore.RedirectDefinition
 	findErr := rs.collection.FindOne(ctx, bson.M{"id": id}, &result)
 	if findErr != nil {
 		return nil, findErr
@@ -52,12 +52,12 @@ func (rs RedirectsDefinitionRepository) Find(ctx context.Context, id string) (*R
 	return &result, nil
 }
 
-func (rs RedirectsDefinitionRepository) Insert(ctx context.Context, def *RedirectDefinition) error {
+func (rs RedirectsDefinitionRepository) Insert(ctx context.Context, def *redirectstore.RedirectDefinition) error {
 	_, err := rs.collection.Col().InsertOne(ctx, def)
 	return err
 }
 
-func (rs RedirectsDefinitionRepository) Update(ctx context.Context, def *RedirectDefinition) error {
+func (rs RedirectsDefinitionRepository) Update(ctx context.Context, def *redirectstore.RedirectDefinition) error {
 	filter := bson.D{{Key: "id", Value: def.ID}}
 	update := bson.D{{Key: "$set", Value: def}}
 
@@ -67,7 +67,7 @@ func (rs RedirectsDefinitionRepository) Update(ctx context.Context, def *Redirec
 }
 
 // maybe will be needed for migrating manual redirections?
-func (rs RedirectsDefinitionRepository) UpsertMany(ctx context.Context, defs []*RedirectDefinition) error {
+func (rs RedirectsDefinitionRepository) UpsertMany(ctx context.Context, defs []*redirectstore.RedirectDefinition) error {
 
 	var operations []mongo.WriteModel
 
