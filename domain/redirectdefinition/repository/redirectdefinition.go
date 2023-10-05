@@ -28,7 +28,7 @@ func NewRedirectsStore(l *zap.Logger, persistor *keelmongo.Persistor) (rs *Redir
 		keelmongo.CollectionWithIndexes(
 			mongo.IndexModel{
 				Keys: bson.M{
-					"id": 1,
+					"source": 1,
 				},
 				Options: options.Index().SetUnique(true),
 			},
@@ -43,9 +43,9 @@ func NewRedirectsStore(l *zap.Logger, persistor *keelmongo.Persistor) (rs *Redir
 		collection: collection}, nil
 }
 
-func (rs RedirectsDefinitionRepository) Find(ctx context.Context, id string) (*redirectstore.RedirectDefinition, error) {
+func (rs RedirectsDefinitionRepository) Find(ctx context.Context, source string) (*redirectstore.RedirectDefinition, error) {
 	var result redirectstore.RedirectDefinition
-	findErr := rs.collection.FindOne(ctx, bson.M{"id": id}, &result)
+	findErr := rs.collection.FindOne(ctx, bson.M{"source": source}, &result)
 	if findErr != nil {
 		return nil, findErr
 	}
@@ -58,7 +58,7 @@ func (rs RedirectsDefinitionRepository) Insert(ctx context.Context, def *redirec
 }
 
 func (rs RedirectsDefinitionRepository) Update(ctx context.Context, def *redirectstore.RedirectDefinition) error {
-	filter := bson.D{{Key: "id", Value: def.ID}}
+	filter := bson.D{{Key: "source", Value: def.Source}}
 	update := bson.D{{Key: "$set", Value: def}}
 
 	_, err := rs.collection.Col().UpdateOne(ctx, filter, update)
@@ -74,7 +74,7 @@ func (rs RedirectsDefinitionRepository) UpsertMany(ctx context.Context, defs []*
 	for _, def := range defs {
 		operation := mongo.NewUpdateOneModel()
 		operation.SetFilter(bson.M{
-			"id": def.ID,
+			"source": def.Source,
 		})
 		operation.SetUpdate(bson.D{{Key: "$set", Value: def}})
 		operation.SetUpsert(true)
@@ -91,8 +91,8 @@ func (rs RedirectsDefinitionRepository) UpsertMany(ctx context.Context, defs []*
 	return err
 }
 
-func (rs RedirectsDefinitionRepository) Delete(ctx context.Context, id string) error {
-	filter := bson.D{{Key: "id", Value: id}}
+func (rs RedirectsDefinitionRepository) Delete(ctx context.Context, source string) error {
+	filter := bson.D{{Key: "source", Value: source}}
 
 	_, err := rs.collection.Col().DeleteOne(ctx, filter)
 	return err
