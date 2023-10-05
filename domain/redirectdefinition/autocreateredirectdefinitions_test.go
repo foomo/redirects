@@ -10,8 +10,8 @@ import (
 	"go.uber.org/zap"
 )
 
-////go:embed contentNodesTest.json
-//var contentNodes []byte
+//go:embed contentNodesTest.json
+var contentNodes []byte
 
 // p := map[string]*content.RepoNode{}
 // err := json.Unmarshal(contentNodes, &p)
