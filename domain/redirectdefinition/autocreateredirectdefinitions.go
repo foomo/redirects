@@ -26,7 +26,14 @@ func AutoCreateRedirectDefinitions(l *zap.Logger, old, new *content.RepoNode) ([
 		sourceURI := old.URI
 		targetURI := new.URI
 		if sourceURI != targetURI {
-			redirects = append(redirects, redirectstore.RedirectDefinition{Source: sourceURI, Target: targetURI})
+			rd := redirectstore.RedirectDefinition{
+				Source:         sourceURI,
+				Target:         targetURI,
+				Code:           301,
+				RespectParams:  true,
+				TransferParams: true,
+			}
+			redirects = append(redirects, rd)
 		}
 		for key, oldchild := range old.Nodes {
 			if newchild, ok := new.Nodes[key]; ok {
@@ -50,7 +57,14 @@ func AutoCreateRedirectDefinitions(l *zap.Logger, old, new *content.RepoNode) ([
 					}
 				}
 				if !found {
-					redirects = append(redirects, redirectstore.RedirectDefinition{Source: oldchild.URI, Target: ""})
+					rd := redirectstore.RedirectDefinition{
+						Source:         oldchild.URI,
+						Target:         "",
+						Code:           301,
+						RespectParams:  true,
+						TransferParams: true,
+					}
+					redirects = append(redirects, rd)
 				}
 			}
 		}
