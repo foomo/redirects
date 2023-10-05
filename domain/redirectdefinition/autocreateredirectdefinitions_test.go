@@ -10,8 +10,8 @@ import (
 	"go.uber.org/zap"
 )
 
-////go:embed contentNodesTest.json
-//var contentNodes []byte
+//go:embed contentNodesTest.json
+var contentNodes []byte
 
 // p := map[string]*content.RepoNode{}
 // err := json.Unmarshal(contentNodes, &p)
@@ -85,10 +85,200 @@ func Test_AutoCreateRedirectDefinitions(t *testing.T) {
 	}
 	redirects, err := AutoCreateRedirectDefinitions(zap.L(), old, new)
 	if err != nil {
+		assert.Error(t, err)
+	}
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(redirects))
+}
+
+func Test_AutoCreateRedirectDefinitionsExg1(t *testing.T) {
+	old := &content.RepoNode{
+		ID:   "1",
+		URI:  "/main",
+		Name: "Root",
+		Nodes: map[string]*content.RepoNode{
+			"2": {
+				ID:    "2",
+				URI:   "/main/herren",
+				Name:  "Node2",
+				Nodes: nil,
+			},
+			"3": {
+				ID:   "3",
+				URI:  "/main/damen",
+				Name: "Node3",
+				Nodes: map[string]*content.RepoNode{
+					"4": {
+						ID:   "4",
+						URI:  "/main/damen/kleidung",
+						Name: "Node4",
+						Nodes: map[string]*content.RepoNode{
+							"5": {
+								ID:    "5",
+								URI:   "/main/damen/kleidung/roecke",
+								Name:  "Node5",
+								Nodes: nil,
+							},
+							"6": {
+								ID:    "6",
+								URI:   "/main/damen/kleidung/hosen",
+								Name:  "Node6",
+								Nodes: nil,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	new := &content.RepoNode{
+		ID:   "1",
+		URI:  "/main",
+		Name: "Root",
+		Nodes: map[string]*content.RepoNode{
+			"2": {
+				ID:    "2",
+				URI:   "/main/herren",
+				Name:  "Node2",
+				Nodes: nil,
+			},
+			"3": {
+				ID:   "3",
+				URI:  "/main/damen",
+				Name: "Node3",
+				Nodes: map[string]*content.RepoNode{
+					"4": {
+						ID:   "4",
+						URI:  "/main/damen/bekleidung",
+						Name: "Node4",
+						Nodes: map[string]*content.RepoNode{
+							"5": {
+								ID:    "5",
+								URI:   "/main/damen/bekleidung/roecke",
+								Name:  "Node5",
+								Nodes: nil,
+							},
+							"6": {
+								ID:    "6",
+								URI:   "/main/damen/bekleidung/hosen",
+								Name:  "Node6",
+								Nodes: nil,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	redirects, err := AutoCreateRedirectDefinitions(zap.L(), old, new)
+	if err != nil {
+		assert.Error(t, err)
+	}
+	assert.NoError(t, err)
+	assert.Equal(t, 3, len(redirects))
+}
+
+func Test_AutoCreateRedirectDefinitionsExg2(t *testing.T) {
+	old := &content.RepoNode{
+		ID:   "1",
+		URI:  "/main",
+		Name: "Root",
+		Nodes: map[string]*content.RepoNode{
+			"2": {
+				ID:    "2",
+				URI:   "/main/herren",
+				Name:  "Node2",
+				Nodes: nil,
+			},
+			"3": {
+				ID:   "3",
+				URI:  "/main/damen",
+				Name: "Node3",
+				Nodes: map[string]*content.RepoNode{
+					"4": {
+						ID:   "4",
+						URI:  "/main/damen/kleidung",
+						Name: "Node4",
+						Nodes: map[string]*content.RepoNode{
+							"5": {
+								ID:    "5",
+								URI:   "/main/damen/kleidung/roecke",
+								Name:  "Node5",
+								Nodes: nil,
+							},
+							"6": {
+								ID:    "6",
+								URI:   "/main/damen/kleidung/hosen",
+								Name:  "Node6",
+								Nodes: nil,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	new := &content.RepoNode{
+		ID:   "1",
+		URI:  "/main",
+		Name: "Root",
+		Nodes: map[string]*content.RepoNode{
+			"2": {
+				ID:   "2",
+				URI:  "/main/herren",
+				Name: "Node2",
+				Nodes: map[string]*content.RepoNode{
+					"4": {
+						ID:   "4",
+						URI:  "/main/herren/kleidung",
+						Name: "Node4",
+						Nodes: map[string]*content.RepoNode{
+							"5": {
+								ID:    "5",
+								URI:   "/main/herren/kleidung/roecke",
+								Name:  "Node5",
+								Nodes: nil,
+							},
+							"6": {
+								ID:    "6",
+								URI:   "/main/herren/kleidung/hosen",
+								Name:  "Node6",
+								Nodes: nil,
+							},
+						},
+					},
+				},
+			},
+			"3": {
+				ID:    "3",
+				URI:   "/main/damen",
+				Name:  "Node3",
+				Nodes: nil,
+			},
+		},
+	}
+	redirects, err := AutoCreateRedirectDefinitions(zap.L(), old, new)
+	if err != nil {
+		assert.Error(t, err)
+	}
+	assert.NoError(t, err)
+	assert.Equal(t, 3, len(redirects))
+}
+
+func Test_AutoCreateRedirectDefinitionsEmptyAndNilArgs(t *testing.T) {
+	old := &content.RepoNode{}
+	new := &content.RepoNode{}
+	redirects, err := AutoCreateRedirectDefinitions(zap.L(), old, new)
+	if err != nil {
 		fmt.Print(err)
 	}
 	assert.NoError(t, err)
-	assert.Equal(t, len(redirects), 2)
+	assert.Equal(t, len(redirects), 0)
+	old = nil
+	new = nil
+	redirects, err = AutoCreateRedirectDefinitions(zap.L(), old, new)
+	assert.Error(t, err)
+	assert.Equal(t, len(redirects), 0)
 }
 
 // FindAllURIs finds and collects all URIs in the tree starting from the given node.
