@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-//go:embed contentNodesTest.json
+////go:embed contentNodesTest.json
 //var contentNodes []byte
 
 // p := map[string]*content.RepoNode{}
