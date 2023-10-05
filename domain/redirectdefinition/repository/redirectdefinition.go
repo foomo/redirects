@@ -22,7 +22,7 @@ type (
 	}
 )
 
-func NewRedirectsStore(l *zap.Logger, persistor *keelmongo.Persistor) (rs *RedirectsDefinitionRepository, err error) {
+func NewRedirectsDefinitionRepository(l *zap.Logger, persistor *keelmongo.Persistor) (rs *RedirectsDefinitionRepository, err error) {
 	collection, cErr := persistor.Collection(
 		"redirects",
 		keelmongo.CollectionWithIndexes(
