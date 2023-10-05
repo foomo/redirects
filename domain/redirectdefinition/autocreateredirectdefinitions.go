@@ -27,8 +27,8 @@ func AutoCreateRedirectDefinitions(l *zap.Logger, old, new *content.RepoNode) ([
 		targetURI := new.URI
 		if sourceURI != targetURI {
 			rd := redirectstore.RedirectDefinition{
-				Source:         sourceURI,
-				Target:         targetURI,
+				Source:         redirectstore.RedirectSource(sourceURI),
+				Target:         redirectstore.RedirectTarget(targetURI),
 				Code:           301,
 				RespectParams:  true,
 				TransferParams: true,
@@ -58,7 +58,7 @@ func AutoCreateRedirectDefinitions(l *zap.Logger, old, new *content.RepoNode) ([
 				}
 				if !found {
 					rd := redirectstore.RedirectDefinition{
-						Source:         oldchild.URI,
+						Source:         redirectstore.RedirectSource(oldchild.URI),
 						Target:         "",
 						Code:           301,
 						RespectParams:  true,
