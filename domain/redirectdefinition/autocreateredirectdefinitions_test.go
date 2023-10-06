@@ -2,6 +2,7 @@ package redirectdefinition
 
 import (
 	_ "embed"
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -13,16 +14,26 @@ import (
 //go:embed contentNodesTest.json
 var contentNodes []byte
 
-// p := map[string]*content.RepoNode{}
-// err := json.Unmarshal(contentNodes, &p)
-// if err != nil {
-// 	fmt.Println(err)
-// }
-// pChanged := map[string]*content.RepoNode{}
-// err = json.Unmarshal(contentNodesChanged, &pChanged)
-// if err != nil {
-// 	fmt.Println(err)
-// }
+//go:embed contentNodesTestChanged.json
+var contentNodesChanged []byte
+
+// changed from /nachhaltigkeit to /chhaltigkeit in kH69EyKjBuAtmkcglykJE
+
+func Test_AutoCreateRedirectDefinitionsParse(t *testing.T) {
+	p := map[string]*content.RepoNode{}
+	err := json.Unmarshal(contentNodes, &p)
+	if err != nil {
+		fmt.Println(err)
+	}
+	pChanged := map[string]*content.RepoNode{}
+	err = json.Unmarshal(contentNodesChanged, &pChanged)
+	if err != nil {
+		fmt.Println(err)
+	}
+	redirects, err := AutoCreateRedirectDefinitions(zap.L(), p["de"], pChanged["de"])
+	assert.NoError(t, err)
+	assert.Equal(t, 12, len(redirects))
+}
 
 func Test_AutoCreateRedirectDefinitions(t *testing.T) {
 	old := &content.RepoNode{
