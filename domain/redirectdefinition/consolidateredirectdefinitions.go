@@ -5,6 +5,10 @@ import (
 	"go.uber.org/zap"
 )
 
+// Consolidate redirect definitions by:
+// * Removing ones that have empty target definition
+// * Removing ones that don't exist in new definitions
+// * If target of one is source to another one, consolidate those into one to prevent multiple redirections
 func ConsolidateRedirectDefinitions(
 	l *zap.Logger,
 	old, new redirectstore.RedirectDefinitions,
@@ -14,10 +18,8 @@ func ConsolidateRedirectDefinitions(
 
 	// Copy new definitions to the consolidated map
 	for source, definition := range new {
-
 		// If Target is empty in new definitions, skip it
 		if definition.Target != "" {
-
 			consolidatedDef[source] = definition
 		}
 	}
@@ -30,5 +32,25 @@ func ConsolidateRedirectDefinitions(
 		}
 	}
 
+	// Check for circular references and update the targets if needed
+	for _, definition := range consolidatedDef {
+		target := definition.Target
+		for {
+			if nextDefinition, found := consolidatedDef[redirectstore.RedirectSource(target)]; found {
+				// If the target is also a source in another definition, update the target
+				if nextDefinition.Target != target {
+					definition.Target = nextDefinition.Target
+
+					// Circular reference detected, remove the target
+					delete(consolidatedDef, redirectstore.RedirectSource(target))
+					break
+				}
+			} else {
+				// No more references found, update the target
+				definition.Target = target
+				break
+			}
+		}
+	}
 	return &consolidatedDef, nil
 }
