@@ -6,7 +6,6 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/foomo/contentserver/content"
 	redirectrepository "github.com/foomo/redirects/domain/redirectdefinition/repository"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
@@ -15,8 +14,6 @@ import (
 type (
 	// UpdateRedirect command
 	UpdateRedirect struct {
-		OldState map[string]*content.RepoNode `json:"oldState"`
-		NewState map[string]*content.RepoNode `json:"newState"`
 	}
 	// UpdateRedirectHandlerFn handler
 	UpdateRedirectHandlerFn func(ctx context.Context, l *zap.Logger, cmd UpdateRedirect) error
