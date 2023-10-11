@@ -6,4 +6,7 @@ import (
 
 type Commands struct {
 	CreateRedirects redirectcommand.CreateRedirectsHandlerFn
+	CreateRedirect  redirectcommand.CreateRedirectHandlerFn
+	UpdateRedirect  redirectcommand.UpdateRedirectHandlerFn
+	DeleteRedirect  redirectcommand.DeleteRedirectHandlerFn
 }

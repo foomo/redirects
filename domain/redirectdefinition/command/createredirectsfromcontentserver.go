@@ -27,7 +27,6 @@ type (
 // CreateRedirectsHandler ...
 func CreateRedirectsHandler(repo *redirectrepository.RedirectsDefinitionRepository) CreateRedirectsHandlerFn {
 	return func(ctx context.Context, l *zap.Logger, cmd CreateRedirects) error {
-
 		return nil //repo.Upsert(ctx, entity)
 	}
 }
