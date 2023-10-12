@@ -6,8 +6,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/foomo/contentserver/content"
 	redirectrepository "github.com/foomo/redirects/domain/redirectdefinition/repository"
+	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
@@ -15,8 +15,7 @@ import (
 type (
 	// CreateRedirect command
 	CreateRedirect struct {
-		OldState map[string]*content.RepoNode `json:"oldState"`
-		NewState map[string]*content.RepoNode `json:"newState"`
+		RedirectDefinition *redirectstore.RedirectDefinition `json:"redirectDefinition"`
 	}
 	// CreateRedirectHandlerFn handler
 	CreateRedirectHandlerFn func(ctx context.Context, l *zap.Logger, cmd CreateRedirect) error
@@ -27,7 +26,7 @@ type (
 // CreateRedirectHandler ...
 func CreateRedirectHandler(repo *redirectrepository.RedirectsDefinitionRepository) CreateRedirectHandlerFn {
 	return func(ctx context.Context, l *zap.Logger, cmd CreateRedirect) error {
-		return nil //repo.Upsert(ctx, entity)
+		return repo.Insert(ctx, cmd.RedirectDefinition)
 	}
 }
 
