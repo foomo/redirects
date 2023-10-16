@@ -16,12 +16,14 @@ import (
 type Service struct {
 	l   *zap.Logger
 	api *API
+	ctx context.Context
 }
 
-func NewService(l *zap.Logger, p *keelmongo.Persistor, api *API) service.RedirectDefinitionService {
+func NewService(l *zap.Logger, p *keelmongo.Persistor, api *API, ctx context.Context) service.RedirectDefinitionService {
 	return &Service{
 		l:   l,
 		api: api,
+		ctx: ctx,
 	}
 }
 
@@ -38,24 +40,24 @@ func (rs *Service) CreateRedirectsFromContentserverexport(old, new map[string]*c
 	return nil
 }
 
-func (rs *Service) GetRedirects() ([]*redirectstore.RedirectDefinition, error) {
-	// TODO: Implement
-	redirects, err := rs.api.GetRedirects(context.Background(),
-		redirectquery.GetRedirects{})
+func (rs *Service) GetRedirects() (*redirectstore.RedirectDefinitions, error) {
+	redirects, err := rs.api.GetRedirects(rs.ctx)
 	if err != nil {
 		return nil, err
 	}
 	return redirects, nil
 }
 
-func (rs *Service) Search(dimension, id, path string) ([]*redirectstore.RedirectDefinition, error) {
-	// TODO: Implement
-	return nil, nil
+func (rs *Service) Search(dimension, id, path string) (*redirectstore.RedirectDefinition, error) {
+	definition, err := rs.api.Search(rs.ctx, redirectquery.Search{})
+	if err != nil {
+		return nil, err
+	}
+	return definition, nil
 }
 
 func (rs *Service) Create(def *redirectstore.RedirectDefinition) error {
-	// TODO: Implement
-	err := rs.api.CreateRedirect(context.Background(),
+	err := rs.api.CreateRedirect(rs.ctx,
 		redirectcommand.CreateRedirect{})
 	if err != nil {
 		return err
@@ -64,8 +66,7 @@ func (rs *Service) Create(def *redirectstore.RedirectDefinition) error {
 }
 
 func (rs *Service) Delete(id string) error {
-	// TODO: Implement
-	err := rs.api.DeleteRedirect(context.Background(),
+	err := rs.api.DeleteRedirect(rs.ctx,
 		redirectcommand.DeleteRedirect{})
 	if err != nil {
 		return err
@@ -74,8 +75,7 @@ func (rs *Service) Delete(id string) error {
 }
 
 func (rs *Service) Update(def *redirectstore.RedirectDefinition) error {
-	// TODO: Implement
-	err := rs.api.UpdareRedirect(context.Background(),
+	err := rs.api.UpdateRedirect(rs.ctx,
 		redirectcommand.UpdateRedirect{})
 	if err != nil {
 		return err

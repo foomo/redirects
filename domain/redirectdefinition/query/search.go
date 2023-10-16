@@ -13,21 +13,25 @@ import (
 )
 
 type (
-	// Search command
+	// Search query
 	Search struct {
-		redirectDefinitions []*redirectstore.RedirectDefinition
+		ID     string                       `json:"id"`
+		Source redirectstore.RedirectSource `json:"source"`
 	}
 	// SearchHandlerFn handler
-	SearchHandlerFn func(ctx context.Context, l *zap.Logger, qry Search) ([]*redirectstore.RedirectDefinition, error)
+	SearchHandlerFn func(ctx context.Context, l *zap.Logger, qry Search) (*redirectstore.RedirectDefinition, error)
 	// SearchMiddlewareFn middleware
 	SearchMiddlewareFn func(next SearchHandlerFn) SearchHandlerFn
 )
 
 // SearchHandler ...
 func SearchHandler(repo *redirectrepository.RedirectsDefinitionRepository) SearchHandlerFn {
-	return func(ctx context.Context, l *zap.Logger, qry Search) ([]*redirectstore.RedirectDefinition, error) {
-		//repo.Get(ctx,)
-		return nil, nil
+	return func(ctx context.Context, l *zap.Logger, qry Search) (*redirectstore.RedirectDefinition, error) {
+		definition, err := repo.Find(ctx, qry.ID, string(qry.Source))
+		if err != nil {
+			return nil, err
+		}
+		return definition, nil
 	}
 }
 
@@ -37,7 +41,7 @@ func SearchHandlerComposed(handler SearchHandlerFn, middlewares ...SearchMiddlew
 		for _, middleware := range middlewares {
 			localNext := next
 			middlewareName := strings.Split(runtime.FuncForPC(reflect.ValueOf(middleware).Pointer()).Name(), ".")[2]
-			next = middleware(func(ctx context.Context, l *zap.Logger, qry Search) ([]*redirectstore.RedirectDefinition, error) {
+			next = middleware(func(ctx context.Context, l *zap.Logger, qry Search) (*redirectstore.RedirectDefinition, error) {
 				trace.SpanFromContext(ctx).AddEvent(middlewareName)
 				return localNext(ctx, l, qry)
 			})
@@ -45,7 +49,7 @@ func SearchHandlerComposed(handler SearchHandlerFn, middlewares ...SearchMiddlew
 		return next
 	}
 	handlerName := strings.Split(runtime.FuncForPC(reflect.ValueOf(handler).Pointer()).Name(), ".")[2]
-	return composed(func(ctx context.Context, l *zap.Logger, qry Search) ([]*redirectstore.RedirectDefinition, error) {
+	return composed(func(ctx context.Context, l *zap.Logger, qry Search) (*redirectstore.RedirectDefinition, error) {
 		trace.SpanFromContext(ctx).AddEvent(handlerName)
 		return handler(ctx, l, qry)
 	})

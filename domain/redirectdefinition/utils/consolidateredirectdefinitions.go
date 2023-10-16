@@ -1,4 +1,4 @@
-package redirectdefinition
+package redirectdefinitionutils
 
 import (
 	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"

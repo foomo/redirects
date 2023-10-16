@@ -1,4 +1,4 @@
-package redirectdefinition
+package redirectdefinitionutils
 
 import (
 	"fmt"

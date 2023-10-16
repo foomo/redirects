@@ -1,4 +1,4 @@
-package redirectdefinition
+package redirectdefinitionutils
 
 import (
 	"errors"
@@ -12,13 +12,13 @@ var (
 	nilError = "calling auto create difference with nil arg"
 )
 
-func AutoCreateRedirectDefinitions(l *zap.Logger, old, new *content.RepoNode) ([]redirectstore.RedirectDefinition, error) {
+func AutoCreateRedirectDefinitions(l *zap.Logger, old, new *content.RepoNode) (redirectstore.RedirectDefinitions, error) {
 	l.Info("calling auto create difference between old and new repo node state")
 	if old == nil || new == nil {
 		l.Error(nilError)
-		return []redirectstore.RedirectDefinition{}, errors.New(nilError)
+		return nil, errors.New(nilError)
 	}
-	var redirects []redirectstore.RedirectDefinition
+	var redirects redirectstore.RedirectDefinitions
 	var newTree = new
 	var generateRedirects func(old, new *content.RepoNode)
 
@@ -26,14 +26,14 @@ func AutoCreateRedirectDefinitions(l *zap.Logger, old, new *content.RepoNode) ([
 		sourceURI := old.URI
 		targetURI := new.URI
 		if sourceURI != targetURI {
-			rd := redirectstore.RedirectDefinition{
+			rd := &redirectstore.RedirectDefinition{
 				Source:         redirectstore.RedirectSource(sourceURI),
 				Target:         redirectstore.RedirectTarget(targetURI),
 				Code:           301,
 				RespectParams:  true,
 				TransferParams: true,
 			}
-			redirects = append(redirects, rd)
+			redirects[rd.Source] = rd
 		}
 		for key, oldchild := range old.Nodes {
 			if newchild, ok := new.Nodes[key]; ok {
@@ -57,14 +57,14 @@ func AutoCreateRedirectDefinitions(l *zap.Logger, old, new *content.RepoNode) ([
 					}
 				}
 				if !found {
-					rd := redirectstore.RedirectDefinition{
+					rd := &redirectstore.RedirectDefinition{
 						Source:         redirectstore.RedirectSource(oldchild.URI),
 						Target:         "",
 						Code:           301,
 						RespectParams:  true,
 						TransferParams: true,
 					}
-					redirects = append(redirects, rd)
+					redirects[rd.Source] = rd
 				}
 			}
 		}

@@ -43,13 +43,21 @@ func NewRedirectsDefinitionRepository(l *zap.Logger, persistor *keelmongo.Persis
 		collection: collection}, nil
 }
 
-func (rs RedirectsDefinitionRepository) Find(ctx context.Context, source string) (*redirectstore.RedirectDefinition, error) {
+func (rs RedirectsDefinitionRepository) Find(ctx context.Context, id, source string) (*redirectstore.RedirectDefinition, error) {
 	var result redirectstore.RedirectDefinition
-	findErr := rs.collection.FindOne(ctx, bson.M{"source": source}, &result)
+	findErr := rs.collection.FindOne(ctx, bson.M{"id": id, "source": source}, &result)
 	if findErr != nil {
 		return nil, findErr
 	}
 	return &result, nil
+}
+
+func (rs RedirectsDefinitionRepository) FindAll(ctx context.Context) (defs *redirectstore.RedirectDefinitions, err error) {
+	err = rs.collection.Find(ctx, bson.M{}, &defs)
+	if err != nil {
+		return nil, err
+	}
+	return defs, nil
 }
 
 func (rs RedirectsDefinitionRepository) Insert(ctx context.Context, def *redirectstore.RedirectDefinition) error {
@@ -67,14 +75,14 @@ func (rs RedirectsDefinitionRepository) Update(ctx context.Context, def *redirec
 }
 
 // maybe will be needed for migrating manual redirections?
-func (rs RedirectsDefinitionRepository) UpsertMany(ctx context.Context, defs []*redirectstore.RedirectDefinition) error {
+func (rs RedirectsDefinitionRepository) UpsertMany(ctx context.Context, defs *redirectstore.RedirectDefinitions) error {
 
 	var operations []mongo.WriteModel
 
-	for _, def := range defs {
+	for source, def := range *defs {
 		operation := mongo.NewUpdateOneModel()
 		operation.SetFilter(bson.M{
-			"source": def.Source,
+			"source": source,
 		})
 		operation.SetUpdate(bson.D{{Key: "$set", Value: def}})
 		operation.SetUpsert(true)

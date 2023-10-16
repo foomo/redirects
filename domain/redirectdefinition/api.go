@@ -18,6 +18,7 @@ type (
 		cmd  Commands
 		repo *redirectrepository.RedirectsDefinitionRepository
 		l    *zap.Logger
+		ctx  context.Context
 		//meter                      *cmrccommonmetric.Meter
 	}
 	Option func(api *API)
@@ -26,12 +27,14 @@ type (
 func NewAPI(
 	l *zap.Logger,
 	repo *redirectrepository.RedirectsDefinitionRepository,
+	ctx context.Context,
 	opts ...Option,
 ) (*API, error) {
 
 	inst := &API{
 		l:    l,
 		repo: repo,
+		ctx:  ctx,
 		//meter:                      cmrccommonmetric.NewMeter(l, "checkout", telemetry.Meter()),
 	}
 	if inst.l == nil {
@@ -88,7 +91,7 @@ func (a *API) CreateRedirect(ctx context.Context, cmd redirectcommand.CreateRedi
 	return nil
 }
 
-func (a *API) UpdareRedirect(ctx context.Context, cmd redirectcommand.UpdateRedirect) (err error) {
+func (a *API) UpdateRedirect(ctx context.Context, cmd redirectcommand.UpdateRedirect) (err error) {
 	if err := a.cmd.UpdateRedirect(ctx, a.l, cmd); err != nil {
 		return err
 	}
@@ -102,16 +105,16 @@ func (a *API) DeleteRedirect(ctx context.Context, cmd redirectcommand.DeleteRedi
 	return nil
 }
 
-func (a *API) GetRedirects(ctx context.Context, qry redirectquery.GetRedirects) (redirects []*redirectstore.RedirectDefinition, err error) {
-	if redirects, err = a.qry.GetRedirects(ctx, a.l, qry); err != nil {
+func (a *API) GetRedirects(ctx context.Context) (redirects *redirectstore.RedirectDefinitions, err error) {
+	if redirects, err = a.qry.GetRedirects(ctx, a.l); err != nil {
 		return nil, err
 	}
 	return redirects, err
 }
 
-func (a *API) Search(ctx context.Context, qry redirectquery.Search) (redirects []*redirectstore.RedirectDefinition, err error) {
-	if redirects, err = a.qry.Search(ctx, a.l, qry); err != nil {
+func (a *API) Search(ctx context.Context, qry redirectquery.Search) (redirect *redirectstore.RedirectDefinition, err error) {
+	if redirect, err = a.qry.Search(ctx, a.l, qry); err != nil {
 		return nil, err
 	}
-	return redirects, err
+	return redirect, err
 }

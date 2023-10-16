@@ -13,21 +13,23 @@ import (
 )
 
 type (
-	// GetRedirects command
+	// GetRedirects query
 	GetRedirects struct {
-		redirectDefinitions []*redirectstore.RedirectDefinition
 	}
 	// GetRedirectsHandlerFn handler
-	GetRedirectsHandlerFn func(ctx context.Context, l *zap.Logger, qry GetRedirects) ([]*redirectstore.RedirectDefinition, error)
+	GetRedirectsHandlerFn func(ctx context.Context, l *zap.Logger) (*redirectstore.RedirectDefinitions, error)
 	// GetRedirectsMiddlewareFn middleware
 	GetRedirectsMiddlewareFn func(next GetRedirectsHandlerFn) GetRedirectsHandlerFn
 )
 
 // GetRedirectsHandler ...
 func GetRedirectsHandler(repo *redirectrepository.RedirectsDefinitionRepository) GetRedirectsHandlerFn {
-	return func(ctx context.Context, l *zap.Logger, qry GetRedirects) ([]*redirectstore.RedirectDefinition, error) {
-		//repo.Get(ctx,)
-		return nil, nil
+	return func(ctx context.Context, l *zap.Logger) (*redirectstore.RedirectDefinitions, error) {
+		defs, err := repo.FindAll(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return defs, nil
 	}
 }
 
@@ -37,16 +39,16 @@ func GetRedirectsHandlerComposed(handler GetRedirectsHandlerFn, middlewares ...G
 		for _, middleware := range middlewares {
 			localNext := next
 			middlewareName := strings.Split(runtime.FuncForPC(reflect.ValueOf(middleware).Pointer()).Name(), ".")[2]
-			next = middleware(func(ctx context.Context, l *zap.Logger, qry GetRedirects) ([]*redirectstore.RedirectDefinition, error) {
+			next = middleware(func(ctx context.Context, l *zap.Logger) (*redirectstore.RedirectDefinitions, error) {
 				trace.SpanFromContext(ctx).AddEvent(middlewareName)
-				return localNext(ctx, l, qry)
+				return localNext(ctx, l)
 			})
 		}
 		return next
 	}
 	handlerName := strings.Split(runtime.FuncForPC(reflect.ValueOf(handler).Pointer()).Name(), ".")[2]
-	return composed(func(ctx context.Context, l *zap.Logger, qry GetRedirects) ([]*redirectstore.RedirectDefinition, error) {
+	return composed(func(ctx context.Context, l *zap.Logger) (*redirectstore.RedirectDefinitions, error) {
 		trace.SpanFromContext(ctx).AddEvent(handlerName)
-		return handler(ctx, l, qry)
+		return handler(ctx, l)
 	})
 }

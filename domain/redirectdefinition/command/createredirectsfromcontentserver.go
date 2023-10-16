@@ -27,7 +27,23 @@ type (
 // CreateRedirectsHandler ...
 func CreateRedirectsHandler(repo *redirectrepository.RedirectsDefinitionRepository) CreateRedirectsHandlerFn {
 	return func(ctx context.Context, l *zap.Logger, cmd CreateRedirects) error {
-		return nil //repo.Upsert(ctx, entity)
+		// for dimension, _ := range cmd.OldState {
+		// defs, err := redirectdefinitionutils.AutoCreateRedirectDefinitions(l, cmd.OldState["de"], cmd.NewState["de"])
+		// if err != nil {
+		// 	return err
+		// }
+		// oldDefs, err := repo.FindAll(ctx)
+		// if err != nil {
+		// 	return err
+		// }
+		//consolidatedDefs, deletedDefs, err := redirectdefinitionutils.ConsolidateRedirectDefinitions(l, *oldDefs, defs)
+		// if err != nil {
+		// 	return err
+		// }
+
+		//repo.UpsertMany(ctx, consolidatedDefs)
+		//repo.Delete()
+		return nil
 	}
 }
 

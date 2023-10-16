@@ -7,9 +7,9 @@ import (
 
 type RedirectDefinitionService interface {
 	CreateRedirectsFromContentserverexport(old, new map[string]*content.RepoNode) error
-	Search(dimension, id, path string) ([]*redirectstore.RedirectDefinition, error)
+	Search(dimension, id, path string) (*redirectstore.RedirectDefinition, error)
 	Create(def *redirectstore.RedirectDefinition) error
 	Delete(id string) error
 	Update(def *redirectstore.RedirectDefinition) error
-	GetRedirects() ([]*redirectstore.RedirectDefinition, error)
+	GetRedirects() (*redirectstore.RedirectDefinitions, error)
 }
