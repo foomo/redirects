@@ -28,7 +28,6 @@ func NewService(l *zap.Logger, p *keelmongo.Persistor, api *API, ctx context.Con
 }
 
 func (rs *Service) CreateRedirectsFromContentserverexport(old, new map[string]*content.RepoNode) error {
-	// TODO: Implement
 	err := rs.api.CreateRedirects(context.Background(),
 		redirectcommand.CreateRedirects{
 			OldState: old,
@@ -58,7 +57,9 @@ func (rs *Service) Search(dimension, id, path string) (*redirectstore.RedirectDe
 
 func (rs *Service) Create(def *redirectstore.RedirectDefinition) error {
 	err := rs.api.CreateRedirect(rs.ctx,
-		redirectcommand.CreateRedirect{})
+		redirectcommand.CreateRedirect{
+			RedirectDefinition: def,
+		})
 	if err != nil {
 		return err
 	}
@@ -67,7 +68,7 @@ func (rs *Service) Create(def *redirectstore.RedirectDefinition) error {
 
 func (rs *Service) Delete(id string) error {
 	err := rs.api.DeleteRedirect(rs.ctx,
-		redirectcommand.DeleteRedirect{})
+		redirectcommand.DeleteRedirect{Source: redirectstore.RedirectSource(id)})
 	if err != nil {
 		return err
 	}
@@ -76,7 +77,9 @@ func (rs *Service) Delete(id string) error {
 
 func (rs *Service) Update(def *redirectstore.RedirectDefinition) error {
 	err := rs.api.UpdateRedirect(rs.ctx,
-		redirectcommand.UpdateRedirect{})
+		redirectcommand.UpdateRedirect{
+			RedirectDefinition: def,
+		})
 	if err != nil {
 		return err
 	}
