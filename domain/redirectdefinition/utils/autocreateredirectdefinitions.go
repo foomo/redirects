@@ -18,7 +18,7 @@ func AutoCreateRedirectDefinitions(l *zap.Logger, old, new *content.RepoNode) (r
 		l.Error(nilError)
 		return nil, errors.New(nilError)
 	}
-	var redirects redirectstore.RedirectDefinitions
+	var redirects = make(redirectstore.RedirectDefinitions)
 	var newTree = new
 	var generateRedirects func(old, new *content.RepoNode)
 
