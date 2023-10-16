@@ -42,29 +42,24 @@ func AutoCreateRedirectDefinitions(l *zap.Logger, old, new *content.RepoNode) ([
 				findInNewTree := FindNodeById(newTree, key)
 				if findInNewTree != nil {
 					generateRedirects(oldchild, findInNewTree)
-				}
-			}
-		}
-		if len(new.Nodes) < len(old.Nodes) {
-			found := false
-			for key, oldchild := range old.Nodes {
-				if _, ok := new.Nodes[key]; !ok {
+				} else {
+					found := false
 					for _, redirect := range redirects {
 						if string(redirect.Source) == oldchild.URI {
 							found = true
 							break
 						}
 					}
-				}
-				if !found {
-					rd := redirectstore.RedirectDefinition{
-						Source:         redirectstore.RedirectSource(oldchild.URI),
-						Target:         "",
-						Code:           301,
-						RespectParams:  true,
-						TransferParams: true,
+					if !found {
+						rd := redirectstore.RedirectDefinition{
+							Source:         redirectstore.RedirectSource(oldchild.URI),
+							Target:         "",
+							Code:           301,
+							RespectParams:  true,
+							TransferParams: true,
+						}
+						redirects = append(redirects, rd)
 					}
-					redirects = append(redirects, rd)
 				}
 			}
 		}
