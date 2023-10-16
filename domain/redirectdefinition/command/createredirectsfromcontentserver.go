@@ -8,9 +8,13 @@ import (
 
 	"github.com/foomo/contentserver/content"
 	redirectrepository "github.com/foomo/redirects/domain/redirectdefinition/repository"
+	redirectdefinitionutils "github.com/foomo/redirects/domain/redirectdefinition/utils"
+
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
+
+const dimension = "de"
 
 type (
 	// CreateRedirects command
@@ -27,22 +31,25 @@ type (
 // CreateRedirectsHandler ...
 func CreateRedirectsHandler(repo *redirectrepository.RedirectsDefinitionRepository) CreateRedirectsHandlerFn {
 	return func(ctx context.Context, l *zap.Logger, cmd CreateRedirects) error {
-		// for dimension, _ := range cmd.OldState {
-		// defs, err := redirectdefinitionutils.AutoCreateRedirectDefinitions(l, cmd.OldState["de"], cmd.NewState["de"])
-		// if err != nil {
-		// 	return err
-		// }
-		// oldDefs, err := repo.FindAll(ctx)
-		// if err != nil {
-		// 	return err
-		// }
-		//consolidatedDefs, deletedDefs, err := redirectdefinitionutils.ConsolidateRedirectDefinitions(l, *oldDefs, defs)
-		// if err != nil {
-		// 	return err
-		// }
+		newDefinitions, err := redirectdefinitionutils.AutoCreateRedirectDefinitions(l, cmd.OldState[dimension], cmd.NewState[dimension])
+		if err != nil {
+			return err
+		}
+		oldDefinitions, err := repo.FindAll(ctx)
+		if err != nil {
+			return err
+		}
+		consolidatedDefs, deletedDefs := redirectdefinitionutils.ConsolidateRedirectDefinitions(l, *oldDefinitions, newDefinitions)
 
-		//repo.UpsertMany(ctx, consolidatedDefs)
-		//repo.Delete()
+		updateErr := repo.UpsertMany(ctx, &consolidatedDefs)
+		if updateErr != nil {
+			return updateErr
+		}
+
+		deleteErr := repo.DeleteMany(ctx, deletedDefs)
+		if deleteErr != nil {
+			return deleteErr
+		}
 		return nil
 	}
 }

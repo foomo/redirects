@@ -105,3 +105,10 @@ func (rs RedirectsDefinitionRepository) Delete(ctx context.Context, source strin
 	_, err := rs.collection.Col().DeleteOne(ctx, filter)
 	return err
 }
+
+func (rs RedirectsDefinitionRepository) DeleteMany(ctx context.Context, sources []redirectstore.RedirectSource) error {
+	filter := bson.M{"source": bson.M{"$in": sources}}
+
+	_, err := rs.collection.Col().DeleteMany(ctx, filter)
+	return err
+}

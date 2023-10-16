@@ -25,20 +25,23 @@ func Test_ConsolidateRedirectDefinitions(t *testing.T) {
 		"tachen": {ID: "4", Source: "tachen", Target: "new-tachen"}, // test that newly added will be actually added
 	}
 
-	consolidatedExpected := redirectstore.RedirectDefinitions{
+	updatedExpected := redirectstore.RedirectDefinitions{
 		"kinder": {ID: "3", Source: "kinder", Target: "new-kinder"},
 		"tachen": {ID: "4", Source: "tachen", Target: "new-tachen"},
 	}
-	consolidated, err := ConsolidateRedirectDefinitions(zap.L(), old, new)
-	if err != nil {
-		fmt.Print(err)
+
+	deletedExpected := []redirectstore.RedirectSource{
+		"kids",
+		"damen",
 	}
-	assert.NoError(t, err)
-	assert.Equal(t, len(consolidatedExpected), len(*consolidated))
+	updatedDefs, deletedSources := ConsolidateRedirectDefinitions(zap.L(), old, new)
+	fmt.Print(deletedSources)
+	assert.Equal(t, len(updatedExpected), len(updatedDefs))
+	assert.Equal(t, len(deletedExpected), len(deletedSources))
 
 	//make sure that consolidated definitions exist in expected
-	for source, definition := range *consolidated {
-		assert.NotNil(t, consolidatedExpected[source])
-		assert.Equal(t, definition, consolidatedExpected[source])
+	for source, definition := range updatedDefs {
+		assert.NotNil(t, updatedDefs[source])
+		assert.Equal(t, definition, updatedDefs[source])
 	}
 }

@@ -12,37 +12,33 @@ import (
 func ConsolidateRedirectDefinitions(
 	l *zap.Logger,
 	old, new redirectstore.RedirectDefinitions,
-) (*redirectstore.RedirectDefinitions, error) {
+) (updatedDefs redirectstore.RedirectDefinitions, deletedSources []redirectstore.RedirectSource) {
 
-	consolidatedDef := make(redirectstore.RedirectDefinitions)
+	updatedDefs = make(redirectstore.RedirectDefinitions)
 
 	// Copy new definitions to the consolidated map
 	for source, definition := range new {
-		// If Target is empty in new definitions, skip it
-		if definition.Target != "" {
-			consolidatedDef[source] = definition
-		}
-	}
-
-	// Remove definitions from the consolidated map if they exist in old but not in new
-	for source := range old {
-		if _, found := consolidatedDef[source]; !found {
-			// Definition exists in old but not in new, remove it
-			delete(old, source)
+		// If Target is empty in new definitions, delete it
+		if definition.Target == "" {
+			deletedSources = append(deletedSources, source)
+		} else {
+			updatedDefs[source] = definition
 		}
 	}
 
 	// Check for circular references and update the targets if needed
-	for _, definition := range consolidatedDef {
+	for _, definition := range updatedDefs {
 		target := definition.Target
 		for {
-			if nextDefinition, found := consolidatedDef[redirectstore.RedirectSource(target)]; found {
+			if nextDefinition, found := updatedDefs[redirectstore.RedirectSource(target)]; found {
 				// If the target is also a source in another definition, update the target
 				if nextDefinition.Target != target {
 					definition.Target = nextDefinition.Target
 
 					// Circular reference detected, remove the target
-					delete(consolidatedDef, redirectstore.RedirectSource(target))
+					delete(updatedDefs, redirectstore.RedirectSource(target))
+
+					deletedSources = append(deletedSources, redirectstore.RedirectSource(target))
 					break
 				}
 			} else {
@@ -52,5 +48,5 @@ func ConsolidateRedirectDefinitions(
 			}
 		}
 	}
-	return &consolidatedDef, nil
+	return updatedDefs, deletedSources
 }
