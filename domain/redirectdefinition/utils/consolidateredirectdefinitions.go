@@ -6,9 +6,9 @@ import (
 )
 
 // Consolidate redirect definitions by:
-// * Removing ones that have empty target definition
-// * Removing ones that don't exist in new definitions
-// * If target of one is source to another one, consolidate those into one to prevent multiple redirections
+// * Making list for update with new and updated definitions
+// * Making list for deleting for definitions with empty target id
+// * If target of one is source to another one, consolidate those into one definition to prevent multiple redirections
 func ConsolidateRedirectDefinitions(
 	l *zap.Logger,
 	old, new redirectstore.RedirectDefinitions,

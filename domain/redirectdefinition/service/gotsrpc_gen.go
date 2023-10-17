@@ -67,12 +67,15 @@ func (p *RedirectDefinitionServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter,
 			return
 		}
 		executionStart := time.Now()
-		createRet := p.service.Create(arg_def)
+		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
+		createRet := p.service.Create(&rw, r, arg_def)
 		callStats.Execution = time.Since(executionStart)
-		rets = []interface{}{createRet}
-		if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
-			gotsrpc.ErrorCouldNotReply(w)
-			return
+		if rw.Status() == http.StatusOK {
+			rets = []interface{}{createRet}
+			if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
+				gotsrpc.ErrorCouldNotReply(w)
+				return
+			}
 		}
 		gotsrpc.Monitor(w, r, args, rets, callStats)
 		return
@@ -91,12 +94,15 @@ func (p *RedirectDefinitionServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter,
 			return
 		}
 		executionStart := time.Now()
-		createRedirectsFromContentserverexportRet := p.service.CreateRedirectsFromContentserverexport(arg_old, arg_new)
+		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
+		createRedirectsFromContentserverexportRet := p.service.CreateRedirectsFromContentserverexport(&rw, r, arg_old, arg_new)
 		callStats.Execution = time.Since(executionStart)
-		rets = []interface{}{createRedirectsFromContentserverexportRet}
-		if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
-			gotsrpc.ErrorCouldNotReply(w)
-			return
+		if rw.Status() == http.StatusOK {
+			rets = []interface{}{createRedirectsFromContentserverexportRet}
+			if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
+				gotsrpc.ErrorCouldNotReply(w)
+				return
+			}
 		}
 		gotsrpc.Monitor(w, r, args, rets, callStats)
 		return
@@ -114,12 +120,15 @@ func (p *RedirectDefinitionServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter,
 			return
 		}
 		executionStart := time.Now()
-		deleteRet := p.service.Delete(arg_id)
+		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
+		deleteRet := p.service.Delete(&rw, r, arg_id)
 		callStats.Execution = time.Since(executionStart)
-		rets = []interface{}{deleteRet}
-		if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
-			gotsrpc.ErrorCouldNotReply(w)
-			return
+		if rw.Status() == http.StatusOK {
+			rets = []interface{}{deleteRet}
+			if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
+				gotsrpc.ErrorCouldNotReply(w)
+				return
+			}
 		}
 		gotsrpc.Monitor(w, r, args, rets, callStats)
 		return
@@ -129,12 +138,15 @@ func (p *RedirectDefinitionServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter,
 			rets []interface{}
 		)
 		executionStart := time.Now()
-		getRedirectsRet, getRedirectsRet_1 := p.service.GetRedirects()
+		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
+		getRedirectsRet, getRedirectsRet_1 := p.service.GetRedirects(&rw, r)
 		callStats.Execution = time.Since(executionStart)
-		rets = []interface{}{getRedirectsRet, getRedirectsRet_1}
-		if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
-			gotsrpc.ErrorCouldNotReply(w)
-			return
+		if rw.Status() == http.StatusOK {
+			rets = []interface{}{getRedirectsRet, getRedirectsRet_1}
+			if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
+				gotsrpc.ErrorCouldNotReply(w)
+				return
+			}
 		}
 		gotsrpc.Monitor(w, r, args, rets, callStats)
 		return
@@ -154,12 +166,15 @@ func (p *RedirectDefinitionServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter,
 			return
 		}
 		executionStart := time.Now()
-		searchRet, searchRet_1 := p.service.Search(arg_dimension, arg_id, arg_path)
+		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
+		searchRet, searchRet_1 := p.service.Search(&rw, r, arg_dimension, arg_id, arg_path)
 		callStats.Execution = time.Since(executionStart)
-		rets = []interface{}{searchRet, searchRet_1}
-		if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
-			gotsrpc.ErrorCouldNotReply(w)
-			return
+		if rw.Status() == http.StatusOK {
+			rets = []interface{}{searchRet, searchRet_1}
+			if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
+				gotsrpc.ErrorCouldNotReply(w)
+				return
+			}
 		}
 		gotsrpc.Monitor(w, r, args, rets, callStats)
 		return
@@ -177,12 +192,15 @@ func (p *RedirectDefinitionServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter,
 			return
 		}
 		executionStart := time.Now()
-		updateRet := p.service.Update(arg_def)
+		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
+		updateRet := p.service.Update(&rw, r, arg_def)
 		callStats.Execution = time.Since(executionStart)
-		rets = []interface{}{updateRet}
-		if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
-			gotsrpc.ErrorCouldNotReply(w)
-			return
+		if rw.Status() == http.StatusOK {
+			rets = []interface{}{updateRet}
+			if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
+				gotsrpc.ErrorCouldNotReply(w)
+				return
+			}
 		}
 		gotsrpc.Monitor(w, r, args, rets, callStats)
 		return

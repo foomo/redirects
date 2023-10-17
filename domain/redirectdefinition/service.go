@@ -2,6 +2,7 @@ package redirectdefinition
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/foomo/contentserver/content"
 	keelmongo "github.com/foomo/keel/persistence/mongo"
@@ -16,69 +17,54 @@ import (
 type Service struct {
 	l   *zap.Logger
 	api *API
-	ctx context.Context
 }
 
 func NewService(l *zap.Logger, p *keelmongo.Persistor, api *API, ctx context.Context) service.RedirectDefinitionService {
 	return &Service{
 		l:   l,
 		api: api,
-		ctx: ctx,
 	}
 }
 
-func (rs *Service) CreateRedirectsFromContentserverexport(old, new map[string]*content.RepoNode) error {
-	// TODO: Implement
-	err := rs.api.CreateRedirects(context.Background(),
+func (rs *Service) CreateRedirectsFromContentserverexport(
+	w http.ResponseWriter,
+	r *http.Request,
+	old, new map[string]*content.RepoNode) error {
+	return rs.api.CreateRedirects(r.Context(),
 		redirectcommand.CreateRedirects{
 			OldState: old,
 			NewState: new,
 		})
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
-func (rs *Service) GetRedirects() (*redirectstore.RedirectDefinitions, error) {
-	redirects, err := rs.api.GetRedirects(rs.ctx)
-	if err != nil {
-		return nil, err
-	}
-	return redirects, nil
+func (rs *Service) GetRedirects(w http.ResponseWriter, r *http.Request) (*redirectstore.RedirectDefinitions, error) {
+	return rs.api.GetRedirects(r.Context())
 }
 
-func (rs *Service) Search(dimension, id, path string) (*redirectstore.RedirectDefinition, error) {
-	definition, err := rs.api.Search(rs.ctx, redirectquery.Search{})
-	if err != nil {
-		return nil, err
-	}
-	return definition, nil
+func (rs *Service) Search(w http.ResponseWriter, r *http.Request, dimension, id, path string) (*redirectstore.RedirectDefinition, error) {
+	return rs.api.Search(r.Context(), redirectquery.Search{
+		ID:     id,
+		Source: redirectstore.RedirectSource(path),
+	})
 }
 
-func (rs *Service) Create(def *redirectstore.RedirectDefinition) error {
-	err := rs.api.CreateRedirect(rs.ctx,
-		redirectcommand.CreateRedirect{})
-	if err != nil {
-		return err
-	}
-	return nil
+func (rs *Service) Create(w http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition) error {
+	return rs.api.CreateRedirect(r.Context(),
+		redirectcommand.CreateRedirect{
+			RedirectDefinition: def,
+		})
 }
 
-func (rs *Service) Delete(id string) error {
-	err := rs.api.DeleteRedirect(rs.ctx,
-		redirectcommand.DeleteRedirect{})
-	if err != nil {
-		return err
-	}
-	return nil
+func (rs *Service) Delete(w http.ResponseWriter, r *http.Request, path string) error {
+	return rs.api.DeleteRedirect(r.Context(),
+		redirectcommand.DeleteRedirect{
+			Source: redirectstore.RedirectSource(path),
+		})
 }
 
-func (rs *Service) Update(def *redirectstore.RedirectDefinition) error {
-	err := rs.api.UpdateRedirect(rs.ctx,
-		redirectcommand.UpdateRedirect{})
-	if err != nil {
-		return err
-	}
-	return nil
+func (rs *Service) Update(w http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition) error {
+	return rs.api.UpdateRedirect(r.Context(),
+		redirectcommand.UpdateRedirect{
+			RedirectDefinition: def,
+		})
 }

@@ -18,7 +18,6 @@ type (
 		cmd  Commands
 		repo *redirectrepository.RedirectsDefinitionRepository
 		l    *zap.Logger
-		ctx  context.Context
 		//meter                      *cmrccommonmetric.Meter
 	}
 	Option func(api *API)
@@ -27,14 +26,12 @@ type (
 func NewAPI(
 	l *zap.Logger,
 	repo *redirectrepository.RedirectsDefinitionRepository,
-	ctx context.Context,
 	opts ...Option,
 ) (*API, error) {
 
 	inst := &API{
 		l:    l,
 		repo: repo,
-		ctx:  ctx,
 		//meter:                      cmrccommonmetric.NewMeter(l, "checkout", telemetry.Meter()),
 	}
 	if inst.l == nil {
@@ -78,43 +75,26 @@ func NewAPI(
 // ------------------------------------------------------------------------------------------------
 
 func (a *API) CreateRedirects(ctx context.Context, cmd redirectcommand.CreateRedirects) (err error) {
-	if err := a.cmd.CreateRedirects(ctx, a.l, cmd); err != nil {
-		return err
-	}
-	return nil
+	return a.cmd.CreateRedirects(ctx, a.l, cmd)
 }
 
 func (a *API) CreateRedirect(ctx context.Context, cmd redirectcommand.CreateRedirect) (err error) {
-	if err := a.cmd.CreateRedirect(ctx, a.l, cmd); err != nil {
-		return err
-	}
-	return nil
+	return a.cmd.CreateRedirect(ctx, a.l, cmd)
+
 }
 
 func (a *API) UpdateRedirect(ctx context.Context, cmd redirectcommand.UpdateRedirect) (err error) {
-	if err := a.cmd.UpdateRedirect(ctx, a.l, cmd); err != nil {
-		return err
-	}
-	return nil
+	return a.cmd.UpdateRedirect(ctx, a.l, cmd)
 }
 
 func (a *API) DeleteRedirect(ctx context.Context, cmd redirectcommand.DeleteRedirect) (err error) {
-	if err := a.cmd.DeleteRedirect(ctx, a.l, cmd); err != nil {
-		return err
-	}
-	return nil
+	return a.cmd.DeleteRedirect(ctx, a.l, cmd)
 }
 
 func (a *API) GetRedirects(ctx context.Context) (redirects *redirectstore.RedirectDefinitions, err error) {
-	if redirects, err = a.qry.GetRedirects(ctx, a.l); err != nil {
-		return nil, err
-	}
-	return redirects, err
+	return a.qry.GetRedirects(ctx, a.l)
 }
 
 func (a *API) Search(ctx context.Context, qry redirectquery.Search) (redirect *redirectstore.RedirectDefinition, err error) {
-	if redirect, err = a.qry.Search(ctx, a.l, qry); err != nil {
-		return nil, err
-	}
-	return redirect, err
+	return a.qry.Search(ctx, a.l, qry)
 }
