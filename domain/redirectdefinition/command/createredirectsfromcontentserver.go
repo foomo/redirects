@@ -39,20 +39,21 @@ func CreateRedirectsHandler(repo *redirectrepository.RedirectsDefinitionReposito
 		}
 		oldDefinitions, err := repo.FindAll(ctx)
 		if err != nil {
-			l.Error(err.Error())
+			l.Error("failed to fetch existing definitions", zap.Error(err))
 			return err
 		}
 		l.Info("calling consolidate automatic redirects")
 		consolidatedDefs, deletedDefs := redirectdefinitionutils.ConsolidateRedirectDefinitions(l, *oldDefinitions, newDefinitions)
+
 		updateErr := repo.UpsertMany(ctx, &consolidatedDefs)
 		if updateErr != nil {
-			l.Error("failed to UpsertMany", zap.Error(updateErr))
+			l.Error("failed to updated definitions", zap.Error(updateErr))
 			return updateErr
 		}
 
 		deleteErr := repo.DeleteMany(ctx, deletedDefs)
 		if deleteErr != nil {
-			l.Error("failed to DeleteMany", zap.Error(deleteErr))
+			l.Error("failed to delete definitions", zap.Error(deleteErr))
 			return deleteErr
 		}
 		l.Info("successfully finished create automatic redirects")

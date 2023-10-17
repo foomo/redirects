@@ -27,11 +27,7 @@ type (
 // SearchHandler ...
 func SearchHandler(repo *redirectrepository.RedirectsDefinitionRepository) SearchHandlerFn {
 	return func(ctx context.Context, l *zap.Logger, qry Search) (*redirectstore.RedirectDefinition, error) {
-		definition, err := repo.Find(ctx, qry.ID, string(qry.Source))
-		if err != nil {
-			return nil, err
-		}
-		return definition, nil
+		return repo.Find(ctx, qry.ID, string(qry.Source))
 	}
 }
 
