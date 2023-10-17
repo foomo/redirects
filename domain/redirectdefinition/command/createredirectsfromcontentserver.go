@@ -31,25 +31,31 @@ type (
 // CreateRedirectsHandler ...
 func CreateRedirectsHandler(repo *redirectrepository.RedirectsDefinitionRepository) CreateRedirectsHandlerFn {
 	return func(ctx context.Context, l *zap.Logger, cmd CreateRedirects) error {
+		l.Info("calling create automatic redirects")
 		newDefinitions, err := redirectdefinitionutils.AutoCreateRedirectDefinitions(l, cmd.OldState[dimension], cmd.NewState[dimension])
 		if err != nil {
+			l.Error("failed to execute auto create redirects", zap.Error(err))
 			return err
 		}
 		oldDefinitions, err := repo.FindAll(ctx)
 		if err != nil {
+			l.Error(err.Error())
 			return err
 		}
+		l.Info("calling consolidate automatic redirects")
 		consolidatedDefs, deletedDefs := redirectdefinitionutils.ConsolidateRedirectDefinitions(l, *oldDefinitions, newDefinitions)
-
 		updateErr := repo.UpsertMany(ctx, &consolidatedDefs)
 		if updateErr != nil {
+			l.Error("failed to UpsertMany", zap.Error(updateErr))
 			return updateErr
 		}
 
 		deleteErr := repo.DeleteMany(ctx, deletedDefs)
 		if deleteErr != nil {
+			l.Error("failed to DeleteMany", zap.Error(deleteErr))
 			return deleteErr
 		}
+		l.Info("successfully finished create automatic redirects")
 		return nil
 	}
 }

@@ -35,6 +35,105 @@ func Test_AutoCreateRedirectDefinitionsParse(t *testing.T) {
 	assert.Equal(t, 12, len(redirects))
 }
 
+func Test_AutoCreateRedirectDefinitionsCoverAll(t *testing.T) {
+	old := &content.RepoNode{
+		ID:   "1",
+		URI:  "/main",
+		Name: "Root",
+		Nodes: map[string]*content.RepoNode{
+			"2": {
+				ID:    "2",
+				URI:   "/main/herren",
+				Name:  "Node2",
+				Nodes: nil,
+			},
+			"3": {
+				ID:   "3",
+				URI:  "/main/damen/kleidung",
+				Name: "Node3",
+				Nodes: map[string]*content.RepoNode{
+					"4": {
+						ID:    "4",
+						URI:   "/main/damen/kleidung/schuhe",
+						Name:  "Node4",
+						Nodes: nil,
+					},
+					"5": {
+						ID:    "5",
+						URI:   "/main/damen/kleidung/roecke",
+						Name:  "Node5",
+						Nodes: nil,
+					},
+				},
+			},
+			"6": {
+				ID:   "6",
+				URI:  "/main/kinder",
+				Name: "Node6",
+				Nodes: map[string]*content.RepoNode{
+					"7": {
+						ID:    "7",
+						URI:   "/main/kinder/schuhe",
+						Name:  "Node4",
+						Nodes: nil,
+					},
+				},
+			},
+			"8": {
+				ID:    "8",
+				URI:   "/main/sport",
+				Name:  "Node8",
+				Nodes: nil,
+			},
+		},
+	}
+	new := &content.RepoNode{
+		ID:   "1",
+		URI:  "/main",
+		Name: "Root",
+		Nodes: map[string]*content.RepoNode{
+			"2": {
+				ID:   "2",
+				URI:  "/main/herren",
+				Name: "Node2",
+				Nodes: map[string]*content.RepoNode{
+					"7": {
+						ID:    "7",
+						URI:   "/main/herren/schuhe",
+						Name:  "Node4",
+						Nodes: nil,
+					},
+				},
+			},
+			"3": {
+				ID:   "3",
+				URI:  "/main/damen/kleidung",
+				Name: "Node3",
+				Nodes: map[string]*content.RepoNode{
+					"4": {
+						ID:    "4",
+						URI:   "/main/damen/kleidung/schuhe-new",
+						Name:  "Node4",
+						Nodes: nil,
+					},
+				},
+			},
+			"6": {
+				ID:    "6",
+				URI:   "/main/kinder-new",
+				Name:  "Node6",
+				Nodes: nil,
+			},
+		},
+	}
+	redirects, err := AutoCreateRedirectDefinitions(zap.L(), old, new)
+	if err != nil {
+		assert.Error(t, err)
+	}
+	assert.NoError(t, err)
+	assert.Equal(t, 5, len(redirects))
+}
+
 func Test_AutoCreateRedirectDefinitions(t *testing.T) {
 	old := &content.RepoNode{
 		ID:   "1",
