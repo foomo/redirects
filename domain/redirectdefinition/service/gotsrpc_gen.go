@@ -112,16 +112,16 @@ func (p *RedirectDefinitionServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter,
 			rets []interface{}
 		)
 		var (
-			arg_id string
+			arg_path string
 		)
-		args = []interface{}{&arg_id}
+		args = []interface{}{&arg_path}
 		if err := gotsrpc.LoadArgs(&args, callStats, r); err != nil {
 			gotsrpc.ErrorCouldNotLoadArgs(w)
 			return
 		}
 		executionStart := time.Now()
 		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
-		deleteRet := p.service.Delete(&rw, r, arg_id)
+		deleteRet := p.service.Delete(&rw, r, arg_path)
 		callStats.Execution = time.Since(executionStart)
 		if rw.Status() == http.StatusOK {
 			rets = []interface{}{deleteRet}

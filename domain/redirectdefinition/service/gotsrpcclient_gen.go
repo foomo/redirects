@@ -15,9 +15,9 @@ import (
 type RedirectDefinitionServiceGoTSRPCClient interface {
 	Create(ctx go_context.Context, def *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition) (retCreate_0 error, clientErr error)
 	CreateRedirectsFromContentserverexport(ctx go_context.Context, old map[string]*github_com_foomo_contentserver_content.RepoNode, new map[string]*github_com_foomo_contentserver_content.RepoNode) (retCreateRedirectsFromContentserverexport_0 error, clientErr error)
-	Delete(ctx go_context.Context, id string) (retDelete_0 error, clientErr error)
+	Delete(ctx go_context.Context, path string) (retDelete_0 error, clientErr error)
 	GetRedirects(ctx go_context.Context) (retGetRedirects_0 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitions, retGetRedirects_1 error, clientErr error)
-	Search(ctx go_context.Context, dimension string, id string, path string) (retSearch_0 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition, retSearch_1 error, clientErr error)
+	Search(ctx go_context.Context, dimension string, id string, path string) (retSearch_0 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitions, retSearch_1 error, clientErr error)
 	Update(ctx go_context.Context, def *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition) (retUpdate_0 error, clientErr error)
 }
 
@@ -62,8 +62,8 @@ func (tsc *HTTPRedirectDefinitionServiceGoTSRPCClient) CreateRedirectsFromConten
 	return
 }
 
-func (tsc *HTTPRedirectDefinitionServiceGoTSRPCClient) Delete(ctx go_context.Context, id string) (retDelete_0 error, clientErr error) {
-	args := []interface{}{id}
+func (tsc *HTTPRedirectDefinitionServiceGoTSRPCClient) Delete(ctx go_context.Context, path string) (retDelete_0 error, clientErr error) {
+	args := []interface{}{path}
 	reply := []interface{}{&retDelete_0}
 	clientErr = tsc.Client.Call(ctx, tsc.URL, tsc.EndPoint, "Delete", args, reply)
 	if clientErr != nil {
@@ -82,7 +82,7 @@ func (tsc *HTTPRedirectDefinitionServiceGoTSRPCClient) GetRedirects(ctx go_conte
 	return
 }
 
-func (tsc *HTTPRedirectDefinitionServiceGoTSRPCClient) Search(ctx go_context.Context, dimension string, id string, path string) (retSearch_0 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition, retSearch_1 error, clientErr error) {
+func (tsc *HTTPRedirectDefinitionServiceGoTSRPCClient) Search(ctx go_context.Context, dimension string, id string, path string) (retSearch_0 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitions, retSearch_1 error, clientErr error) {
 	args := []interface{}{dimension, id, path}
 	reply := []interface{}{&retSearch_0, &retSearch_1}
 	clientErr = tsc.Client.Call(ctx, tsc.URL, tsc.EndPoint, "Search", args, reply)

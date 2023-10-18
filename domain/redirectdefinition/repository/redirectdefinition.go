@@ -7,6 +7,7 @@ import (
 
 	keelmongo "github.com/foomo/keel/persistence/mongo"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
@@ -46,6 +47,23 @@ func NewRedirectsDefinitionRepository(l *zap.Logger, persistor *keelmongo.Persis
 func (rs RedirectsDefinitionRepository) Find(ctx context.Context, id, source string) (*redirectstore.RedirectDefinition, error) {
 	var result redirectstore.RedirectDefinition
 	findErr := rs.collection.FindOne(ctx, bson.M{"id": id, "source": source}, &result)
+	if findErr != nil {
+		return nil, findErr
+	}
+	return &result, nil
+}
+
+// TODO: DraganaB check if we need to search by id
+func (rs RedirectsDefinitionRepository) FindMany(ctx context.Context, id, source string) (*redirectstore.RedirectDefinitions, error) {
+	var result redirectstore.RedirectDefinitions
+
+	// Create a regex pattern for fuzzy match
+	pattern := primitive.Regex{Pattern: source, Options: "i"} // "i" for case-insensitive match
+
+	// Create a filter with the regex pattern
+	filter := bson.M{"source": primitive.Regex{Pattern: pattern.Pattern, Options: pattern.Options}}
+
+	findErr := rs.collection.FindOne(ctx, filter, &result)
 	if findErr != nil {
 		return nil, findErr
 	}
