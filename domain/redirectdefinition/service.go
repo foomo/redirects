@@ -42,7 +42,7 @@ func (rs *Service) GetRedirects(w http.ResponseWriter, r *http.Request) (*redire
 	return rs.api.GetRedirects(r.Context())
 }
 
-func (rs *Service) Search(w http.ResponseWriter, r *http.Request, dimension, id, path string) (*redirectstore.RedirectDefinition, error) {
+func (rs *Service) Search(w http.ResponseWriter, r *http.Request, dimension, id, path string) (*redirectstore.RedirectDefinitions, error) {
 	return rs.api.Search(r.Context(), redirectquery.Search{
 		ID:     id,
 		Source: redirectstore.RedirectSource(path),

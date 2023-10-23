@@ -95,6 +95,6 @@ func (a *API) GetRedirects(ctx context.Context) (redirects *redirectstore.Redire
 	return a.qry.GetRedirects(ctx, a.l)
 }
 
-func (a *API) Search(ctx context.Context, qry redirectquery.Search) (redirect *redirectstore.RedirectDefinition, err error) {
+func (a *API) Search(ctx context.Context, qry redirectquery.Search) (redirect *redirectstore.RedirectDefinitions, err error) {
 	return a.qry.Search(ctx, a.l, qry)
 }
