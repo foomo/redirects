@@ -52,12 +52,13 @@ func (rs RedirectsDefinitionRepository) Find(ctx context.Context, id, source str
 	return &result, nil
 }
 
-func (rs RedirectsDefinitionRepository) FindAll(ctx context.Context) (defs *redirectstore.RedirectDefinitions, err error) {
-	err = rs.collection.Find(ctx, bson.M{}, &defs)
+func (rs RedirectsDefinitionRepository) FindAll(ctx context.Context) (*redirectstore.RedirectDefinitions, error) {
+	var result redirectstore.RedirectDefinitions
+	err := rs.collection.Find(ctx, bson.M{}, &result)
 	if err != nil {
 		return nil, err
 	}
-	return defs, nil
+	return &result, nil
 }
 
 func (rs RedirectsDefinitionRepository) Insert(ctx context.Context, def *redirectstore.RedirectDefinition) error {
