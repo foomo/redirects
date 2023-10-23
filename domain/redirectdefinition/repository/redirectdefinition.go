@@ -71,12 +71,16 @@ func (rs RedirectsDefinitionRepository) FindMany(ctx context.Context, id, source
 }
 
 func (rs RedirectsDefinitionRepository) FindAll(ctx context.Context) (*redirectstore.RedirectDefinitions, error) {
-	var result redirectstore.RedirectDefinitions
+	var result []redirectstore.RedirectDefinition
 	err := rs.collection.Find(ctx, bson.M{}, &result)
 	if err != nil {
 		return nil, err
 	}
-	return &result, nil
+	var retResult = make(redirectstore.RedirectDefinitions)
+	for _, res := range result {
+		retResult[res.Source] = &res
+	}
+	return &retResult, nil
 }
 
 func (rs RedirectsDefinitionRepository) Insert(ctx context.Context, def *redirectstore.RedirectDefinition) error {
