@@ -24,7 +24,7 @@ func TestGetAllRedirects(t *testing.T) {
 	)
 	assert.NoError(t, err)
 	// create repository
-	repo, err := redirectrepository.NewRedirectsDefinitionRepository(l, remotePersistor)
+	repo, err := redirectrepository.NewBaseRedirectsDefinitionRepository(l, remotePersistor)
 	if err != nil {
 		fmt.Print(err)
 	}
