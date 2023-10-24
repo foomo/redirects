@@ -16,7 +16,7 @@ type (
 	API struct {
 		qry  Queries
 		cmd  Commands
-		repo redirectrepository.RedirectsDefinitionRepository
+		repo redirectrepository.BaseRedirectsDefinitionRepository
 		l    *zap.Logger
 		//meter                      *cmrccommonmetric.Meter
 	}
@@ -25,7 +25,7 @@ type (
 
 func NewAPI(
 	l *zap.Logger,
-	repo redirectrepository.RedirectsDefinitionRepository,
+	repo redirectrepository.BaseRedirectsDefinitionRepository,
 	opts ...Option,
 ) (*API, error) {
 
@@ -36,9 +36,6 @@ func NewAPI(
 	}
 	if inst.l == nil {
 		return nil, errors.New("missing logger")
-	}
-	if inst.repo == nil {
-		return nil, errors.New("missing cart repository")
 	}
 	inst.cmd = Commands{
 		CreateRedirects: redirectcommand.CreateRedirectsHandlerComposed(
