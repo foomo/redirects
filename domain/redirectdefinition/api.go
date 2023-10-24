@@ -16,7 +16,7 @@ type (
 	API struct {
 		qry  Queries
 		cmd  Commands
-		repo *redirectrepository.RedirectsDefinitionRepository
+		repo redirectrepository.RedirectsDefinitionRepository
 		l    *zap.Logger
 		//meter                      *cmrccommonmetric.Meter
 	}
@@ -25,7 +25,7 @@ type (
 
 func NewAPI(
 	l *zap.Logger,
-	repo *redirectrepository.RedirectsDefinitionRepository,
+	repo redirectrepository.RedirectsDefinitionRepository,
 	opts ...Option,
 ) (*API, error) {
 

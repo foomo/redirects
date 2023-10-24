@@ -23,7 +23,7 @@ type (
 )
 
 // GetRedirectsHandler ...
-func GetRedirectsHandler(repo *redirectrepository.RedirectsDefinitionRepository) GetRedirectsHandlerFn {
+func GetRedirectsHandler(repo redirectrepository.RedirectsDefinitionRepository) GetRedirectsHandlerFn {
 	return func(ctx context.Context, l *zap.Logger) (*redirectstore.RedirectDefinitions, error) {
 		return repo.FindAll(ctx)
 	}

@@ -14,16 +14,30 @@ import (
 )
 
 type (
-	RSI interface {
-		Find(ctx context.Context, id string) (*redirectstore.RedirectDefinition, error)
+	RedirectsDefinitionRepository interface {
+		FindOne(ctx context.Context, id string) (*redirectstore.RedirectDefinition, error)
+		FindMany(ctx context.Context, id, source string) (*redirectstore.RedirectDefinitions, error)
+		FindAll(ctx context.Context) (defs *redirectstore.RedirectDefinitions, err error)
+		Insert(ctx context.Context, def *redirectstore.RedirectDefinition) error
+		Update(ctx context.Context, def *redirectstore.RedirectDefinition) error
+		UpsertMany(ctx context.Context, defs *redirectstore.RedirectDefinitions) error
+		Delete(ctx context.Context, source string) error
+		DeleteMany(ctx context.Context, sources []redirectstore.RedirectSource) error
 	}
-	RedirectsDefinitionRepository struct {
+	BaseRedirectsDefinitionRepository struct {
 		l          *zap.Logger
 		collection *keelmongo.Collection
 	}
 )
 
-func NewRedirectsDefinitionRepository(l *zap.Logger, persistor *keelmongo.Persistor) (rs *RedirectsDefinitionRepository, err error) {
+func NewRedirectsDefinitionRepository(l *zap.Logger, collection *keelmongo.Collection) *BaseRedirectsDefinitionRepository {
+	return &BaseRedirectsDefinitionRepository{
+		l:          l,
+		collection: collection,
+	}
+}
+
+func NewBaseRedirectsDefinitionRepository(l *zap.Logger, persistor *keelmongo.Persistor) (rs *BaseRedirectsDefinitionRepository, err error) {
 	collection, cErr := persistor.Collection(
 		"redirects",
 		keelmongo.CollectionWithIndexes(
@@ -39,12 +53,10 @@ func NewRedirectsDefinitionRepository(l *zap.Logger, persistor *keelmongo.Persis
 	if cErr != nil {
 		return nil, cErr
 	}
-	return &RedirectsDefinitionRepository{
-		l:          l,
-		collection: collection}, nil
+	return NewRedirectsDefinitionRepository(l, collection), nil
 }
 
-func (rs RedirectsDefinitionRepository) Find(ctx context.Context, id, source string) (*redirectstore.RedirectDefinition, error) {
+func (rs BaseRedirectsDefinitionRepository) FindOne(ctx context.Context, id, source string) (*redirectstore.RedirectDefinition, error) {
 	var result redirectstore.RedirectDefinition
 	findErr := rs.collection.FindOne(ctx, bson.M{"id": id, "source": source}, &result)
 	if findErr != nil {
@@ -54,7 +66,7 @@ func (rs RedirectsDefinitionRepository) Find(ctx context.Context, id, source str
 }
 
 // TODO: DraganaB check if we need to search by id
-func (rs RedirectsDefinitionRepository) FindMany(ctx context.Context, id, source string) (*redirectstore.RedirectDefinitions, error) {
+func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, id, source string) (*redirectstore.RedirectDefinitions, error) {
 	var result redirectstore.RedirectDefinitions
 
 	// Create a regex pattern for fuzzy match
@@ -70,7 +82,7 @@ func (rs RedirectsDefinitionRepository) FindMany(ctx context.Context, id, source
 	return &result, nil
 }
 
-func (rs RedirectsDefinitionRepository) FindAll(ctx context.Context) (defs *redirectstore.RedirectDefinitions, err error) {
+func (rs BaseRedirectsDefinitionRepository) FindAll(ctx context.Context) (defs *redirectstore.RedirectDefinitions, err error) {
 	err = rs.collection.Find(ctx, bson.M{}, &defs)
 	if err != nil {
 		return nil, err
@@ -78,12 +90,12 @@ func (rs RedirectsDefinitionRepository) FindAll(ctx context.Context) (defs *redi
 	return defs, nil
 }
 
-func (rs RedirectsDefinitionRepository) Insert(ctx context.Context, def *redirectstore.RedirectDefinition) error {
+func (rs BaseRedirectsDefinitionRepository) Insert(ctx context.Context, def *redirectstore.RedirectDefinition) error {
 	_, err := rs.collection.Col().InsertOne(ctx, def)
 	return err
 }
 
-func (rs RedirectsDefinitionRepository) Update(ctx context.Context, def *redirectstore.RedirectDefinition) error {
+func (rs BaseRedirectsDefinitionRepository) Update(ctx context.Context, def *redirectstore.RedirectDefinition) error {
 	filter := bson.D{{Key: "source", Value: def.Source}}
 	update := bson.D{{Key: "$set", Value: def}}
 
@@ -93,7 +105,7 @@ func (rs RedirectsDefinitionRepository) Update(ctx context.Context, def *redirec
 }
 
 // maybe will be needed for migrating manual redirections?
-func (rs RedirectsDefinitionRepository) UpsertMany(ctx context.Context, defs *redirectstore.RedirectDefinitions) error {
+func (rs BaseRedirectsDefinitionRepository) UpsertMany(ctx context.Context, defs *redirectstore.RedirectDefinitions) error {
 
 	var operations []mongo.WriteModel
 
@@ -117,16 +129,14 @@ func (rs RedirectsDefinitionRepository) UpsertMany(ctx context.Context, defs *re
 	return err
 }
 
-func (rs RedirectsDefinitionRepository) Delete(ctx context.Context, source string) error {
+func (rs BaseRedirectsDefinitionRepository) Delete(ctx context.Context, source string) error {
 	filter := bson.D{{Key: "source", Value: source}}
-
 	_, err := rs.collection.Col().DeleteOne(ctx, filter)
 	return err
 }
 
-func (rs RedirectsDefinitionRepository) DeleteMany(ctx context.Context, sources []redirectstore.RedirectSource) error {
+func (rs BaseRedirectsDefinitionRepository) DeleteMany(ctx context.Context, sources []redirectstore.RedirectSource) error {
 	filter := bson.M{"source": bson.M{"$in": sources}}
-
 	_, err := rs.collection.Col().DeleteMany(ctx, filter)
 	return err
 }
