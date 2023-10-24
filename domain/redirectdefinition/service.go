@@ -30,6 +30,7 @@ func (rs *Service) CreateRedirectsFromContentserverexport(
 	w http.ResponseWriter,
 	r *http.Request,
 	old, new map[string]*content.RepoNode) error {
+	rs.l.Info("CreateRedirectsFromContentserverexport called ")
 	return rs.api.CreateRedirects(r.Context(),
 		redirectcommand.CreateRedirects{
 			OldState: old,
