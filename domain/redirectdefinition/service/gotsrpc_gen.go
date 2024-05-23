@@ -13,32 +13,28 @@ import (
 )
 
 const (
-	RedirectDefinitionServiceGoTSRPCProxyCreate                                 = "Create"
-	RedirectDefinitionServiceGoTSRPCProxyCreateRedirectsFromContentserverexport = "CreateRedirectsFromContentserverexport"
-	RedirectDefinitionServiceGoTSRPCProxyDelete                                 = "Delete"
-	RedirectDefinitionServiceGoTSRPCProxyGetRedirects                           = "GetRedirects"
-	RedirectDefinitionServiceGoTSRPCProxySearch                                 = "Search"
-	RedirectDefinitionServiceGoTSRPCProxyUpdate                                 = "Update"
+	InternalServiceGoTSRPCProxyCreateRedirectsFromContentserverexport = "CreateRedirectsFromContentserverexport"
+	InternalServiceGoTSRPCProxyGetRedirects                           = "GetRedirects"
 )
 
-type RedirectDefinitionServiceGoTSRPCProxy struct {
+type InternalServiceGoTSRPCProxy struct {
 	EndPoint string
-	service  RedirectDefinitionService
+	service  InternalService
 }
 
-func NewDefaultRedirectDefinitionServiceGoTSRPCProxy(service RedirectDefinitionService) *RedirectDefinitionServiceGoTSRPCProxy {
-	return NewRedirectDefinitionServiceGoTSRPCProxy(service, "/services/redirects/redirectdefinition")
+func NewDefaultInternalServiceGoTSRPCProxy(service InternalService) *InternalServiceGoTSRPCProxy {
+	return NewInternalServiceGoTSRPCProxy(service, "/services/redirects/redirectdefinition/internal")
 }
 
-func NewRedirectDefinitionServiceGoTSRPCProxy(service RedirectDefinitionService, endpoint string) *RedirectDefinitionServiceGoTSRPCProxy {
-	return &RedirectDefinitionServiceGoTSRPCProxy{
+func NewInternalServiceGoTSRPCProxy(service InternalService, endpoint string) *InternalServiceGoTSRPCProxy {
+	return &InternalServiceGoTSRPCProxy{
 		EndPoint: endpoint,
 		service:  service,
 	}
 }
 
 // ServeHTTP exposes your service
-func (p *RedirectDefinitionServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (p *InternalServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodOptions {
 		return
 	} else if r.Method != http.MethodPost {
@@ -51,35 +47,9 @@ func (p *RedirectDefinitionServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter,
 	callStats, _ := gotsrpc.GetStatsForRequest(r)
 	callStats.Func = funcName
 	callStats.Package = "github.com/foomo/redirects/domain/redirectdefinition/service"
-	callStats.Service = "RedirectDefinitionService"
+	callStats.Service = "InternalService"
 	switch funcName {
-	case RedirectDefinitionServiceGoTSRPCProxyCreate:
-		var (
-			args []interface{}
-			rets []interface{}
-		)
-		var (
-			arg_def *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition
-		)
-		args = []interface{}{&arg_def}
-		if err := gotsrpc.LoadArgs(&args, callStats, r); err != nil {
-			gotsrpc.ErrorCouldNotLoadArgs(w)
-			return
-		}
-		executionStart := time.Now()
-		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
-		createRet := p.service.Create(&rw, r, arg_def)
-		callStats.Execution = time.Since(executionStart)
-		if rw.Status() == http.StatusOK {
-			rets = []interface{}{createRet}
-			if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
-				gotsrpc.ErrorCouldNotReply(w)
-				return
-			}
-		}
-		gotsrpc.Monitor(w, r, args, rets, callStats)
-		return
-	case RedirectDefinitionServiceGoTSRPCProxyCreateRedirectsFromContentserverexport:
+	case InternalServiceGoTSRPCProxyCreateRedirectsFromContentserverexport:
 		var (
 			args []interface{}
 			rets []interface{}
@@ -106,7 +76,96 @@ func (p *RedirectDefinitionServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter,
 		}
 		gotsrpc.Monitor(w, r, args, rets, callStats)
 		return
-	case RedirectDefinitionServiceGoTSRPCProxyDelete:
+	case InternalServiceGoTSRPCProxyGetRedirects:
+		var (
+			args []interface{}
+			rets []interface{}
+		)
+		executionStart := time.Now()
+		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
+		getRedirectsRet, getRedirectsRet_1 := p.service.GetRedirects(&rw, r)
+		callStats.Execution = time.Since(executionStart)
+		if rw.Status() == http.StatusOK {
+			rets = []interface{}{getRedirectsRet, getRedirectsRet_1}
+			if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
+				gotsrpc.ErrorCouldNotReply(w)
+				return
+			}
+		}
+		gotsrpc.Monitor(w, r, args, rets, callStats)
+		return
+	default:
+		gotsrpc.ClearStats(r)
+		gotsrpc.ErrorFuncNotFound(w)
+	}
+}
+
+const (
+	AdminServiceGoTSRPCProxyCreate = "Create"
+	AdminServiceGoTSRPCProxyDelete = "Delete"
+	AdminServiceGoTSRPCProxySearch = "Search"
+	AdminServiceGoTSRPCProxyUpdate = "Update"
+)
+
+type AdminServiceGoTSRPCProxy struct {
+	EndPoint string
+	service  AdminService
+}
+
+func NewDefaultAdminServiceGoTSRPCProxy(service AdminService) *AdminServiceGoTSRPCProxy {
+	return NewAdminServiceGoTSRPCProxy(service, "/services/redirects/redirectdefinition/admin")
+}
+
+func NewAdminServiceGoTSRPCProxy(service AdminService, endpoint string) *AdminServiceGoTSRPCProxy {
+	return &AdminServiceGoTSRPCProxy{
+		EndPoint: endpoint,
+		service:  service,
+	}
+}
+
+// ServeHTTP exposes your service
+func (p *AdminServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodOptions {
+		return
+	} else if r.Method != http.MethodPost {
+		gotsrpc.ErrorMethodNotAllowed(w)
+		return
+	}
+	defer io.Copy(io.Discard, r.Body) // Drain Request Body
+
+	funcName := gotsrpc.GetCalledFunc(r, p.EndPoint)
+	callStats, _ := gotsrpc.GetStatsForRequest(r)
+	callStats.Func = funcName
+	callStats.Package = "github.com/foomo/redirects/domain/redirectdefinition/service"
+	callStats.Service = "AdminService"
+	switch funcName {
+	case AdminServiceGoTSRPCProxyCreate:
+		var (
+			args []interface{}
+			rets []interface{}
+		)
+		var (
+			arg_def *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition
+		)
+		args = []interface{}{&arg_def}
+		if err := gotsrpc.LoadArgs(&args, callStats, r); err != nil {
+			gotsrpc.ErrorCouldNotLoadArgs(w)
+			return
+		}
+		executionStart := time.Now()
+		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
+		createRet := p.service.Create(&rw, r, arg_def)
+		callStats.Execution = time.Since(executionStart)
+		if rw.Status() == http.StatusOK {
+			rets = []interface{}{createRet}
+			if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
+				gotsrpc.ErrorCouldNotReply(w)
+				return
+			}
+		}
+		gotsrpc.Monitor(w, r, args, rets, callStats)
+		return
+	case AdminServiceGoTSRPCProxyDelete:
 		var (
 			args []interface{}
 			rets []interface{}
@@ -132,25 +191,7 @@ func (p *RedirectDefinitionServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter,
 		}
 		gotsrpc.Monitor(w, r, args, rets, callStats)
 		return
-	case RedirectDefinitionServiceGoTSRPCProxyGetRedirects:
-		var (
-			args []interface{}
-			rets []interface{}
-		)
-		executionStart := time.Now()
-		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
-		getRedirectsRet, getRedirectsRet_1 := p.service.GetRedirects(&rw, r)
-		callStats.Execution = time.Since(executionStart)
-		if rw.Status() == http.StatusOK {
-			rets = []interface{}{getRedirectsRet, getRedirectsRet_1}
-			if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
-				gotsrpc.ErrorCouldNotReply(w)
-				return
-			}
-		}
-		gotsrpc.Monitor(w, r, args, rets, callStats)
-		return
-	case RedirectDefinitionServiceGoTSRPCProxySearch:
+	case AdminServiceGoTSRPCProxySearch:
 		var (
 			args []interface{}
 			rets []interface{}
@@ -178,7 +219,7 @@ func (p *RedirectDefinitionServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter,
 		}
 		gotsrpc.Monitor(w, r, args, rets, callStats)
 		return
-	case RedirectDefinitionServiceGoTSRPCProxyUpdate:
+	case AdminServiceGoTSRPCProxyUpdate:
 		var (
 			args []interface{}
 			rets []interface{}

@@ -1,14 +1,11 @@
 package redirectdefinition
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/foomo/contentserver/content"
-	keelmongo "github.com/foomo/keel/persistence/mongo"
 	redirectcommand "github.com/foomo/redirects/domain/redirectdefinition/command"
 	redirectquery "github.com/foomo/redirects/domain/redirectdefinition/query"
-	service "github.com/foomo/redirects/domain/redirectdefinition/service"
 	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
 	"go.uber.org/zap"
 )
@@ -19,7 +16,7 @@ type Service struct {
 	api *API
 }
 
-func NewService(l *zap.Logger, p *keelmongo.Persistor, api *API, ctx context.Context) service.RedirectDefinitionService {
+func NewService(l *zap.Logger, api *API) *Service {
 	return &Service{
 		l:   l,
 		api: api,
