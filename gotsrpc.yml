@@ -5,8 +5,8 @@ module:
 targets:
   redirectdefinition:
     services:
-      /services/redirects/redirectdefinition/admin: AdminService
-      /services/redirects/redirectdefinition/internal: InternalService
+      /services/redirectdefinition/admin: AdminService
+      /services/redirectdefinition/internal: InternalService
     package: github.com/foomo/redirects/domain/redirectdefinition/service
     tsrpc:
       - AdminService

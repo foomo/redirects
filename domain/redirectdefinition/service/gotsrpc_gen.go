@@ -23,7 +23,7 @@ type InternalServiceGoTSRPCProxy struct {
 }
 
 func NewDefaultInternalServiceGoTSRPCProxy(service InternalService) *InternalServiceGoTSRPCProxy {
-	return NewInternalServiceGoTSRPCProxy(service, "/services/redirects/redirectdefinition/internal")
+	return NewInternalServiceGoTSRPCProxy(service, "/services/redirectdefinition/internal")
 }
 
 func NewInternalServiceGoTSRPCProxy(service InternalService, endpoint string) *InternalServiceGoTSRPCProxy {
@@ -113,7 +113,7 @@ type AdminServiceGoTSRPCProxy struct {
 }
 
 func NewDefaultAdminServiceGoTSRPCProxy(service AdminService) *AdminServiceGoTSRPCProxy {
-	return NewAdminServiceGoTSRPCProxy(service, "/services/redirects/redirectdefinition/admin")
+	return NewAdminServiceGoTSRPCProxy(service, "/services/redirectdefinition/admin")
 }
 
 func NewAdminServiceGoTSRPCProxy(service AdminService, endpoint string) *AdminServiceGoTSRPCProxy {
