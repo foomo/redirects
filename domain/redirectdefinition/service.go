@@ -41,8 +41,9 @@ func (rs *Service) GetRedirects(w http.ResponseWriter, r *http.Request) (*redire
 
 func (rs *Service) Search(w http.ResponseWriter, r *http.Request, dimension, id, path string) (*redirectstore.RedirectDefinitions, *redirectstore.RedirectDefinitionError) {
 	result, err := rs.api.Search(r.Context(), redirectquery.Search{
-		ID:     id,
-		Source: redirectstore.RedirectSource(path),
+		ID:        id,
+		Source:    redirectstore.RedirectSource(path),
+		Dimension: redirectstore.Dimension(dimension),
 	})
 	if err != nil {
 		return nil, redirectstore.NewRedirectDefinitionError(err.Error())
@@ -61,7 +62,7 @@ func (rs *Service) Create(w http.ResponseWriter, r *http.Request, def *redirects
 	return nil
 }
 
-func (rs *Service) Delete(w http.ResponseWriter, r *http.Request, path string) *redirectstore.RedirectDefinitionError {
+func (rs *Service) Delete(w http.ResponseWriter, r *http.Request, path, dimension string) *redirectstore.RedirectDefinitionError {
 	err := rs.api.DeleteRedirect(r.Context(),
 		redirectcommand.DeleteRedirect{
 			Source:    redirectstore.RedirectSource(path),
