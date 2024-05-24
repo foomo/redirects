@@ -168,16 +168,17 @@ func (p *AdminServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Requ
 			rets []interface{}
 		)
 		var (
-			arg_path string
+			arg_path      string
+			arg_dimension string
 		)
-		args = []interface{}{&arg_path}
+		args = []interface{}{&arg_path, &arg_dimension}
 		if err := gotsrpc.LoadArgs(&args, callStats, r); err != nil {
 			gotsrpc.ErrorCouldNotLoadArgs(w)
 			return
 		}
 		executionStart := time.Now()
 		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
-		deleteRet := p.service.Delete(&rw, r, arg_path)
+		deleteRet := p.service.Delete(&rw, r, arg_path, arg_dimension)
 		callStats.Execution = time.Since(executionStart)
 		if rw.Status() == http.StatusOK {
 			rets = []interface{}{deleteRet}

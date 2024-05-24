@@ -81,7 +81,7 @@ func (p *RedirectsProvider) Close(ctx context.Context) error {
 	return nil
 }
 
-func (p *RedirectsProvider) Process(r *http.Request) (*store.Redirect, error) {
+func (p *RedirectsProvider) Process(r *http.Request, dimension store.Dimension) (*store.Redirect, error) {
 	l := keellog.With(p.l, keellog.FCodeMethod("Process"))
 	l.Debug("process redirect request")
 
