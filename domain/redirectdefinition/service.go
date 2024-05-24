@@ -1,6 +1,7 @@
 package redirectdefinition
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/foomo/contentserver/content"
@@ -10,19 +11,22 @@ import (
 	"go.uber.org/zap"
 )
 
-// Potentially add Nats to service (still not sure)
 type Service struct {
 	l   *zap.Logger
+	ctx context.Context
 	api *API
 }
 
-func NewService(l *zap.Logger, api *API) *Service {
+func NewService(l *zap.Logger, ctx context.Context, api *API) *Service {
 	return &Service{
 		l:   l,
+		ctx: ctx,
 		api: api,
 	}
 }
 
+// CreateRedirectsFromContentserverexport creates redirects from contentserverexport
+// internal use only
 func (rs *Service) CreateRedirectsFromContentserverexport(
 	w http.ResponseWriter,
 	r *http.Request,
@@ -35,10 +39,14 @@ func (rs *Service) CreateRedirectsFromContentserverexport(
 		})
 }
 
-func (rs *Service) GetRedirects(w http.ResponseWriter, r *http.Request) (*redirectstore.RedirectDefinitions, error) {
-	return rs.api.GetRedirects(r.Context())
+// GetRedirects returns all redirects
+// internal use only
+func (rs *Service) GetRedirects() (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
+	return rs.api.GetRedirects(rs.ctx)
 }
 
+// Search for a redirect
+// used by frontend
 func (rs *Service) Search(w http.ResponseWriter, r *http.Request, dimension, id, path string) (*redirectstore.RedirectDefinitions, *redirectstore.RedirectDefinitionError) {
 	result, err := rs.api.Search(r.Context(), redirectquery.Search{
 		ID:     id,
@@ -50,6 +58,8 @@ func (rs *Service) Search(w http.ResponseWriter, r *http.Request, dimension, id,
 	return result, nil
 }
 
+// Create a redirect
+// used by frontend
 func (rs *Service) Create(w http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition) *redirectstore.RedirectDefinitionError {
 	err := rs.api.CreateRedirect(r.Context(),
 		redirectcommand.CreateRedirect{
@@ -61,6 +71,8 @@ func (rs *Service) Create(w http.ResponseWriter, r *http.Request, def *redirects
 	return nil
 }
 
+// Delete a redirect
+// used by frontend
 func (rs *Service) Delete(w http.ResponseWriter, r *http.Request, path string) *redirectstore.RedirectDefinitionError {
 	err := rs.api.DeleteRedirect(r.Context(),
 		redirectcommand.DeleteRedirect{
@@ -72,6 +84,8 @@ func (rs *Service) Delete(w http.ResponseWriter, r *http.Request, path string) *
 	return nil
 }
 
+// Update a redirect
+// used by frontend
 func (rs *Service) Update(w http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition) *redirectstore.RedirectDefinitionError {
 	err := rs.api.UpdateRedirect(r.Context(),
 		redirectcommand.UpdateRedirect{

@@ -88,7 +88,7 @@ func (a *API) DeleteRedirect(ctx context.Context, cmd redirectcommand.DeleteRedi
 	return a.cmd.DeleteRedirect(ctx, a.l, cmd)
 }
 
-func (a *API) GetRedirects(ctx context.Context) (redirects *redirectstore.RedirectDefinitions, err error) {
+func (a *API) GetRedirects(ctx context.Context) (redirects map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, err error) {
 	return a.qry.GetRedirects(ctx, a.l)
 }
 

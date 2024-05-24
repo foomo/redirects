@@ -2,130 +2,136 @@ package redirectprovider
 
 import (
 	"context"
-	"regexp"
+	"net/http"
 	"strings"
+	"sync"
 
 	keellog "github.com/foomo/keel/log"
-	keelmongo "github.com/foomo/keel/persistence/mongo"
-	redirectrepository "github.com/foomo/redirects/domain/redirectdefinition/repository"
 	store "github.com/foomo/redirects/domain/redirectdefinition/store"
-
+	"github.com/nats-io/nats.go"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 
-type ProductURLProvider func(ctx context.Context, legacyID string) (productURL string, clientErr error)
-type MatcherFunc func(request store.RedirectRequest) (*store.RedirectDefinition, error)
+type RedirectsProviderFunc func(ctx context.Context) (map[store.RedirectSource]*store.RedirectDefinition, error, error)
+type MatcherFunc func(r *http.Request) (*store.RedirectDefinition, error)
 
 type RedirectsProvider struct {
-	l            *zap.Logger
-	MatcherFuncs []MatcherFunc
-	ctx          context.Context
-	redirects    store.RedirectDefinitions
+	sync.RWMutex
+	l             *zap.Logger
+	ctx           context.Context
+	matcherFuncs  []MatcherFunc
+	redirects     map[store.RedirectSource]*store.RedirectDefinition
+	providerFunc  RedirectsProviderFunc
+	updateChannel chan *nats.Msg
 }
 
-func NewRedirectsProvider(
+func NewProvider(
 	l *zap.Logger,
 	ctx context.Context,
-	regexLegacyProductURL *regexp.Regexp, //todo: get this from consumer because this is specific?
-	persistor keelmongo.Persistor,
-	useNats bool,
-	matcherFuncs ...MatcherFunc) (*RedirectsProvider, error) {
-
-	repo, errRepo := redirectrepository.NewBaseRedirectsDefinitionRepository(l, &persistor)
-	if errRepo != nil {
-		l.Error("failed to init redirects repository", zap.Error(errRepo))
-		return nil, errRepo
-	}
-
-	redirects, err := repo.FindAll(ctx)
-	if err != nil {
-		l.Error("failed to find redirects", zap.Error(err))
-		return nil, err
-	}
-
+	providerFunc RedirectsProviderFunc,
+	updateChannel chan *nats.Msg,
+	matcherFuncs ...MatcherFunc,
+) *RedirectsProvider {
 	provider := &RedirectsProvider{
-		l:         l,
-		ctx:       ctx,
-		redirects: *redirects,
+		l:             l,
+		ctx:           ctx,
+		matcherFuncs:  matcherFuncs,
+		providerFunc:  providerFunc,
+		updateChannel: updateChannel,
 	}
-
-	// TODO: Do we need cache, nats and special func for loading
-	//err := provider.LoadRedirects()
-	//if err != nil {
-	// error is already logged
-	//return provider, err
-	//}
-
-	return provider, nil
+	return provider
 }
 
-func (p *RedirectsProvider) LoadRedirects() error {
-	// TODO: is this needed
-	//p.redirects =
+func (p *RedirectsProvider) loadRedirects() error {
+	redirectDefinitions, err, clientErr := p.providerFunc(p.ctx)
+	if err != nil {
+		return err
+	} else if clientErr != nil {
+		return clientErr
+	} else if redirectDefinitions != nil {
+		p.Lock()
+		p.redirects = redirectDefinitions
+		p.Unlock()
+		return nil
+	}
+	return errors.New("no redirects loaded")
+}
+
+func (p *RedirectsProvider) Start() error {
+	if err := p.loadRedirects(); err != nil {
+		return err
+	}
+	go func() {
+		for {
+			select {
+			case <-p.ctx.Done():
+				return
+			case <-p.updateChannel:
+				if err := p.loadRedirects(); err != nil {
+					keellog.WithError(p.l, err).Error("could not load redirects")
+				}
+			}
+		}
+	}()
 	return nil
 }
 
-func (p *RedirectsProvider) Process(originalRequest store.RedirectRequest) (*store.Redirect, error) {
-	p.l = keellog.With(p.l, zap.Any("originalRequest", originalRequest))
-	p.l.Debug("process redirect request", zap.Any("original request", originalRequest))
+func (p *RedirectsProvider) Close(ctx context.Context) error {
+	return nil
+}
 
-	if p.isBlacklisted(originalRequest) {
-		p.l.Debug("request is on black list", zap.Any("original request", originalRequest))
-		return nil, nil
-	}
+func (p *RedirectsProvider) Process(r *http.Request) (*store.Redirect, error) {
+	l := keellog.With(p.l, keellog.FCodeMethod("Process"))
+	l.Debug("process redirect request")
 
-	// normalize the incoming request url
+	// normalize the incoming request
 	// a-z order of get-parameters
-	request, err := normalizeRedirectRequest(originalRequest)
+	request, err := normalizeRedirectRequest(r)
 	if err != nil {
-		keellog.WithError(p.l, err).Error("could normalized redirect request")
+		keellog.WithError(l, err).Error("could normalized redirect request")
 		return nil, err
 	}
 
-	redirect, ok := p.redirects[store.RedirectSource(request)]
-	if ok && redirect != nil {
-		return &store.Redirect{
-			Response: store.RedirectResponse(redirect.Target),
-			Code:     redirect.Code,
-		}, nil
+	// check if the request is on the blacklist
+	if isBlacklisted(request) {
+		l.Debug("request is on black list")
+		return nil, nil
 	}
 
-	if !ok {
-		definition, err := p.matchRedirectDefinition(request)
+	definition, err := p.matchRedirectDefinition(request)
+	if err != nil {
+		keellog.WithError(l, err).Error("could not match redirect definition")
+		return nil, err
+	}
 
+	// we found a redirect definition and process to create the response
+	if definition != nil {
+		redirect, err := p.createRedirect(request, definition)
 		if err != nil {
-			keellog.WithError(p.l, err).Error("could not match redirect definition")
+			keellog.WithError(l, err).Error("could not create redirect response")
 			return nil, err
 		}
-
-		// we found a redirect definition and process to create the response
-		if definition != nil {
-			redirect, err := p.createRedirect(request, definition)
-			if err != nil {
-				keellog.WithError(p.l, err).Error("could not create redirect response")
-				return nil, err
-			}
-			return redirect, nil
-		}
+		return redirect, nil
 	}
 
 	// if we do not find a specific redirect we check if we need to redirect
 	// base on generic rules - no trailing slash/lowercased
-	definition, err := p.checkForStandardRedirect(originalRequest)
+	definition, err = p.checkForStandardRedirect(request)
 	if err != nil {
-		keellog.WithError(p.l, err).Error("could not check for standard redirect")
+		keellog.WithError(l, err).Error("could not check for standard redirect")
 		return nil, err
 	}
 	if definition != nil {
-		redirect, err := p.createRedirect(originalRequest, definition)
+		redirect, err := p.createRedirect(request, definition)
 		if err != nil {
-			keellog.WithError(p.l, err).Error("could not create redirect response")
+			keellog.WithError(l, err).Error("could not create redirect response")
 			return nil, err
 		}
-		p.l.Debug("redirect based on standard rules", keellog.FValue(originalRequest))
+		l.Debug("redirect based on standard rules")
 		return redirect, nil
 	}
-	p.l.Debug("no redirect necessary", keellog.FValue(originalRequest))
+	l.Debug("no redirect necessary")
 	return nil, nil
 }
 
@@ -137,43 +143,41 @@ func (p *RedirectsProvider) Process(originalRequest store.RedirectRequest) (*sto
 //		AND a definition matches the request path exactly
 //		AND the definition allows a query via the RespectParams flag
 //	case 3: request matches a source from the regex pool
-func (p *RedirectsProvider) matchRedirectDefinition(request store.RedirectRequest) (*store.RedirectDefinition, error) {
-	p.l.Debug("enter matchRedirectDefinition")
+func (p *RedirectsProvider) matchRedirectDefinition(r *http.Request) (*store.RedirectDefinition, error) {
 
-	// TODO: Do we need pool?
-	// 1. full url from flat-pool
-	// definition := p.matcherFull(request)
-	// if definition != nil {
-	// 	return definition, nil
-	// }
+	// 1. full url from cache
+	p.RLock()
+	definition, ok := p.redirects[store.RedirectSource(r.URL.RequestURI())]
+	p.RUnlock()
+	if ok {
+		return definition, nil
+	}
 
 	// 2. full url against regex
-	definition, err := p.matcherFuncs(request)
+	definition, err := p.execMatcherFuncs(r)
 	if err != nil {
 		// no need to log anything here as logging is already done in .matcherFuncs
 		return nil, err
-	}
-	if definition != nil {
+	} else if definition != nil {
 		return definition, nil
 	}
 
-	// TODO: do wee need this
-	// // 3. path and RespectParams from flat-pool
-	// definition, err = p.matcherPath(request)
-	// if err != nil {
-	// 	// no need to log anything here as logging is already done in .matcherPath
-	// 	return nil, err
-	// }
-	if definition != nil {
-		return definition, nil
+	if strings.Contains(r.URL.RequestURI(), "?") {
+		p.RLock()
+		definition, ok := p.redirects[store.RedirectSource(r.URL.Path)]
+		p.RUnlock()
+		if ok && definition.RespectParams {
+			return definition, nil
+		}
 	}
 
 	return nil, nil
 }
 
 // isBlacklisted define a series of paths/... redirection should leave alone
-func (p *RedirectsProvider) isBlacklisted(request store.RedirectRequest) bool {
-	p.l.Debug("enter isBlacklisted", zap.Any("request", request))
+func isBlacklisted(r *http.Request) bool {
+	request := store.RedirectRequest(r.URL.RequestURI())
+
 	isHome, err := request.IsHomepage()
 	if err != nil {
 		return false
@@ -186,27 +190,29 @@ func (p *RedirectsProvider) isBlacklisted(request store.RedirectRequest) bool {
 	return false
 }
 
-func (p *RedirectsProvider) matcherFuncs(request store.RedirectRequest) (*store.RedirectDefinition, error) {
-	p.l.Debug("enter matcherLegacyProductURL")
-	for _, matcherFunc := range p.MatcherFuncs {
-		if redirectDefinition, err := matcherFunc(request); err != nil && redirectDefinition != nil {
-			return redirectDefinition, nil
+// execMatcherFuncs executes the matcher functions
+func (p *RedirectsProvider) execMatcherFuncs(r *http.Request) (*store.RedirectDefinition, error) {
+	for _, matcherFunc := range p.matcherFuncs {
+		if definition, err := matcherFunc(r); err != nil && definition != nil {
+			return definition, nil
 		}
 	}
 	return nil, nil
 }
 
-func (p *RedirectsProvider) createRedirect(request store.RedirectRequest, definition *store.RedirectDefinition) (*store.Redirect, error) {
+// createRedirect creates a redirect response based on the definition
+func (p *RedirectsProvider) createRedirect(r *http.Request, definition *store.RedirectDefinition) (*store.Redirect, error) {
+
 	redirect := &store.Redirect{
 		Code: definition.Code,
 	}
 	// if no transfer of parameters is allowed OR the request holds no query
 	// the response is the definition's target
-	if !definition.TransferParams || !strings.Contains(string(request), "?") {
+	if !definition.TransferParams || !strings.Contains(r.URL.RequestURI(), "?") {
 		redirect.Response = store.RedirectResponse(definition.Target)
 	} else {
 		// merge query strings of the request and the target
-		response, err := mergeQueryStringsFromURLs(string(request), string(definition.Target))
+		response, err := mergeQueryStringsFromURLs(r.URL.RequestURI(), string(definition.Target))
 		if err != nil {
 			keellog.WithError(p.l, err).Error("could not merge the query strings of the requests")
 			return nil, err
@@ -216,7 +222,10 @@ func (p *RedirectsProvider) createRedirect(request store.RedirectRequest, defini
 	return redirect, nil
 }
 
-func (p *RedirectsProvider) checkForStandardRedirect(redirectRequest store.RedirectRequest) (*store.RedirectDefinition, error) {
+// checkForStandardRedirect checks if the request needs to be redirected based on generic rules
+func (p *RedirectsProvider) checkForStandardRedirect(r *http.Request) (*store.RedirectDefinition, error) {
+	redirectRequest := store.RedirectRequest(r.URL.RequestURI())
+
 	newRequest, redirectNeeded, err := redirectRequest.GenericTransform()
 	if err != nil {
 		return nil, err
