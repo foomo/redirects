@@ -65,7 +65,7 @@ func (p *RedirectsProvider) LoadRedirects() error {
 	return nil
 }
 
-func (p *RedirectsProvider) Process(originalRequest store.RedirectRequest) (*store.Redirect, error) {
+func (p *RedirectsProvider) Process(originalRequest store.RedirectRequest, dimension store.Dimension) (*store.Redirect, error) {
 	p.l = keellog.With(p.l, zap.Any("originalRequest", originalRequest))
 	p.l.Debug("process redirect request", zap.Any("original request", originalRequest))
 
@@ -82,7 +82,7 @@ func (p *RedirectsProvider) Process(originalRequest store.RedirectRequest) (*sto
 		return nil, err
 	}
 
-	redirect, ok := p.redirects[store.RedirectSource(request)]
+	redirect, ok := p.redirects[store.RedirectSource(request)][dimension]
 	if ok && redirect != nil {
 		return &store.Redirect{
 			Response: store.RedirectResponse(redirect.Target),

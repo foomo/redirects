@@ -5,6 +5,7 @@ type RedirectID string
 type RedirectTarget string
 type RedirectRequest string
 type RedirectionType string
+type Dimension string
 
 const (
 	Manual    RedirectionType = "manual"
@@ -19,6 +20,7 @@ type RedirectDefinition struct {
 	RespectParams   bool            `json:"respectparams" bson:"respectparams"`
 	TransferParams  bool            `json:"transferparams" bson:"transferparams"`
 	RedirectionType RedirectionType `json:"redirectType" bson:"redirectType"`
+	Dimension       Dimension       `json:"dimension" bson:"dimension"`
 }
 
-type RedirectDefinitions map[RedirectSource]*RedirectDefinition
+type RedirectDefinitions map[RedirectSource]map[Dimension]*RedirectDefinition

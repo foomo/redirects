@@ -60,7 +60,7 @@ func (tsc *HTTPInternalServiceGoTSRPCClient) GetRedirects(ctx go_context.Context
 
 type AdminServiceGoTSRPCClient interface {
 	Create(ctx go_context.Context, def *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition) (retCreate_0 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error)
-	Delete(ctx go_context.Context, path string) (retDelete_0 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error)
+	Delete(ctx go_context.Context, path string, dimension string) (retDelete_0 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error)
 	Search(ctx go_context.Context, dimension string, id string, path string) (retSearch_0 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitions, retSearch_1 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error)
 	Update(ctx go_context.Context, def *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition) (retUpdate_0 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error)
 }
@@ -96,8 +96,8 @@ func (tsc *HTTPAdminServiceGoTSRPCClient) Create(ctx go_context.Context, def *gi
 	return
 }
 
-func (tsc *HTTPAdminServiceGoTSRPCClient) Delete(ctx go_context.Context, path string) (retDelete_0 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error) {
-	args := []interface{}{path}
+func (tsc *HTTPAdminServiceGoTSRPCClient) Delete(ctx go_context.Context, path string, dimension string) (retDelete_0 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error) {
+	args := []interface{}{path, dimension}
 	reply := []interface{}{&retDelete_0}
 	clientErr = tsc.Client.Call(ctx, tsc.URL, tsc.EndPoint, "Delete", args, reply)
 	if clientErr != nil {

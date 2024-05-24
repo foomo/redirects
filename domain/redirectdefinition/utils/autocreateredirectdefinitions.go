@@ -12,7 +12,7 @@ var (
 	nilError = "calling auto create difference with nil arg"
 )
 
-func AutoCreateRedirectDefinitions(l *zap.Logger, old, new *content.RepoNode) (redirectstore.RedirectDefinitions, error) {
+func AutoCreateRedirectDefinitions(l *zap.Logger, old, new *content.RepoNode, dimension redirectstore.Dimension) (redirectstore.RedirectDefinitions, error) {
 	l.Info("calling auto create difference between old and new repo node state")
 	if old == nil || new == nil {
 		l.Error(nilError)
@@ -32,8 +32,12 @@ func AutoCreateRedirectDefinitions(l *zap.Logger, old, new *content.RepoNode) (r
 				Code:           301,
 				RespectParams:  true,
 				TransferParams: true,
+				Dimension:      dimension,
 			}
-			redirects[rd.Source] = rd
+			if redirects[rd.Source] == nil {
+				redirects[rd.Source] = make(map[redirectstore.Dimension]*redirectstore.RedirectDefinition)
+			}
+			redirects[rd.Source][dimension] = rd
 		}
 		for key, oldchild := range old.Nodes {
 			if newchild, ok := new.Nodes[key]; ok {
@@ -45,7 +49,7 @@ func AutoCreateRedirectDefinitions(l *zap.Logger, old, new *content.RepoNode) (r
 				} else {
 					found := false
 					for _, redirect := range redirects {
-						if string(redirect.Source) == oldchild.URI {
+						if string(redirect[dimension].Source) == oldchild.URI {
 							found = true
 							break
 						}
@@ -57,8 +61,12 @@ func AutoCreateRedirectDefinitions(l *zap.Logger, old, new *content.RepoNode) (r
 							Code:           301,
 							RespectParams:  true,
 							TransferParams: true,
+							Dimension:      dimension,
 						}
-						redirects[rd.Source] = rd
+						if redirects[rd.Source] == nil {
+							redirects[rd.Source] = make(map[redirectstore.Dimension]*redirectstore.RedirectDefinition)
+						}
+						redirects[rd.Source][dimension] = rd
 					}
 				}
 			}

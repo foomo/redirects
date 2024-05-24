@@ -30,7 +30,7 @@ func Test_AutoCreateRedirectDefinitionsParse(t *testing.T) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	redirects, err := AutoCreateRedirectDefinitions(zap.L(), p["de"], pChanged["de"])
+	redirects, err := AutoCreateRedirectDefinitions(zap.L(), p["de"], pChanged["de"], "HMD-de")
 	assert.NoError(t, err)
 	assert.Equal(t, 12, len(redirects))
 }
@@ -126,7 +126,7 @@ func Test_AutoCreateRedirectDefinitionsCoverAll(t *testing.T) {
 			},
 		},
 	}
-	redirects, err := AutoCreateRedirectDefinitions(zap.L(), old, new)
+	redirects, err := AutoCreateRedirectDefinitions(zap.L(), old, new, "HMD-de")
 	if err != nil {
 		assert.Error(t, err)
 	}
@@ -193,7 +193,7 @@ func Test_AutoCreateRedirectDefinitions(t *testing.T) {
 			},
 		},
 	}
-	redirects, err := AutoCreateRedirectDefinitions(zap.L(), old, new)
+	redirects, err := AutoCreateRedirectDefinitions(zap.L(), old, new, "HMD-de")
 	if err != nil {
 		assert.Error(t, err)
 	}
@@ -280,7 +280,7 @@ func Test_AutoCreateRedirectDefinitionsExg1(t *testing.T) {
 			},
 		},
 	}
-	redirects, err := AutoCreateRedirectDefinitions(zap.L(), old, new)
+	redirects, err := AutoCreateRedirectDefinitions(zap.L(), old, new, "HMD-de")
 	if err != nil {
 		assert.Error(t, err)
 	}
@@ -367,7 +367,7 @@ func Test_AutoCreateRedirectDefinitionsExg2(t *testing.T) {
 			},
 		},
 	}
-	redirects, err := AutoCreateRedirectDefinitions(zap.L(), old, new)
+	redirects, err := AutoCreateRedirectDefinitions(zap.L(), old, new, "HMD-de")
 	if err != nil {
 		assert.Error(t, err)
 	}
@@ -454,7 +454,7 @@ func Test_AutoCreateRedirectDefinitionsExg3(t *testing.T) {
 			},
 		},
 	}
-	redirects, err := AutoCreateRedirectDefinitions(zap.L(), old, new)
+	redirects, err := AutoCreateRedirectDefinitions(zap.L(), old, new, "HMD-de")
 	if err != nil {
 		assert.Error(t, err)
 	}
@@ -465,7 +465,7 @@ func Test_AutoCreateRedirectDefinitionsExg3(t *testing.T) {
 func Test_AutoCreateRedirectDefinitionsEmptyAndNilArgs(t *testing.T) {
 	old := &content.RepoNode{}
 	new := &content.RepoNode{}
-	redirects, err := AutoCreateRedirectDefinitions(zap.L(), old, new)
+	redirects, err := AutoCreateRedirectDefinitions(zap.L(), old, new, "HMD-de")
 	if err != nil {
 		fmt.Print(err)
 	}
@@ -473,7 +473,7 @@ func Test_AutoCreateRedirectDefinitionsEmptyAndNilArgs(t *testing.T) {
 	assert.Equal(t, len(redirects), 0)
 	old = nil
 	new = nil
-	redirects, err = AutoCreateRedirectDefinitions(zap.L(), old, new)
+	redirects, err = AutoCreateRedirectDefinitions(zap.L(), old, new, "HMD-de")
 	assert.Error(t, err)
 	assert.Equal(t, len(redirects), 0)
 }

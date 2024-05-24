@@ -64,7 +64,8 @@ func (rs *Service) Create(w http.ResponseWriter, r *http.Request, def *redirects
 func (rs *Service) Delete(w http.ResponseWriter, r *http.Request, path string) *redirectstore.RedirectDefinitionError {
 	err := rs.api.DeleteRedirect(r.Context(),
 		redirectcommand.DeleteRedirect{
-			Source: redirectstore.RedirectSource(path),
+			Source:    redirectstore.RedirectSource(path),
+			Dimension: redirectstore.Dimension(dimension),
 		})
 	if err != nil {
 		return redirectstore.NewRedirectDefinitionError(err.Error())

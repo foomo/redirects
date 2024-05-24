@@ -1,7 +1,7 @@
 package service
 
 import (
-	http "net/http"
+	"net/http"
 
 	"github.com/foomo/contentserver/content"
 	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
@@ -13,7 +13,7 @@ import (
 type AdminService interface {
 	Search(w http.ResponseWriter, r *http.Request, dimension, id, path string) (*redirectstore.RedirectDefinitions, *redirectstore.RedirectDefinitionError)
 	Create(w http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition) *redirectstore.RedirectDefinitionError
-	Delete(w http.ResponseWriter, r *http.Request, path string) *redirectstore.RedirectDefinitionError
+	Delete(w http.ResponseWriter, r *http.Request, path, dimension string) *redirectstore.RedirectDefinitionError
 	Update(w http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition) *redirectstore.RedirectDefinitionError
 }
 

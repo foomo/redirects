@@ -8,13 +8,12 @@ import (
 
 	"github.com/foomo/contentserver/content"
 	redirectrepository "github.com/foomo/redirects/domain/redirectdefinition/repository"
+	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
 	redirectdefinitionutils "github.com/foomo/redirects/domain/redirectdefinition/utils"
 
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
-
-const dimension = "de"
 
 type (
 	// CreateRedirects command
@@ -32,31 +31,43 @@ type (
 func CreateRedirectsHandler(repo redirectrepository.BaseRedirectsDefinitionRepository) CreateRedirectsHandlerFn {
 	return func(ctx context.Context, l *zap.Logger, cmd CreateRedirects) error {
 		l.Info("calling create automatic redirects")
-		newDefinitions, err := redirectdefinitionutils.AutoCreateRedirectDefinitions(l, cmd.OldState[dimension], cmd.NewState[dimension])
-		if err != nil {
-			l.Error("failed to execute auto create redirects", zap.Error(err))
-			return err
-		}
-		oldDefinitions, err := repo.FindAll(ctx)
-		if err != nil {
-			l.Error("failed to fetch existing definitions", zap.Error(err))
-			return err
-		}
-		l.Info("calling consolidate automatic redirects")
-		consolidatedDefs, deletedDefs := redirectdefinitionutils.ConsolidateRedirectDefinitions(l, *oldDefinitions, newDefinitions)
 
-		if len(consolidatedDefs) > 0 {
-			updateErr := repo.UpsertMany(ctx, &consolidatedDefs)
-			if updateErr != nil {
-				l.Error("failed to updated definitions", zap.Error(updateErr))
-				return updateErr
-			}
+		dimensions := map[string]bool{}
+		for dim := range cmd.OldState {
+			dimensions[dim] = true
 		}
-		if len(deletedDefs) > 0 {
-			deleteErr := repo.DeleteMany(ctx, deletedDefs)
-			if deleteErr != nil {
-				l.Error("failed to delete definitions", zap.Error(deleteErr))
-				return deleteErr
+
+		for dim := range cmd.NewState {
+			dimensions[dim] = true
+		}
+
+		for dimension := range dimensions {
+			newDefinitions, err := redirectdefinitionutils.AutoCreateRedirectDefinitions(l, cmd.OldState[dimension], cmd.NewState[dimension], redirectstore.Dimension(dimension))
+			if err != nil {
+				l.Error("failed to execute auto create redirects", zap.Error(err))
+				return err
+			}
+			//oldDefinitions, err := repo.FindAll(ctx)
+			//if err != nil {
+			//	l.Error("failed to fetch existing definitions", zap.Error(err))
+			//	return err
+			//}
+			l.Info("calling consolidate automatic redirects")
+			consolidatedDefs, deletedDefs := redirectdefinitionutils.ConsolidateRedirectDefinitions(l, newDefinitions, redirectstore.Dimension(dimension))
+
+			if len(consolidatedDefs) > 0 {
+				updateErr := repo.UpsertMany(ctx, &consolidatedDefs)
+				if updateErr != nil {
+					l.Error("failed to updated definitions", zap.Error(updateErr))
+					return updateErr
+				}
+			}
+			if len(deletedDefs) > 0 {
+				deleteErr := repo.DeleteMany(ctx, deletedDefs, dimension)
+				if deleteErr != nil {
+					l.Error("failed to delete definitions", zap.Error(deleteErr))
+					return deleteErr
+				}
 			}
 		}
 
