@@ -82,12 +82,15 @@ func (p *InternalServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.R
 			rets []interface{}
 		)
 		executionStart := time.Now()
-		getRedirectsRet, getRedirectsRet_1 := p.service.GetRedirects()
+		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
+		getRedirectsRet, getRedirectsRet_1 := p.service.GetRedirects(&rw, r)
 		callStats.Execution = time.Since(executionStart)
-		rets = []interface{}{getRedirectsRet, getRedirectsRet_1}
-		if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
-			gotsrpc.ErrorCouldNotReply(w)
-			return
+		if rw.Status() == http.StatusOK {
+			rets = []interface{}{getRedirectsRet, getRedirectsRet_1}
+			if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
+				gotsrpc.ErrorCouldNotReply(w)
+				return
+			}
 		}
 		gotsrpc.Monitor(w, r, args, rets, callStats)
 		return

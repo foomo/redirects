@@ -22,5 +22,5 @@ type AdminService interface {
 // will not be exposed only to other backend services
 type InternalService interface {
 	CreateRedirectsFromContentserverexport(w http.ResponseWriter, r *http.Request, old, new map[string]*content.RepoNode) error
-	GetRedirects() (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error)
+	GetRedirects(w http.ResponseWriter, r *http.Request) (map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error)
 }

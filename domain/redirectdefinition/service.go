@@ -1,7 +1,6 @@
 package redirectdefinition
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/foomo/contentserver/content"
@@ -13,14 +12,12 @@ import (
 
 type Service struct {
 	l   *zap.Logger
-	ctx context.Context
 	api *API
 }
 
-func NewService(l *zap.Logger, ctx context.Context, api *API) *Service {
+func NewService(l *zap.Logger, api *API) *Service {
 	return &Service{
 		l:   l,
-		ctx: ctx,
 		api: api,
 	}
 }
@@ -28,9 +25,11 @@ func NewService(l *zap.Logger, ctx context.Context, api *API) *Service {
 // CreateRedirectsFromContentserverexport creates redirects from contentserverexport
 // internal use only
 func (rs *Service) CreateRedirectsFromContentserverexport(
-	w http.ResponseWriter,
+	_ http.ResponseWriter,
 	r *http.Request,
-	old, new map[string]*content.RepoNode) error {
+	old,
+	new map[string]*content.RepoNode,
+) error {
 	rs.l.Info("CreateRedirectsFromContentserverexport called ")
 	return rs.api.CreateRedirects(r.Context(),
 		redirectcommand.CreateRedirects{
@@ -41,13 +40,13 @@ func (rs *Service) CreateRedirectsFromContentserverexport(
 
 // GetRedirects returns all redirects
 // internal use only
-func (rs *Service) GetRedirects() (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
-	return rs.api.GetRedirects(rs.ctx)
+func (rs *Service) GetRedirects(_ http.ResponseWriter, r *http.Request) (map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
+	return rs.api.GetRedirects(r.Context())
 }
 
 // Search for a redirect
 // used by frontend
-func (rs *Service) Search(w http.ResponseWriter, r *http.Request, dimension, id, path string) (*redirectstore.RedirectDefinitions, *redirectstore.RedirectDefinitionError) {
+func (rs *Service) Search(_ http.ResponseWriter, r *http.Request, dimension, id, path string) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, *redirectstore.RedirectDefinitionError) {
 	result, err := rs.api.Search(r.Context(), redirectquery.Search{
 		ID:        id,
 		Source:    redirectstore.RedirectSource(path),
@@ -61,7 +60,7 @@ func (rs *Service) Search(w http.ResponseWriter, r *http.Request, dimension, id,
 
 // Create a redirect
 // used by frontend
-func (rs *Service) Create(w http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition) *redirectstore.RedirectDefinitionError {
+func (rs *Service) Create(_ http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition) *redirectstore.RedirectDefinitionError {
 	err := rs.api.CreateRedirect(r.Context(),
 		redirectcommand.CreateRedirect{
 			RedirectDefinition: def,
@@ -74,7 +73,7 @@ func (rs *Service) Create(w http.ResponseWriter, r *http.Request, def *redirects
 
 // Delete a redirect
 // used by frontend
-func (rs *Service) Delete(w http.ResponseWriter, r *http.Request, path, dimension string) *redirectstore.RedirectDefinitionError {
+func (rs *Service) Delete(_ http.ResponseWriter, r *http.Request, path, dimension string) *redirectstore.RedirectDefinitionError {
 	err := rs.api.DeleteRedirect(r.Context(),
 		redirectcommand.DeleteRedirect{
 			Source:    redirectstore.RedirectSource(path),
@@ -88,7 +87,7 @@ func (rs *Service) Delete(w http.ResponseWriter, r *http.Request, path, dimensio
 
 // Update a redirect
 // used by frontend
-func (rs *Service) Update(w http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition) *redirectstore.RedirectDefinitionError {
+func (rs *Service) Update(_ http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition) *redirectstore.RedirectDefinitionError {
 	err := rs.api.UpdateRedirect(r.Context(),
 		redirectcommand.UpdateRedirect{
 			RedirectDefinition: def,

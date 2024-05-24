@@ -8,31 +8,31 @@ import (
 	redirectquery "github.com/foomo/redirects/domain/redirectdefinition/query"
 	redirectrepository "github.com/foomo/redirects/domain/redirectdefinition/repository"
 	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
+	redirectnats "github.com/foomo/redirects/pkg/nats"
 	"go.uber.org/zap"
 )
 
 // API for the domain
 type (
 	API struct {
+		l    *zap.Logger
 		qry  Queries
 		cmd  Commands
-		repo redirectrepository.BaseRedirectsDefinitionRepository
-		l    *zap.Logger
-		//meter                      *cmrccommonmetric.Meter
+		repo redirectrepository.RedirectsDefinitionRepository
 	}
 	Option func(api *API)
 )
 
 func NewAPI(
 	l *zap.Logger,
-	repo redirectrepository.BaseRedirectsDefinitionRepository,
+	repo redirectrepository.RedirectsDefinitionRepository,
+	updateSignal *redirectnats.UpdateSignal,
 	opts ...Option,
 ) (*API, error) {
 
 	inst := &API{
 		l:    l,
 		repo: repo,
-		//meter:                      cmrccommonmetric.NewMeter(l, "checkout", telemetry.Meter()),
 	}
 	if inst.l == nil {
 		return nil, errors.New("missing logger")
@@ -40,15 +40,23 @@ func NewAPI(
 	inst.cmd = Commands{
 		CreateRedirects: redirectcommand.CreateRedirectsHandlerComposed(
 			redirectcommand.CreateRedirectsHandler(inst.repo),
+			// TODO: @stevan add middleware with updateSignal that comes after the handler
+			//       and calls updateSignal.Publish()
 		),
 		CreateRedirect: redirectcommand.CreateRedirectHandlerComposed(
 			redirectcommand.CreateRedirectHandler(inst.repo),
+			// TODO: @stevan add middleware with updateSignal that comes after the handler
+			//       and calls updateSignal.Publish()
 		),
 		UpdateRedirect: redirectcommand.UpdateRedirectHandlerComposed(
 			redirectcommand.UpdateRedirectHandler(inst.repo),
+			// TODO: @stevan add middleware with updateSignal that comes after the handler
+			//       and calls updateSignal.Publish()
 		),
 		DeleteRedirect: redirectcommand.DeleteRedirectHandlerComposed(
 			redirectcommand.DeleteRedirectHandler(inst.repo),
+			// TODO: @stevan add middleware with updateSignal that comes after the handler
+			//       and calls updateSignal.Publish()
 		),
 	}
 	inst.qry = Queries{
@@ -88,10 +96,10 @@ func (a *API) DeleteRedirect(ctx context.Context, cmd redirectcommand.DeleteRedi
 	return a.cmd.DeleteRedirect(ctx, a.l, cmd)
 }
 
-func (a *API) GetRedirects(ctx context.Context) (redirects map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, err error) {
+func (a *API) GetRedirects(ctx context.Context) (map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
 	return a.qry.GetRedirects(ctx, a.l)
 }
 
-func (a *API) Search(ctx context.Context, qry redirectquery.Search) (redirect *redirectstore.RedirectDefinitions, err error) {
+func (a *API) Search(ctx context.Context, qry redirectquery.Search) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
 	return a.qry.Search(ctx, a.l, qry)
 }

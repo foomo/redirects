@@ -25,7 +25,7 @@ type (
 )
 
 // DeleteRedirectHandler ...
-func DeleteRedirectHandler(repo redirectrepository.BaseRedirectsDefinitionRepository) DeleteRedirectHandlerFn {
+func DeleteRedirectHandler(repo redirectrepository.RedirectsDefinitionRepository) DeleteRedirectHandlerFn {
 	return func(ctx context.Context, l *zap.Logger, cmd DeleteRedirect) error {
 		return repo.Delete(ctx, string(cmd.Source), string(cmd.Dimension))
 	}

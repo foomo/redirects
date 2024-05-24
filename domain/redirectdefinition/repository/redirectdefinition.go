@@ -16,8 +16,8 @@ import (
 type (
 	RedirectsDefinitionRepository interface {
 		FindOne(ctx context.Context, id, source string) (*redirectstore.RedirectDefinition, error)
-		FindMany(ctx context.Context, id, source, dimension string) (*redirectstore.RedirectDefinitions, error)
-		FindAll(ctx context.Context) (defs *redirectstore.RedirectDefinitions, err error)
+		FindMany(ctx context.Context, id, source, dimension string) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error)
+		FindAll(ctx context.Context) (defs map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, err error)
 		Insert(ctx context.Context, def *redirectstore.RedirectDefinition) error
 		Update(ctx context.Context, def *redirectstore.RedirectDefinition) error
 		UpsertMany(ctx context.Context, defs *redirectstore.RedirectDefinitions) error
@@ -66,8 +66,8 @@ func (rs BaseRedirectsDefinitionRepository) FindOne(ctx context.Context, id, sou
 }
 
 // TODO: DraganaB check if we need to search by id
-func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, id, source, dimension string) (*redirectstore.RedirectDefinitions, error) {
-	var result redirectstore.RedirectDefinitions
+func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, id, source, dimension string) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
+	var result map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition
 
 	// Create a regex pattern for fuzzy match
 	pattern := primitive.Regex{Pattern: source, Options: "i"} // "i" for case-insensitive match
@@ -75,23 +75,26 @@ func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, id, so
 	// Create a filter with the regex pattern
 	filter := bson.M{"source": primitive.Regex{Pattern: pattern.Pattern, Options: pattern.Options}, "dimension": dimension}
 
+	// TODO: @stevan why findOne ??
 	findErr := rs.collection.FindOne(ctx, filter, &result)
 	if findErr != nil {
 		return nil, findErr
 	}
-	return &result, nil
+	return result, nil
 }
 
-func (rs BaseRedirectsDefinitionRepository) FindAll(ctx context.Context) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
+func (rs BaseRedirectsDefinitionRepository) FindAll(ctx context.Context) (map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
 	var result []redirectstore.RedirectDefinition
 	err := rs.collection.Find(ctx, bson.M{}, &result)
 	if err != nil {
 		return nil, err
 	}
-	var retResult = make(map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition)
+	var retResult = make(map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition)
 	for _, res := range result {
-		retResult[res.Source] = make(map[redirectstore.Dimension]*redirectstore.RedirectDefinition)
-		retResult[res.Source][res.Dimension] = &res
+		if _, ok := retResult[res.Dimension]; !ok {
+			retResult[res.Dimension] = make(map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition)
+		}
+		retResult[res.Dimension][res.Source] = &res
 	}
 	return retResult, nil
 }

@@ -28,7 +28,7 @@ type (
 )
 
 // CreateRedirectsHandler ...
-func CreateRedirectsHandler(repo redirectrepository.BaseRedirectsDefinitionRepository) CreateRedirectsHandlerFn {
+func CreateRedirectsHandler(repo redirectrepository.RedirectsDefinitionRepository) CreateRedirectsHandlerFn {
 	return func(ctx context.Context, l *zap.Logger, cmd CreateRedirects) error {
 		l.Info("calling create automatic redirects")
 

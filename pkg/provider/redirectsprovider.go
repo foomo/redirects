@@ -13,38 +13,44 @@ import (
 	"go.uber.org/zap"
 )
 
-type RedirectsProviderFunc func(ctx context.Context) (map[store.RedirectSource]*store.RedirectDefinition, error, error)
+type RedirectsProviderInterface interface {
+	Start(ctx context.Context) error
+	Close(ctx context.Context) error
+	Process(r *http.Request) (*store.Redirect, error)
+}
+type DimensionProviderFunc func(r *http.Request) (store.Dimension, error)
+type RedirectsProviderFunc func(ctx context.Context) (map[store.Dimension]map[store.RedirectSource]*store.RedirectDefinition, error, error)
 type MatcherFunc func(r *http.Request) (*store.RedirectDefinition, error)
 
 type RedirectsProvider struct {
 	sync.RWMutex
-	l             *zap.Logger
-	ctx           context.Context
-	matcherFuncs  []MatcherFunc
-	redirects     map[store.RedirectSource]*store.RedirectDefinition
-	providerFunc  RedirectsProviderFunc
-	updateChannel chan *nats.Msg
+	l                     *zap.Logger
+	matcherFuncs          []MatcherFunc
+	redirects             map[store.Dimension]map[store.RedirectSource]*store.RedirectDefinition
+	redirectsProviderFunc RedirectsProviderFunc
+	dimensionProviderFunc DimensionProviderFunc
+	updateChannel         chan *nats.Msg
 }
 
 func NewProvider(
 	l *zap.Logger,
-	ctx context.Context,
 	providerFunc RedirectsProviderFunc,
+	dimensionProviderFunc DimensionProviderFunc,
 	updateChannel chan *nats.Msg,
 	matcherFuncs ...MatcherFunc,
 ) *RedirectsProvider {
 	provider := &RedirectsProvider{
-		l:             l,
-		ctx:           ctx,
-		matcherFuncs:  matcherFuncs,
-		providerFunc:  providerFunc,
-		updateChannel: updateChannel,
+		l:                     l,
+		matcherFuncs:          matcherFuncs,
+		redirectsProviderFunc: providerFunc,
+		dimensionProviderFunc: dimensionProviderFunc,
+		updateChannel:         updateChannel,
 	}
 	return provider
 }
 
-func (p *RedirectsProvider) loadRedirects() error {
-	redirectDefinitions, err, clientErr := p.providerFunc(p.ctx)
+func (p *RedirectsProvider) loadRedirects(ctx context.Context) error {
+	redirectDefinitions, err, clientErr := p.redirectsProviderFunc(ctx)
 	if err != nil {
 		return err
 	} else if clientErr != nil {
@@ -58,17 +64,17 @@ func (p *RedirectsProvider) loadRedirects() error {
 	return errors.New("no redirects loaded")
 }
 
-func (p *RedirectsProvider) Start() error {
-	if err := p.loadRedirects(); err != nil {
+func (p *RedirectsProvider) Start(ctx context.Context) error {
+	if err := p.loadRedirects(ctx); err != nil {
 		return err
 	}
 	go func() {
 		for {
 			select {
-			case <-p.ctx.Done():
+			case <-ctx.Done():
 				return
 			case <-p.updateChannel:
-				if err := p.loadRedirects(); err != nil {
+				if err := p.loadRedirects(ctx); err != nil {
 					keellog.WithError(p.l, err).Error("could not load redirects")
 				}
 			}
@@ -81,9 +87,15 @@ func (p *RedirectsProvider) Close(ctx context.Context) error {
 	return nil
 }
 
-func (p *RedirectsProvider) Process(r *http.Request, dimension store.Dimension) (*store.Redirect, error) {
+func (p *RedirectsProvider) Process(r *http.Request) (*store.Redirect, error) {
 	l := keellog.With(p.l, keellog.FCodeMethod("Process"))
 	l.Debug("process redirect request")
+
+	//
+	dimension, err := p.dimensionProviderFunc(r)
+	if err != nil {
+		return nil, err
+	}
 
 	// normalize the incoming request
 	// a-z order of get-parameters
@@ -99,7 +111,7 @@ func (p *RedirectsProvider) Process(r *http.Request, dimension store.Dimension) 
 		return nil, nil
 	}
 
-	definition, err := p.matchRedirectDefinition(request)
+	definition, err := p.matchRedirectDefinition(request, dimension)
 	if err != nil {
 		keellog.WithError(l, err).Error("could not match redirect definition")
 		return nil, err
@@ -136,21 +148,19 @@ func (p *RedirectsProvider) Process(r *http.Request, dimension store.Dimension) 
 }
 
 // matchRedirectDefinition checks if there is a redirect definition matching the request
-//
-//	case 1: full string match
-//	case 2:
-//		request has query string
-//		AND a definition matches the request path exactly
-//		AND the definition allows a query via the RespectParams flag
-//	case 3: request matches a source from the regex pool
-func (p *RedirectsProvider) matchRedirectDefinition(r *http.Request) (*store.RedirectDefinition, error) {
+func (p *RedirectsProvider) matchRedirectDefinition(r *http.Request, dimension store.Dimension) (*store.RedirectDefinition, error) {
 
 	// 1. full url from cache
-	p.RLock()
-	definition, ok := p.redirects[store.RedirectSource(r.URL.RequestURI())]
-	p.RUnlock()
-	if ok {
+	definition := p.definitionForDimensionAndSource(dimension, store.RedirectSource(r.URL.RequestURI()))
+	if definition != nil {
 		return definition, nil
+	}
+
+	if strings.Contains(r.URL.RequestURI(), "?") {
+		definition := p.definitionForDimensionAndSource(dimension, store.RedirectSource(r.URL.Path))
+		if definition != nil && definition.RespectParams {
+			return definition, nil
+		}
 	}
 
 	// 2. full url against regex
@@ -162,16 +172,20 @@ func (p *RedirectsProvider) matchRedirectDefinition(r *http.Request) (*store.Red
 		return definition, nil
 	}
 
-	if strings.Contains(r.URL.RequestURI(), "?") {
-		p.RLock()
-		definition, ok := p.redirects[store.RedirectSource(r.URL.Path)]
-		p.RUnlock()
-		if ok && definition.RespectParams {
-			return definition, nil
+	return nil, nil
+}
+
+func (p *RedirectsProvider) definitionForDimensionAndSource(dimension store.Dimension, source store.RedirectSource) *store.RedirectDefinition {
+	p.RLock()
+	defer p.RUnlock()
+	definitions, ok := p.redirects[dimension]
+	if ok {
+		definition, ok := definitions[source]
+		if ok {
+			return definition
 		}
 	}
-
-	return nil, nil
+	return nil
 }
 
 // isBlacklisted define a series of paths/... redirection should leave alone
