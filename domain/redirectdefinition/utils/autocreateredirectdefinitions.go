@@ -34,10 +34,7 @@ func AutoCreateRedirectDefinitions(l *zap.Logger, old, new *content.RepoNode, di
 				TransferParams: true,
 				Dimension:      dimension,
 			}
-			if redirects[rd.Source] == nil {
-				redirects[rd.Source] = make(map[redirectstore.Dimension]*redirectstore.RedirectDefinition)
-			}
-			redirects[rd.Source][dimension] = rd
+			redirects[rd.Source] = rd
 		}
 		for key, oldchild := range old.Nodes {
 			if newchild, ok := new.Nodes[key]; ok {
@@ -49,7 +46,7 @@ func AutoCreateRedirectDefinitions(l *zap.Logger, old, new *content.RepoNode, di
 				} else {
 					found := false
 					for _, redirect := range redirects {
-						if string(redirect[dimension].Source) == oldchild.URI {
+						if string(redirect.Source) == oldchild.URI {
 							found = true
 							break
 						}
@@ -63,10 +60,7 @@ func AutoCreateRedirectDefinitions(l *zap.Logger, old, new *content.RepoNode, di
 							TransferParams: true,
 							Dimension:      dimension,
 						}
-						if redirects[rd.Source] == nil {
-							redirects[rd.Source] = make(map[redirectstore.Dimension]*redirectstore.RedirectDefinition)
-						}
-						redirects[rd.Source][dimension] = rd
+						redirects[rd.Source] = rd
 					}
 				}
 			}

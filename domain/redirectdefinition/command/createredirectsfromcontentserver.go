@@ -10,6 +10,7 @@ import (
 	redirectrepository "github.com/foomo/redirects/domain/redirectdefinition/repository"
 	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
 	redirectdefinitionutils "github.com/foomo/redirects/domain/redirectdefinition/utils"
+	redirectnats "github.com/foomo/redirects/pkg/nats"
 
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
@@ -53,8 +54,7 @@ func CreateRedirectsHandler(repo redirectrepository.RedirectsDefinitionRepositor
 			//	return err
 			//}
 			l.Info("calling consolidate automatic redirects")
-			consolidatedDefs, deletedDefs := redirectdefinitionutils.ConsolidateRedirectDefinitions(l, newDefinitions, redirectstore.Dimension(dimension))
-
+			consolidatedDefs, deletedDefs := redirectdefinitionutils.ConsolidateRedirectDefinitions(l, newDefinitions)
 			if len(consolidatedDefs) > 0 {
 				updateErr := repo.UpsertMany(ctx, &consolidatedDefs)
 				if updateErr != nil {
@@ -94,4 +94,21 @@ func CreateRedirectsHandlerComposed(handler CreateRedirectsHandlerFn, middleware
 		trace.SpanFromContext(ctx).AddEvent(handlerName)
 		return handler(ctx, l, cmd)
 	})
+}
+
+// CreateRedirectsPublishMiddleware ...
+func CreateRedirectsPublishMiddleware(updateSignal *redirectnats.UpdateSignal) CreateRedirectsMiddlewareFn {
+	return func(next CreateRedirectsHandlerFn) CreateRedirectsHandlerFn {
+		return func(ctx context.Context, l *zap.Logger, cmd CreateRedirects) error {
+			err := next(ctx, l, cmd)
+			if err != nil {
+				return err
+			}
+			err = updateSignal.Publish()
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+	}
 }

@@ -8,6 +8,7 @@ import (
 
 	redirectrepository "github.com/foomo/redirects/domain/redirectdefinition/repository"
 	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
+	redirectnats "github.com/foomo/redirects/pkg/nats"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
@@ -49,4 +50,21 @@ func DeleteRedirectHandlerComposed(handler DeleteRedirectHandlerFn, middlewares 
 		trace.SpanFromContext(ctx).AddEvent(handlerName)
 		return handler(ctx, l, cmd)
 	})
+}
+
+// DeleteRedirectPublishMiddleware ...
+func DeleteRedirectPublishMiddleware(updateSignal *redirectnats.UpdateSignal) DeleteRedirectMiddlewareFn {
+	return func(next DeleteRedirectHandlerFn) DeleteRedirectHandlerFn {
+		return func(ctx context.Context, l *zap.Logger, cmd DeleteRedirect) error {
+			err := next(ctx, l, cmd)
+			if err != nil {
+				return err
+			}
+			err = updateSignal.Publish()
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+	}
 }

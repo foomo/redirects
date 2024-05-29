@@ -10,11 +10,11 @@ import (
 )
 
 func Test_ConsolidateRedirectDefinitions(t *testing.T) {
-	old := redirectstore.RedirectDefinitions{
-		"damen":  {ID: "1", Source: "damen", Target: "damenish"},
-		"her":    {ID: "2", Source: "her", Target: "heren"}, // test if doesn't exist in new it will be removed
-		"kinder": {ID: "3", Source: "kinder", Target: "kids"},
-	}
+	//old := redirectstore.RedirectDefinitions{
+	//	"damen":  {ID: "1", Source: "damen", Target: "damenish"},
+	//	"her":    {ID: "2", Source: "her", Target: "heren"}, // test if doesn't exist in new it will be removed
+	//	"kinder": {ID: "3", Source: "kinder", Target: "kids"},
+	//}
 
 	new := redirectstore.RedirectDefinitions{
 		"damen":  {ID: "1", Source: "damen", Target: ""}, // test that if target is empty it will be removed
@@ -34,7 +34,7 @@ func Test_ConsolidateRedirectDefinitions(t *testing.T) {
 		"kids",
 		"damen",
 	}
-	updatedDefs, deletedSources := ConsolidateRedirectDefinitions(zap.L(), old, new)
+	updatedDefs, deletedSources := ConsolidateRedirectDefinitions(zap.L(), new)
 	fmt.Print(deletedSources)
 	assert.Equal(t, len(updatedExpected), len(updatedDefs))
 	assert.Equal(t, len(deletedExpected), len(deletedSources))

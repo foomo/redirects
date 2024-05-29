@@ -23,4 +23,4 @@ type RedirectDefinition struct {
 	Dimension       Dimension       `json:"dimension" bson:"dimension"`
 }
 
-type RedirectDefinitions map[RedirectSource]map[Dimension]*RedirectDefinition
+type RedirectDefinitions map[RedirectSource]*RedirectDefinition

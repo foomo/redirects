@@ -75,8 +75,7 @@ func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, id, so
 	// Create a filter with the regex pattern
 	filter := bson.M{"source": primitive.Regex{Pattern: pattern.Pattern, Options: pattern.Options}, "dimension": dimension}
 
-	// TODO: @stevan why findOne ??
-	findErr := rs.collection.FindOne(ctx, filter, &result)
+	findErr := rs.collection.Find(ctx, filter, &result)
 	if findErr != nil {
 		return nil, findErr
 	}
@@ -118,19 +117,17 @@ func (rs BaseRedirectsDefinitionRepository) UpsertMany(ctx context.Context, defs
 
 	var operations []mongo.WriteModel
 
-	for source, defByDimension := range *defs {
-		for _, def := range defByDimension {
-			operation := mongo.NewUpdateOneModel()
-			operation.SetFilter(bson.M{
-				"source":    source,
-				"dimension": def.Dimension,
-			})
-			operation.SetUpdate(bson.D{{Key: "$set", Value: def}})
-			operation.SetUpsert(true)
-			operations = append(operations, operation)
-		}
-
+	for source, def := range *defs {
+		operation := mongo.NewUpdateOneModel()
+		operation.SetFilter(bson.M{
+			"source":    source,
+			"dimension": def.Dimension,
+		})
+		operation.SetUpdate(bson.D{{Key: "$set", Value: def}})
+		operation.SetUpsert(true)
+		operations = append(operations, operation)
 	}
+
 	bulkOption := options.BulkWriteOptions{}
 	bulkOption.SetOrdered(false)
 

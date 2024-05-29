@@ -40,23 +40,19 @@ func NewAPI(
 	inst.cmd = Commands{
 		CreateRedirects: redirectcommand.CreateRedirectsHandlerComposed(
 			redirectcommand.CreateRedirectsHandler(inst.repo),
-			// TODO: @stevan add middleware with updateSignal that comes after the handler
-			//       and calls updateSignal.Publish()
+			redirectcommand.CreateRedirectsPublishMiddleware(updateSignal),
 		),
 		CreateRedirect: redirectcommand.CreateRedirectHandlerComposed(
 			redirectcommand.CreateRedirectHandler(inst.repo),
-			// TODO: @stevan add middleware with updateSignal that comes after the handler
-			//       and calls updateSignal.Publish()
+			redirectcommand.CreateRedirectPublishMiddleware(updateSignal),
 		),
 		UpdateRedirect: redirectcommand.UpdateRedirectHandlerComposed(
 			redirectcommand.UpdateRedirectHandler(inst.repo),
-			// TODO: @stevan add middleware with updateSignal that comes after the handler
-			//       and calls updateSignal.Publish()
+			redirectcommand.UpdateRedirectPublishMiddleware(updateSignal),
 		),
 		DeleteRedirect: redirectcommand.DeleteRedirectHandlerComposed(
 			redirectcommand.DeleteRedirectHandler(inst.repo),
-			// TODO: @stevan add middleware with updateSignal that comes after the handler
-			//       and calls updateSignal.Publish()
+			redirectcommand.DeleteRedirectPublishMiddleware(updateSignal),
 		),
 	}
 	inst.qry = Queries{
