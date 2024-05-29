@@ -67,8 +67,7 @@ func (rs BaseRedirectsDefinitionRepository) FindOne(ctx context.Context, id, sou
 
 // TODO: DraganaB check if we need to search by id
 func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, id, source, dimension string) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
-	var result map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition
-
+	var result []*redirectstore.RedirectDefinition
 	// Create a regex pattern for fuzzy match
 	pattern := primitive.Regex{Pattern: source, Options: "i"} // "i" for case-insensitive match
 
@@ -76,10 +75,17 @@ func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, id, so
 	filter := bson.M{"source": primitive.Regex{Pattern: pattern.Pattern, Options: pattern.Options}, "dimension": dimension}
 
 	findErr := rs.collection.Find(ctx, filter, &result)
+	var retResult = make(map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition)
+	for _, red := range result {
+		if _, ok := retResult[red.Source]; !ok {
+			retResult[red.Source] = red
+		}
+	}
+
 	if findErr != nil {
 		return nil, findErr
 	}
-	return result, nil
+	return retResult, nil
 }
 
 func (rs BaseRedirectsDefinitionRepository) FindAll(ctx context.Context) (map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
