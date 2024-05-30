@@ -12,7 +12,7 @@ import (
 // will be exposed to the frontend
 type AdminService interface {
 	Search(w http.ResponseWriter, r *http.Request, dimension, id, path string) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, *redirectstore.RedirectDefinitionError)
-	Create(w http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition) *redirectstore.RedirectDefinitionError
+	Create(w http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition) (redirectstore.RedirectID, *redirectstore.RedirectDefinitionError)
 	Delete(w http.ResponseWriter, r *http.Request, path, dimension string) *redirectstore.RedirectDefinitionError
 	Update(w http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition) *redirectstore.RedirectDefinitionError
 }

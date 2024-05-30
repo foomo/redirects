@@ -59,7 +59,7 @@ func (tsc *HTTPInternalServiceGoTSRPCClient) GetRedirects(ctx go_context.Context
 }
 
 type AdminServiceGoTSRPCClient interface {
-	Create(ctx go_context.Context, def *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition) (retCreate_0 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error)
+	Create(ctx go_context.Context, def *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition) (retCreate_0 github_com_foomo_redirects_domain_redirectdefinition_store.RedirectID, retCreate_1 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error)
 	Delete(ctx go_context.Context, path string, dimension string) (retDelete_0 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error)
 	Search(ctx go_context.Context, dimension string, id string, path string) (retSearch_0 map[github_com_foomo_redirects_domain_redirectdefinition_store.RedirectSource]*github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition, retSearch_1 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error)
 	Update(ctx go_context.Context, def *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition) (retUpdate_0 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error)
@@ -86,9 +86,9 @@ func NewAdminServiceGoTSRPCClientWithClient(url string, endpoint string, client 
 		Client:   gotsrpc.NewClientWithHttpClient(client),
 	}
 }
-func (tsc *HTTPAdminServiceGoTSRPCClient) Create(ctx go_context.Context, def *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition) (retCreate_0 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error) {
+func (tsc *HTTPAdminServiceGoTSRPCClient) Create(ctx go_context.Context, def *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition) (retCreate_0 github_com_foomo_redirects_domain_redirectdefinition_store.RedirectID, retCreate_1 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error) {
 	args := []interface{}{def}
-	reply := []interface{}{&retCreate_0}
+	reply := []interface{}{&retCreate_0, &retCreate_1}
 	clientErr = tsc.Client.Call(ctx, tsc.URL, tsc.EndPoint, "Create", args, reply)
 	if clientErr != nil {
 		clientErr = pkg_errors.WithMessage(clientErr, "failed to call service.AdminServiceGoTSRPCProxy Create")

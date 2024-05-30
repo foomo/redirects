@@ -105,6 +105,7 @@ func (rs BaseRedirectsDefinitionRepository) FindAll(ctx context.Context) (map[re
 }
 
 func (rs BaseRedirectsDefinitionRepository) Insert(ctx context.Context, def *redirectstore.RedirectDefinition) error {
+	def.ID = redirectstore.RedirectID(redirectstore.NewEntityID())
 	_, err := rs.collection.Col().InsertOne(ctx, def)
 	return err
 }

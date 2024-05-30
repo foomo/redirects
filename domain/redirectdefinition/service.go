@@ -60,15 +60,15 @@ func (rs *Service) Search(_ http.ResponseWriter, r *http.Request, dimension, id,
 
 // Create a redirect
 // used by frontend
-func (rs *Service) Create(_ http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition) *redirectstore.RedirectDefinitionError {
+func (rs *Service) Create(_ http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition) (redirectstore.RedirectID, *redirectstore.RedirectDefinitionError) {
 	err := rs.api.CreateRedirect(r.Context(),
 		redirectcommand.CreateRedirect{
 			RedirectDefinition: def,
 		})
 	if err != nil {
-		return redirectstore.NewRedirectDefinitionError(err.Error())
+		return "", redirectstore.NewRedirectDefinitionError(err.Error())
 	}
-	return nil
+	return def.ID, nil
 }
 
 // Delete a redirect
