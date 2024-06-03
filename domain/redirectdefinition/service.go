@@ -1,6 +1,7 @@
 package redirectdefinition
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/foomo/contentserver/content"
@@ -46,11 +47,15 @@ func (rs *Service) GetRedirects(_ http.ResponseWriter, r *http.Request) (map[red
 
 // Search for a redirect
 // used by frontend
-func (rs *Service) Search(_ http.ResponseWriter, r *http.Request, dimension, id, path string) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, *redirectstore.RedirectDefinitionError) {
+func (rs *Service) Search(_ http.ResponseWriter, r *http.Request, locale, path string) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, *redirectstore.RedirectDefinitionError) {
+	site, err := rs.api.getSiteIdentifierProvider(r)
+	if err != nil {
+		return nil, redirectstore.NewRedirectDefinitionError(err.Error())
+	}
+
 	result, err := rs.api.Search(r.Context(), redirectquery.Search{
-		ID:        id,
 		Source:    redirectstore.RedirectSource(path),
-		Dimension: redirectstore.Dimension(dimension),
+		Dimension: redirectstore.Dimension(fmt.Sprintf("%s-%s", site, locale)),
 	})
 	if err != nil {
 		return nil, redirectstore.NewRedirectDefinitionError(err.Error())
@@ -60,8 +65,14 @@ func (rs *Service) Search(_ http.ResponseWriter, r *http.Request, dimension, id,
 
 // Create a redirect
 // used by frontend
-func (rs *Service) Create(_ http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition) (redirectstore.RedirectID, *redirectstore.RedirectDefinitionError) {
-	err := rs.api.CreateRedirect(r.Context(),
+func (rs *Service) Create(_ http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition, locale string) (redirectstore.RedirectID, *redirectstore.RedirectDefinitionError) {
+	site, err := rs.api.getSiteIdentifierProvider(r)
+	if err != nil {
+		return "", redirectstore.NewRedirectDefinitionError(err.Error())
+	}
+	def.Dimension = redirectstore.Dimension(fmt.Sprintf("%s-%s", site, locale))
+
+	err = rs.api.CreateRedirect(r.Context(),
 		redirectcommand.CreateRedirect{
 			RedirectDefinition: def,
 		})
@@ -87,8 +98,14 @@ func (rs *Service) Delete(_ http.ResponseWriter, r *http.Request, path, dimensio
 
 // Update a redirect
 // used by frontend
-func (rs *Service) Update(_ http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition) *redirectstore.RedirectDefinitionError {
-	err := rs.api.UpdateRedirect(r.Context(),
+func (rs *Service) Update(_ http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition, locale string) *redirectstore.RedirectDefinitionError {
+	site, err := rs.api.getSiteIdentifierProvider(r)
+	if err != nil {
+		return redirectstore.NewRedirectDefinitionError(err.Error())
+	}
+	def.Dimension = redirectstore.Dimension(fmt.Sprintf("%s-%s", site, locale))
+
+	err = rs.api.UpdateRedirect(r.Context(),
 		redirectcommand.UpdateRedirect{
 			RedirectDefinition: def,
 		})

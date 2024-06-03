@@ -6,6 +6,7 @@ type RedirectTarget string
 type RedirectRequest string
 type RedirectionType string
 type Dimension string
+type Site string
 
 const (
 	Manual    RedirectionType = "manual"

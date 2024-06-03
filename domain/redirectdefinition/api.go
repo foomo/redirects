@@ -9,16 +9,18 @@ import (
 	redirectrepository "github.com/foomo/redirects/domain/redirectdefinition/repository"
 	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
 	redirectnats "github.com/foomo/redirects/pkg/nats"
+	redirectprovider "github.com/foomo/redirects/pkg/provider"
 	"go.uber.org/zap"
 )
 
 // API for the domain
 type (
 	API struct {
-		l    *zap.Logger
-		qry  Queries
-		cmd  Commands
-		repo redirectrepository.RedirectsDefinitionRepository
+		l                         *zap.Logger
+		qry                       Queries
+		cmd                       Commands
+		getSiteIdentifierProvider redirectprovider.SiteIdentifierProviderFunc
+		repo                      redirectrepository.RedirectsDefinitionRepository
 	}
 	Option func(api *API)
 )

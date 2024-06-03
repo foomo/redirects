@@ -16,7 +16,7 @@ import (
 type (
 	RedirectsDefinitionRepository interface {
 		FindOne(ctx context.Context, id, source string) (*redirectstore.RedirectDefinition, error)
-		FindMany(ctx context.Context, id, source, dimension string) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error)
+		FindMany(ctx context.Context, source, dimension string) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error)
 		FindAll(ctx context.Context) (defs map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, err error)
 		Insert(ctx context.Context, def *redirectstore.RedirectDefinition) error
 		Update(ctx context.Context, def *redirectstore.RedirectDefinition) error
@@ -42,13 +42,16 @@ func NewBaseRedirectsDefinitionRepository(l *zap.Logger, persistor *keelmongo.Pe
 		"redirects",
 		keelmongo.CollectionWithIndexes(
 			mongo.IndexModel{
-				Keys: bson.M{
-					"source": 1,
+				Keys: bson.D{
+					{Key: "source", Value: 1},
+					{Key: "dimension", Value: 1},
 				},
 				Options: options.Index().SetUnique(true),
 			},
 		),
 	)
+
+	_, err = collection.Col().Indexes().DropOne(context.TODO(), "source_1")
 
 	if cErr != nil {
 		return nil, cErr
@@ -66,7 +69,7 @@ func (rs BaseRedirectsDefinitionRepository) FindOne(ctx context.Context, id, sou
 }
 
 // TODO: DraganaB check if we need to search by id
-func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, id, source, dimension string) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
+func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, source, dimension string) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
 	var result []*redirectstore.RedirectDefinition
 	// Create a regex pattern for fuzzy match
 	pattern := primitive.Regex{Pattern: source, Options: "i"} // "i" for case-insensitive match

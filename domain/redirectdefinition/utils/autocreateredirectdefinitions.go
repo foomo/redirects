@@ -2,7 +2,6 @@ package redirectdefinitionutils
 
 import (
 	"errors"
-
 	"github.com/foomo/contentserver/content"
 	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
 	"go.uber.org/zap"
@@ -27,6 +26,7 @@ func AutoCreateRedirectDefinitions(l *zap.Logger, old, new *content.RepoNode, di
 		targetURI := new.URI
 		if sourceURI != targetURI {
 			rd := &redirectstore.RedirectDefinition{
+				ID:             redirectstore.RedirectID(redirectstore.NewEntityID()),
 				Source:         redirectstore.RedirectSource(sourceURI),
 				Target:         redirectstore.RedirectTarget(targetURI),
 				Code:           301,
@@ -53,6 +53,7 @@ func AutoCreateRedirectDefinitions(l *zap.Logger, old, new *content.RepoNode, di
 					}
 					if !found {
 						rd := &redirectstore.RedirectDefinition{
+							ID:             redirectstore.RedirectID(redirectstore.NewEntityID()),
 							Source:         redirectstore.RedirectSource(oldchild.URI),
 							Target:         "",
 							Code:           301,

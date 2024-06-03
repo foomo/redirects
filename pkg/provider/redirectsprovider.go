@@ -19,6 +19,7 @@ type RedirectsProviderInterface interface {
 	Process(r *http.Request) (*store.Redirect, error)
 }
 type DimensionProviderFunc func(r *http.Request) (store.Dimension, error)
+type SiteIdentifierProviderFunc func(r *http.Request) (store.Site, error)
 type RedirectsProviderFunc func(ctx context.Context) (map[store.Dimension]map[store.RedirectSource]*store.RedirectDefinition, error, error)
 type MatcherFunc func(r *http.Request) (*store.RedirectDefinition, error)
 
