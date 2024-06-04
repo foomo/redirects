@@ -98,14 +98,8 @@ func (rs *Service) Delete(_ http.ResponseWriter, r *http.Request, path, dimensio
 
 // Update a redirect
 // used by frontend
-func (rs *Service) Update(_ http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition, locale string) *redirectstore.RedirectDefinitionError {
-	site, err := rs.api.getSiteIdentifierProvider(r)
-	if err != nil {
-		return redirectstore.NewRedirectDefinitionError(err.Error())
-	}
-	def.Dimension = redirectstore.Dimension(fmt.Sprintf("%s-%s", site, locale))
-
-	err = rs.api.UpdateRedirect(r.Context(),
+func (rs *Service) Update(_ http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition) *redirectstore.RedirectDefinitionError {
+	err := rs.api.UpdateRedirect(r.Context(),
 		redirectcommand.UpdateRedirect{
 			RedirectDefinition: def,
 		})

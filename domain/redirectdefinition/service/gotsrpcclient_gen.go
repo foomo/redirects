@@ -62,7 +62,7 @@ type AdminServiceGoTSRPCClient interface {
 	Create(ctx go_context.Context, def *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition, locale string) (retCreate_0 github_com_foomo_redirects_domain_redirectdefinition_store.RedirectID, retCreate_1 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error)
 	Delete(ctx go_context.Context, path string, dimension string) (retDelete_0 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error)
 	Search(ctx go_context.Context, locale string, path string) (retSearch_0 map[github_com_foomo_redirects_domain_redirectdefinition_store.RedirectSource]*github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition, retSearch_1 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error)
-	Update(ctx go_context.Context, def *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition, locale string) (retUpdate_0 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error)
+	Update(ctx go_context.Context, def *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition) (retUpdate_0 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error)
 }
 
 type HTTPAdminServiceGoTSRPCClient struct {
@@ -116,8 +116,8 @@ func (tsc *HTTPAdminServiceGoTSRPCClient) Search(ctx go_context.Context, locale 
 	return
 }
 
-func (tsc *HTTPAdminServiceGoTSRPCClient) Update(ctx go_context.Context, def *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition, locale string) (retUpdate_0 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error) {
-	args := []interface{}{def, locale}
+func (tsc *HTTPAdminServiceGoTSRPCClient) Update(ctx go_context.Context, def *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition) (retUpdate_0 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error) {
+	args := []interface{}{def}
 	reply := []interface{}{&retUpdate_0}
 	clientErr = tsc.Client.Call(ctx, tsc.URL, tsc.EndPoint, "Update", args, reply)
 	if clientErr != nil {

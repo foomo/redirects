@@ -226,17 +226,16 @@ func (p *AdminServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Requ
 			rets []interface{}
 		)
 		var (
-			arg_def    *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition
-			arg_locale string
+			arg_def *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition
 		)
-		args = []interface{}{&arg_def, &arg_locale}
+		args = []interface{}{&arg_def}
 		if err := gotsrpc.LoadArgs(&args, callStats, r); err != nil {
 			gotsrpc.ErrorCouldNotLoadArgs(w)
 			return
 		}
 		executionStart := time.Now()
 		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
-		updateRet := p.service.Update(&rw, r, arg_def, arg_locale)
+		updateRet := p.service.Update(&rw, r, arg_def)
 		callStats.Execution = time.Since(executionStart)
 		if rw.Status() == http.StatusOK {
 			rets = []interface{}{updateRet}

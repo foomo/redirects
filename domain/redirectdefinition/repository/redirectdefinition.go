@@ -99,10 +99,11 @@ func (rs BaseRedirectsDefinitionRepository) FindAll(ctx context.Context) (map[re
 	}
 	var retResult = make(map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition)
 	for _, res := range result {
+		resCopy := res
 		if _, ok := retResult[res.Dimension]; !ok {
 			retResult[res.Dimension] = make(map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition)
 		}
-		retResult[res.Dimension][res.Source] = &res
+		retResult[res.Dimension][res.Source] = &resCopy
 	}
 	return retResult, nil
 }

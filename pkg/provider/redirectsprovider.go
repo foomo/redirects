@@ -92,7 +92,6 @@ func (p *RedirectsProvider) Process(r *http.Request) (*store.Redirect, error) {
 	l := keellog.With(p.l, keellog.FCodeMethod("Process"))
 	l.Debug("process redirect request")
 
-	//
 	dimension, err := p.dimensionProviderFunc(r)
 	if err != nil {
 		return nil, err
