@@ -26,13 +26,14 @@ func AutoCreateRedirectDefinitions(l *zap.Logger, old, new *content.RepoNode, di
 		targetURI := new.URI
 		if sourceURI != targetURI {
 			rd := &redirectstore.RedirectDefinition{
-				ID:             redirectstore.RedirectID(redirectstore.NewEntityID()),
-				Source:         redirectstore.RedirectSource(sourceURI),
-				Target:         redirectstore.RedirectTarget(targetURI),
-				Code:           301,
-				RespectParams:  true,
-				TransferParams: true,
-				Dimension:      dimension,
+				ID:              redirectstore.RedirectID(redirectstore.NewEntityID()),
+				Source:          redirectstore.RedirectSource(sourceURI),
+				Target:          redirectstore.RedirectTarget(targetURI),
+				Code:            301,
+				RespectParams:   true,
+				TransferParams:  true,
+				RedirectionType: redirectstore.Automatic,
+				Dimension:       dimension,
 			}
 			redirects[rd.Source] = rd
 		}
@@ -53,13 +54,14 @@ func AutoCreateRedirectDefinitions(l *zap.Logger, old, new *content.RepoNode, di
 					}
 					if !found {
 						rd := &redirectstore.RedirectDefinition{
-							ID:             redirectstore.RedirectID(redirectstore.NewEntityID()),
-							Source:         redirectstore.RedirectSource(oldchild.URI),
-							Target:         "",
-							Code:           301,
-							RespectParams:  true,
-							TransferParams: true,
-							Dimension:      dimension,
+							ID:              redirectstore.RedirectID(redirectstore.NewEntityID()),
+							Source:          redirectstore.RedirectSource(oldchild.URI),
+							Target:          "",
+							Code:            301,
+							RespectParams:   true,
+							TransferParams:  true,
+							RedirectionType: redirectstore.Automatic,
+							Dimension:       dimension,
 						}
 						redirects[rd.Source] = rd
 					}
