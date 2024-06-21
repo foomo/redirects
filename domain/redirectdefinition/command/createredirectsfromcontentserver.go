@@ -179,10 +179,11 @@ func softDeleteStrategy(
 				continue
 			}
 		}
-		def, ok := currentDefinitions[id]
-		if ok {
-			def.Stale = true
-			additionalRedirects = append(additionalRedirects, def)
+		for _, def := range currentDefinitions {
+			if def.ID == id {
+				def.Stale = true
+				additionalRedirects = append(additionalRedirects, def)
+			}
 		}
 	}
 	return append(newRedirects, additionalRedirects...)
