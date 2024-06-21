@@ -15,8 +15,9 @@ import (
 type (
 	// Search query
 	Search struct {
-		Source    redirectstore.RedirectSource `json:"source"`
-		Dimension redirectstore.Dimension      `json:"dimension"`
+		Source     redirectstore.RedirectSource `json:"source"`
+		Dimension  redirectstore.Dimension      `json:"dimension"`
+		OnlyActive bool                         `json:"onlyActive"`
 	}
 	// SearchHandlerFn handler
 	SearchHandlerFn func(ctx context.Context, l *zap.Logger, qry Search) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error)
@@ -27,7 +28,7 @@ type (
 // SearchHandler ...
 func SearchHandler(repo redirectrepository.RedirectsDefinitionRepository) SearchHandlerFn {
 	return func(ctx context.Context, l *zap.Logger, qry Search) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
-		return repo.FindMany(ctx, string(qry.Source), string(qry.Dimension))
+		return repo.FindMany(ctx, string(qry.Source), string(qry.Dimension), qry.OnlyActive)
 	}
 }
 

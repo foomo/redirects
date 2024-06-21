@@ -15,7 +15,7 @@ import (
 type (
 	RedirectsDefinitionRepository interface {
 		FindOne(ctx context.Context, id, source string) (*redirectstore.RedirectDefinition, error)
-		FindMany(ctx context.Context, source, dimension string) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error)
+		FindMany(ctx context.Context, source, dimension string, onlyActive bool) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error)
 		FindAll(ctx context.Context, onlyActive bool) (defs map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, err error)
 		Insert(ctx context.Context, def *redirectstore.RedirectDefinition) error
 		Update(ctx context.Context, def *redirectstore.RedirectDefinition) error
@@ -67,7 +67,7 @@ func (rs BaseRedirectsDefinitionRepository) FindOne(ctx context.Context, id, sou
 	return &result, nil
 }
 
-func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, source, dimension string) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
+func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, source, dimension string, onlyActive bool) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
 	var result []*redirectstore.RedirectDefinition
 	filter := bson.M{}
 
@@ -79,6 +79,10 @@ func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, source
 
 	if dimension != "" {
 		filter["dimension"] = dimension
+	}
+
+	if onlyActive {
+		filter["stale"] = false
 	}
 
 	findErr := rs.collection.Find(ctx, filter, &result)
