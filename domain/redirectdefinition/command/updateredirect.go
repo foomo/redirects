@@ -8,6 +8,7 @@ import (
 
 	redirectrepository "github.com/foomo/redirects/domain/redirectdefinition/repository"
 	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
+	redirectnats "github.com/foomo/redirects/pkg/nats"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
@@ -24,7 +25,7 @@ type (
 )
 
 // UpdateRedirectHandler ...
-func UpdateRedirectHandler(repo redirectrepository.BaseRedirectsDefinitionRepository) UpdateRedirectHandlerFn {
+func UpdateRedirectHandler(repo redirectrepository.RedirectsDefinitionRepository) UpdateRedirectHandlerFn {
 	return func(ctx context.Context, l *zap.Logger, cmd UpdateRedirect) error {
 		return repo.Update(ctx, cmd.RedirectDefinition)
 	}
@@ -48,4 +49,21 @@ func UpdateRedirectHandlerComposed(handler UpdateRedirectHandlerFn, middlewares 
 		trace.SpanFromContext(ctx).AddEvent(handlerName)
 		return handler(ctx, l, cmd)
 	})
+}
+
+// UpdateRedirectPublishMiddleware ...
+func UpdateRedirectPublishMiddleware(updateSignal *redirectnats.UpdateSignal) UpdateRedirectMiddlewareFn {
+	return func(next UpdateRedirectHandlerFn) UpdateRedirectHandlerFn {
+		return func(ctx context.Context, l *zap.Logger, cmd UpdateRedirect) error {
+			err := next(ctx, l, cmd)
+			if err != nil {
+				return err
+			}
+			err = updateSignal.Publish()
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+	}
 }
