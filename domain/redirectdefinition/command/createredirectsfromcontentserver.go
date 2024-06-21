@@ -127,7 +127,7 @@ func CreateRedirectsAutoCreateMiddleware() CreateRedirectsMiddlewareFn {
 }
 
 // CreateRedirectsConsolidateMiddleware ...
-func CreateRedirectsConsolidateMiddleware(repo redirectrepository.RedirectsDefinitionRepository) CreateRedirectsMiddlewareFn {
+func CreateRedirectsConsolidateMiddleware(repo redirectrepository.RedirectsDefinitionRepository, autoDelete bool) CreateRedirectsMiddlewareFn {
 	return func(next CreateRedirectsHandlerFn) CreateRedirectsHandlerFn {
 		return func(ctx context.Context, l *zap.Logger, cmd CreateRedirects) error {
 			l.Info("consolidating redirect definitions")
@@ -135,7 +135,7 @@ func CreateRedirectsConsolidateMiddleware(repo redirectrepository.RedirectsDefin
 			redirectsToDelete := []redirectstore.EntityID{}
 
 			// get all current definitions for the dimension from the database
-			allCurrentDefinitions, err := repo.FindAll(ctx)
+			allCurrentDefinitions, err := repo.FindAll(ctx, true)
 			if err != nil {
 				l.Error("failed to fetch existing definitions", zap.Error(err))
 				return err
@@ -148,7 +148,14 @@ func CreateRedirectsConsolidateMiddleware(repo redirectrepository.RedirectsDefin
 					redirectdefinitionutils.CreateFlatRepoNodeMap(cmd.NewState[string(dimension)], make(map[string]*content.RepoNode)),
 				)
 				redirectsToUpsert = append(redirectsToUpsert, defs...)
-				redirectsToDelete = append(redirectsToDelete, ids...)
+
+				// if we are in auto delete mode we add the ids to the delete list
+				// otherwise we soft delete the definitions
+				if autoDelete {
+					redirectsToDelete = append(redirectsToDelete, ids...)
+				} else {
+					softDeleteStrategy(ids, defs, currentDefinitions)
+				}
 			}
 			cmd.RedirectsToUpsert = redirectsToUpsert
 			cmd.RedirectsToDelete = redirectsToDelete
@@ -156,4 +163,27 @@ func CreateRedirectsConsolidateMiddleware(repo redirectrepository.RedirectsDefin
 			return next(ctx, l, cmd)
 		}
 	}
+}
+
+// softDeleteStrategy ...
+func softDeleteStrategy(
+	idsToDelete []redirectstore.EntityID,
+	newRedirects []*redirectstore.RedirectDefinition,
+	currentDefinitions map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition,
+) (redirectsToUpsert []*redirectstore.RedirectDefinition) {
+	additionalRedirects := []*redirectstore.RedirectDefinition{}
+	for _, id := range idsToDelete {
+		for _, def := range newRedirects {
+			if def.ID == id {
+				def.Stale = true
+				continue
+			}
+		}
+		def, ok := currentDefinitions[id]
+		if ok {
+			def.Stale = true
+			additionalRedirects = append(additionalRedirects, def)
+		}
+	}
+	return append(newRedirects, additionalRedirects...)
 }

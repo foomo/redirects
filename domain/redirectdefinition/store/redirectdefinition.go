@@ -22,6 +22,7 @@ type RedirectDefinition struct {
 	TransferParams  bool            `json:"transferparams" bson:"transferparams"`
 	RedirectionType RedirectionType `json:"redirectType" bson:"redirectType"`
 	Dimension       Dimension       `json:"dimension" bson:"dimension"`
+	Stale           bool            `json:"stale" bson:"stale"`
 }
 
 type RedirectDefinitions map[RedirectSource]*RedirectDefinition

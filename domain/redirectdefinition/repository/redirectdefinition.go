@@ -16,7 +16,7 @@ type (
 	RedirectsDefinitionRepository interface {
 		FindOne(ctx context.Context, id, source string) (*redirectstore.RedirectDefinition, error)
 		FindMany(ctx context.Context, source, dimension string) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error)
-		FindAll(ctx context.Context) (defs map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, err error)
+		FindAll(ctx context.Context, onlyActive bool) (defs map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, err error)
 		Insert(ctx context.Context, def *redirectstore.RedirectDefinition) error
 		Update(ctx context.Context, def *redirectstore.RedirectDefinition) error
 		UpsertMany(ctx context.Context, defs []*redirectstore.RedirectDefinition) error
@@ -95,8 +95,13 @@ func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, source
 	return retResult, nil
 }
 
-func (rs BaseRedirectsDefinitionRepository) FindAll(ctx context.Context) (map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
+func (rs BaseRedirectsDefinitionRepository) FindAll(ctx context.Context, onlyActive bool) (map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
 	var result []redirectstore.RedirectDefinition
+	filter := bson.M{}
+	if onlyActive {
+		filter["stale"] = false
+	}
+
 	err := rs.collection.Find(ctx, bson.M{}, &result)
 	if err != nil {
 		return nil, err
