@@ -16,8 +16,7 @@ import (
 type (
 	// DeleteRedirect command
 	DeleteRedirect struct {
-		Source    redirectstore.RedirectSource `json:"source"`
-		Dimension redirectstore.Dimension      `json:"dimension"`
+		ID redirectstore.EntityID `json:"id"`
 	}
 	// DeleteRedirectHandlerFn handler
 	DeleteRedirectHandlerFn func(ctx context.Context, l *zap.Logger, cmd DeleteRedirect) error
@@ -28,7 +27,7 @@ type (
 // DeleteRedirectHandler ...
 func DeleteRedirectHandler(repo redirectrepository.RedirectsDefinitionRepository) DeleteRedirectHandlerFn {
 	return func(ctx context.Context, l *zap.Logger, cmd DeleteRedirect) error {
-		return repo.Delete(ctx, string(cmd.Source), string(cmd.Dimension))
+		return repo.Delete(ctx, cmd.ID)
 	}
 }
 

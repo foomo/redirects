@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/foomo/contentserver/content"
+	keellog "github.com/foomo/keel/log"
 	redirectrepository "github.com/foomo/redirects/domain/redirectdefinition/repository"
 	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
 	redirectdefinitionutils "github.com/foomo/redirects/domain/redirectdefinition/utils"
@@ -33,39 +34,57 @@ func CreateRedirectsHandler(repo redirectrepository.RedirectsDefinitionRepositor
 	return func(ctx context.Context, l *zap.Logger, cmd CreateRedirects) error {
 		l.Info("calling create automatic redirects")
 
-		dimensions := map[string]bool{}
+		dimensions := map[string]struct{}{}
 		for dim := range cmd.OldState {
-			dimensions[dim] = true
+			dimensions[dim] = struct{}{}
 		}
 
 		for dim := range cmd.NewState {
-			dimensions[dim] = true
+			dimensions[dim] = struct{}{}
 		}
 
 		for dimension := range dimensions {
-			newDefinitions, err := redirectdefinitionutils.AutoCreateRedirectDefinitions(l, cmd.OldState[dimension], cmd.NewState[dimension], redirectstore.Dimension(dimension))
+			oldNodeMap := redirectdefinitionutils.CreateFlatRepoNodeMap(cmd.OldState[dimension], make(map[string]*content.RepoNode))
+			newNodeMap := redirectdefinitionutils.CreateFlatRepoNodeMap(cmd.NewState[dimension], make(map[string]*content.RepoNode))
+
+			newDefinitions, err := redirectdefinitionutils.AutoCreateRedirectDefinitions(
+				l,
+				oldNodeMap,
+				newNodeMap,
+				redirectstore.Dimension(dimension),
+			)
 			if err != nil {
-				l.Error("failed to execute auto create redirects", zap.Error(err))
+				keellog.WithError(l, err).Error("failed to execute auto create redirects")
 				return err
 			}
-			//oldDefinitions, err := repo.FindAll(ctx)
-			//if err != nil {
-			//	l.Error("failed to fetch existing definitions", zap.Error(err))
-			//	return err
-			//}
-			l.Info("calling consolidate automatic redirects")
-			consolidatedDefs, deletedDefs := redirectdefinitionutils.ConsolidateRedirectDefinitions(l, newDefinitions)
+
+			// get all current definitions for the dimension from the database
+			currentDefinitions, err := repo.FindMany(ctx, "", dimension)
+			if err != nil {
+				l.Error("failed to fetch existing definitions", zap.Error(err))
+				return err
+			}
+
+			consolidatedDefs, deletedIDs := redirectdefinitionutils.ConsolidateRedirectDefinitions(
+				l,
+				newDefinitions,
+				currentDefinitions,
+				newNodeMap,
+			)
+
+			l.Info("consolidated definitions", zap.Any("consolidatedDefs", consolidatedDefs), zap.Any("deletedIDs", deletedIDs))
+
 			if len(consolidatedDefs) > 0 {
 				updateErr := repo.UpsertMany(ctx, &consolidatedDefs)
 				if updateErr != nil {
-					l.Error("failed to updated definitions", zap.Error(updateErr))
+					keellog.WithError(l, updateErr).Error("failed to updated definitions")
 					return updateErr
 				}
 			}
-			if len(deletedDefs) > 0 {
-				deleteErr := repo.DeleteMany(ctx, deletedDefs, dimension)
+			if len(deletedIDs) > 0 {
+				deleteErr := repo.DeleteMany(ctx, deletedIDs)
 				if deleteErr != nil {
-					l.Error("failed to delete definitions", zap.Error(deleteErr))
+					keellog.WithError(l, deleteErr).Error("failed to delete definitions")
 					return deleteErr
 				}
 			}

@@ -14,13 +14,22 @@ import (
 type Service struct {
 	l   *zap.Logger
 	api *API
+
+	enableCreationOfAutomaticRedirects enabledFunc
 }
 
-func NewService(l *zap.Logger, api *API) *Service {
-	return &Service{
-		l:   l,
-		api: api,
+func NewService(l *zap.Logger, api *API, options ...ServiceOption) *Service {
+	s := &Service{
+		l:                                  l,
+		api:                                api,
+		enableCreationOfAutomaticRedirects: defaultEnabledFunc,
 	}
+
+	for _, o := range options {
+		o(s)
+	}
+
+	return s
 }
 
 // CreateRedirectsFromContentserverexport creates redirects from contentserverexport
@@ -32,6 +41,10 @@ func (rs *Service) CreateRedirectsFromContentserverexport(
 	new map[string]*content.RepoNode,
 ) error {
 	rs.l.Info("CreateRedirectsFromContentserverexport called ")
+	if !rs.enableCreationOfAutomaticRedirects() {
+		rs.l.Info("CreateRedirectsFromContentserverexport not enabled")
+		return nil
+	}
 	return rs.api.CreateRedirects(r.Context(),
 		redirectcommand.CreateRedirects{
 			OldState: old,
@@ -65,7 +78,7 @@ func (rs *Service) Search(_ http.ResponseWriter, r *http.Request, locale, path s
 
 // Create a redirect
 // used by frontend
-func (rs *Service) Create(_ http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition, locale string) (redirectstore.RedirectID, *redirectstore.RedirectDefinitionError) {
+func (rs *Service) Create(_ http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition, locale string) (redirectstore.EntityID, *redirectstore.RedirectDefinitionError) {
 	site, err := rs.api.getSiteIdentifierProvider(r)
 	if err != nil {
 		return "", redirectstore.NewRedirectDefinitionError(err.Error())
@@ -84,11 +97,10 @@ func (rs *Service) Create(_ http.ResponseWriter, r *http.Request, def *redirects
 
 // Delete a redirect
 // used by frontend
-func (rs *Service) Delete(_ http.ResponseWriter, r *http.Request, path, dimension string) *redirectstore.RedirectDefinitionError {
+func (rs *Service) Delete(_ http.ResponseWriter, r *http.Request, id string) *redirectstore.RedirectDefinitionError {
 	err := rs.api.DeleteRedirect(r.Context(),
 		redirectcommand.DeleteRedirect{
-			Source:    redirectstore.RedirectSource(path),
-			Dimension: redirectstore.Dimension(dimension),
+			ID: redirectstore.EntityID(id),
 		})
 	if err != nil {
 		return redirectstore.NewRedirectDefinitionError(err.Error())

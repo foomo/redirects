@@ -1,6 +1,7 @@
 package redirectdefinitionutils
 
 import (
+	"github.com/foomo/contentserver/content"
 	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
 	"go.uber.org/zap"
 )
@@ -12,42 +13,60 @@ import (
 func ConsolidateRedirectDefinitions(
 	l *zap.Logger,
 	new redirectstore.RedirectDefinitions,
-) (updatedDefs redirectstore.RedirectDefinitions, deletedSources []redirectstore.RedirectSource) {
+	current redirectstore.RedirectDefinitions,
+	newNodeMap map[string]*content.RepoNode,
+) (redirectstore.RedirectDefinitions, []redirectstore.EntityID) {
 
-	updatedDefs = make(redirectstore.RedirectDefinitions)
+	upsertRedirectDefinitions := redirectstore.RedirectDefinitions{}
+	deletedIDs := []redirectstore.EntityID{}
 
-	// Copy new definitions to the consolidated map
-	for source, definition := range new {
-		// If Target is empty in new definitions, delete it
-		if definition.Target == "" {
-			deletedSources = append(deletedSources, source)
-		} else {
-			updatedDefs[source] = definition
+	// Step 1:
+	// check if for the IDs of the new redirects there is already a redirect in the current
+	// state and update the target of the new redirect to the target of the current redirect
+	currentRedirectsByID := map[string][]*redirectstore.RedirectDefinition{}
+	for _, redirectDefinition := range current {
+		_, ok := currentRedirectsByID[redirectDefinition.ContentID]
+		if !ok {
+			currentRedirectsByID[redirectDefinition.ContentID] = []*redirectstore.RedirectDefinition{}
 		}
+		currentRedirectsByID[redirectDefinition.ContentID] = append(currentRedirectsByID[redirectDefinition.ContentID], redirectDefinition)
 	}
 
-	// Check for circular references and update the targets if needed
-
-	for _, definition := range updatedDefs {
-		target := definition.Target
-		for {
-			if nextDefinition, found := updatedDefs[redirectstore.RedirectSource(target)]; found {
-				// If the target is also a source in another definition, update the target
-				if nextDefinition.Target != target {
-					definition.Target = nextDefinition.Target
-
-					// Circular reference detected, remove the target
-					delete(updatedDefs, redirectstore.RedirectSource(target))
-
-					deletedSources = append(deletedSources, redirectstore.RedirectSource(target))
-					break
+	// iterate over the incoming redirects and add the new redirects to the list that should be upserted
+	for _, redirectDefinition := range new {
+		upsertRedirectDefinitions[redirectDefinition.Source] = redirectDefinition
+		// check if the ID of the new redirect is already in the current list of redirects
+		currentDefinitions, ok := currentRedirectsByID[redirectDefinition.ContentID]
+		if ok {
+			for _, currentDefinition := range currentDefinitions {
+				// if a new redirect points to the same ID as an existing redirect we need to reset
+				// the target of the existing redirect to the new target
+				if currentDefinition.RedirectionType == redirectstore.Automatic {
+					currentDefinition.Target = redirectDefinition.Target
+					upsertRedirectDefinitions[currentDefinition.Source] = currentDefinition
 				}
-			} else {
-				// No more references found, update the target
-				definition.Target = target
-				break
 			}
 		}
 	}
-	return updatedDefs, deletedSources
+
+	// Step 2:
+	// handle the case where the target of a redirect is no longer available in the current
+	// contentserverexport, in this case the redirect should be deleted
+	availableTargets := map[string]struct{}{}
+	for _, node := range newNodeMap {
+		availableTargets[node.URI] = struct{}{}
+	}
+	for _, redirectDefinition := range current {
+		// we should only handle automatic redirects - manually created redirects
+		// might point to URLs that are not handled by contentful and thus might not be part
+		// of the new contentserverexport
+		if redirectDefinition.RedirectionType == redirectstore.Automatic {
+			_, ok := availableTargets[string(redirectDefinition.Target)]
+			if !ok {
+				deletedIDs = append(deletedIDs, redirectDefinition.ID)
+			}
+		}
+	}
+
+	return upsertRedirectDefinitions, deletedIDs
 }

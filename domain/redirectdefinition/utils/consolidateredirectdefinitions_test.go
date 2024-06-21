@@ -1,41 +1,40 @@
 package redirectdefinitionutils
 
 import (
-	"fmt"
 	"testing"
 
+	"github.com/foomo/contentserver/content"
 	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )
 
 func Test_ConsolidateRedirectDefinitions(t *testing.T) {
-	//old := redirectstore.RedirectDefinitions{
-	//	"damen":  {ID: "1", Source: "damen", Target: "damenish"},
-	//	"her":    {ID: "2", Source: "her", Target: "heren"}, // test if doesn't exist in new it will be removed
-	//	"kinder": {ID: "3", Source: "kinder", Target: "kids"},
-	//}
+	currentNodes := map[string]*content.RepoNode{
+		"HMD-de": {ID: "1", URI: "/redirects-test-de-03"},
+	}
 
-	new := redirectstore.RedirectDefinitions{
-		"damen":  {ID: "1", Source: "damen", Target: ""}, // test that if target is empty it will be removed
-		"kinder": {ID: "3", Source: "kinder", Target: "kids"},
-		"kids":   {ID: "3", Source: "kids", Target: "new-kinder"},
-		// TODO: Dragana currently works with only 2 circular references, make it work with multiple
-		//"new-kinder": {ID: "3", Source: "new-kinder", Target: "newest-kinder"}, // test that if a target is source in another definition it will be consolidated
-		"tachen": {ID: "4", Source: "tachen", Target: "new-tachen"}, // test that newly added will be actually added
+	oldRedirects := redirectstore.RedirectDefinitions{
+		"/redirects-test-de-01": {ID: "1", ContentID: "1", Source: "/redirects-test-de-01", Target: "/redirects-test-de-02", RedirectionType: redirectstore.Automatic},
+	}
+
+	newRedirects := redirectstore.RedirectDefinitions{
+		"/redirects-test-de-02": {ID: "2", ContentID: "1", Source: "/redirects-test-de-02", Target: "/redirects-test-de-03", RedirectionType: redirectstore.Automatic},
 	}
 
 	updatedExpected := redirectstore.RedirectDefinitions{
-		"kinder": {ID: "3", Source: "kinder", Target: "new-kinder"},
-		"tachen": {ID: "4", Source: "tachen", Target: "new-tachen"},
+		"/redirects-test-de-01": {ID: "1", ContentID: "1", Source: "/redirects-test-de-01", Target: "/redirects-test-de-03", RedirectionType: redirectstore.Automatic},
+		"/redirects-test-de-02": {ID: "2", ContentID: "1", Source: "/redirects-test-de-02", Target: "/redirects-test-de-03", RedirectionType: redirectstore.Automatic},
 	}
 
-	deletedExpected := []redirectstore.RedirectSource{
-		"kids",
-		"damen",
-	}
-	updatedDefs, deletedSources := ConsolidateRedirectDefinitions(zap.L(), new)
-	fmt.Print(deletedSources)
+	deletedExpected := []redirectstore.RedirectSource{}
+
+	updatedDefs, deletedSources := ConsolidateRedirectDefinitions(
+		zap.L(),
+		newRedirects,
+		oldRedirects,
+		currentNodes,
+	)
 	assert.Equal(t, len(updatedExpected), len(updatedDefs))
 	assert.Equal(t, len(deletedExpected), len(deletedSources))
 

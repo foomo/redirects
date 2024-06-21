@@ -3,9 +3,8 @@ package redirectrepository
 import (
 	"context"
 
-	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
-
 	keelmongo "github.com/foomo/keel/persistence/mongo"
+	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -21,8 +20,8 @@ type (
 		Insert(ctx context.Context, def *redirectstore.RedirectDefinition) error
 		Update(ctx context.Context, def *redirectstore.RedirectDefinition) error
 		UpsertMany(ctx context.Context, defs *redirectstore.RedirectDefinitions) error
-		Delete(ctx context.Context, source, dimension string) error
-		DeleteMany(ctx context.Context, sources []redirectstore.RedirectSource, dimension string) error
+		Delete(ctx context.Context, id redirectstore.EntityID) error
+		DeleteMany(ctx context.Context, ids []redirectstore.EntityID) error
 	}
 	BaseRedirectsDefinitionRepository struct {
 		l          *zap.Logger
@@ -68,14 +67,19 @@ func (rs BaseRedirectsDefinitionRepository) FindOne(ctx context.Context, id, sou
 	return &result, nil
 }
 
-// TODO: DraganaB check if we need to search by id
 func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, source, dimension string) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
 	var result []*redirectstore.RedirectDefinition
-	// Create a regex pattern for fuzzy match
-	pattern := primitive.Regex{Pattern: source, Options: "i"} // "i" for case-insensitive match
+	filter := bson.M{}
 
-	// Create a filter with the regex pattern
-	filter := bson.M{"source": primitive.Regex{Pattern: pattern.Pattern, Options: pattern.Options}, "dimension": dimension}
+	if source != "" {
+		// Create a regex pattern for fuzzy match
+		pattern := primitive.Regex{Pattern: source, Options: "i"} // "i" for case-insensitive match
+		filter["source"] = primitive.Regex{Pattern: pattern.Pattern, Options: pattern.Options}
+	}
+
+	if dimension != "" {
+		filter["dimension"] = dimension
+	}
 
 	findErr := rs.collection.Find(ctx, filter, &result)
 	var retResult = make(map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition)
@@ -109,13 +113,15 @@ func (rs BaseRedirectsDefinitionRepository) FindAll(ctx context.Context) (map[re
 }
 
 func (rs BaseRedirectsDefinitionRepository) Insert(ctx context.Context, def *redirectstore.RedirectDefinition) error {
-	def.ID = redirectstore.RedirectID(redirectstore.NewEntityID())
+	if def.ID == "" {
+		def.ID = redirectstore.EntityID(redirectstore.NewEntityID())
+	}
 	_, err := rs.collection.Col().InsertOne(ctx, def)
 	return err
 }
 
 func (rs BaseRedirectsDefinitionRepository) Update(ctx context.Context, def *redirectstore.RedirectDefinition) error {
-	filter := bson.D{{Key: "source", Value: def.Source}, {Key: "dimension", Value: def.Dimension}}
+	filter := bson.D{{Key: "id", Value: def.ID}}
 	update := bson.D{{Key: "$set", Value: def}}
 
 	_, err := rs.collection.Col().UpdateOne(ctx, filter, update)
@@ -128,11 +134,13 @@ func (rs BaseRedirectsDefinitionRepository) UpsertMany(ctx context.Context, defs
 
 	var operations []mongo.WriteModel
 
-	for source, def := range *defs {
+	for _, def := range *defs {
+		if def.ID == "" {
+			def.ID = redirectstore.EntityID(redirectstore.NewEntityID())
+		}
 		operation := mongo.NewUpdateOneModel()
 		operation.SetFilter(bson.M{
-			"source":    source,
-			"dimension": def.Dimension,
+			"id": def.ID,
 		})
 		operation.SetUpdate(bson.D{{Key: "$set", Value: def}})
 		operation.SetUpsert(true)
@@ -150,14 +158,14 @@ func (rs BaseRedirectsDefinitionRepository) UpsertMany(ctx context.Context, defs
 	return err
 }
 
-func (rs BaseRedirectsDefinitionRepository) Delete(ctx context.Context, source, dimension string) error {
-	filter := bson.D{{Key: "source", Value: source}, {Key: "dimension", Value: dimension}}
+func (rs BaseRedirectsDefinitionRepository) Delete(ctx context.Context, id redirectstore.EntityID) error {
+	filter := bson.D{{Key: "id", Value: id}}
 	_, err := rs.collection.Col().DeleteOne(ctx, filter)
 	return err
 }
 
-func (rs BaseRedirectsDefinitionRepository) DeleteMany(ctx context.Context, sources []redirectstore.RedirectSource, dimension string) error {
-	filter := bson.M{"source": bson.M{"$in": sources}, "dimension": dimension}
+func (rs BaseRedirectsDefinitionRepository) DeleteMany(ctx context.Context, ids []redirectstore.EntityID) error {
+	filter := bson.M{"id": bson.M{"$in": ids}}
 	_, err := rs.collection.Col().DeleteMany(ctx, filter)
 	return err
 }

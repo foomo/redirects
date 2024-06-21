@@ -1,7 +1,6 @@
 package redirectstore
 
 type RedirectSource string
-type RedirectID string
 type RedirectTarget string
 type RedirectRequest string
 type RedirectionType string
@@ -14,7 +13,8 @@ const (
 )
 
 type RedirectDefinition struct {
-	ID              RedirectID      `json:"id" bson:"id"`
+	ID              EntityID        `json:"id" bson:"id"`
+	ContentID       string          `json:"contentId" bson:"contentId"`
 	Source          RedirectSource  `json:"source" bson:"source"`
 	Target          RedirectTarget  `json:"target" bson:"target"`
 	Code            RedirectCode    `json:"code" bson:"code"`
