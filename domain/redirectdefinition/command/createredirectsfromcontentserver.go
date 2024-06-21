@@ -20,8 +20,10 @@ import (
 type (
 	// CreateRedirects command
 	CreateRedirects struct {
-		OldState map[string]*content.RepoNode `json:"oldState"`
-		NewState map[string]*content.RepoNode `json:"newState"`
+		OldState          map[string]*content.RepoNode        `json:"oldState"`
+		NewState          map[string]*content.RepoNode        `json:"newState"`
+		RedirectsToUpsert []*redirectstore.RedirectDefinition `json:"redirectsToUpsert,omitempty"`
+		RedirectsToDelete []redirectstore.EntityID            `json:"redirectsToDeletee,omitempty"`
 	}
 	// CreateRedirectsHandlerFn handler
 	CreateRedirectsHandlerFn func(ctx context.Context, l *zap.Logger, cmd CreateRedirects) error
@@ -32,64 +34,20 @@ type (
 // CreateRedirectsHandler ...
 func CreateRedirectsHandler(repo redirectrepository.RedirectsDefinitionRepository) CreateRedirectsHandlerFn {
 	return func(ctx context.Context, l *zap.Logger, cmd CreateRedirects) error {
-		l.Info("calling create automatic redirects")
-
-		dimensions := map[string]struct{}{}
-		for dim := range cmd.OldState {
-			dimensions[dim] = struct{}{}
-		}
-
-		for dim := range cmd.NewState {
-			dimensions[dim] = struct{}{}
-		}
-
-		for dimension := range dimensions {
-			oldNodeMap := redirectdefinitionutils.CreateFlatRepoNodeMap(cmd.OldState[dimension], make(map[string]*content.RepoNode))
-			newNodeMap := redirectdefinitionutils.CreateFlatRepoNodeMap(cmd.NewState[dimension], make(map[string]*content.RepoNode))
-
-			newDefinitions, err := redirectdefinitionutils.AutoCreateRedirectDefinitions(
-				l,
-				oldNodeMap,
-				newNodeMap,
-				redirectstore.Dimension(dimension),
-			)
-			if err != nil {
-				keellog.WithError(l, err).Error("failed to execute auto create redirects")
-				return err
-			}
-
-			// get all current definitions for the dimension from the database
-			currentDefinitions, err := repo.FindMany(ctx, "", dimension)
-			if err != nil {
-				l.Error("failed to fetch existing definitions", zap.Error(err))
-				return err
-			}
-
-			consolidatedDefs, deletedIDs := redirectdefinitionutils.ConsolidateRedirectDefinitions(
-				l,
-				newDefinitions,
-				currentDefinitions,
-				newNodeMap,
-			)
-
-			l.Info("consolidated definitions", zap.Any("consolidatedDefs", consolidatedDefs), zap.Any("deletedIDs", deletedIDs))
-
-			if len(consolidatedDefs) > 0 {
-				updateErr := repo.UpsertMany(ctx, &consolidatedDefs)
-				if updateErr != nil {
-					keellog.WithError(l, updateErr).Error("failed to updated definitions")
-					return updateErr
-				}
-			}
-			if len(deletedIDs) > 0 {
-				deleteErr := repo.DeleteMany(ctx, deletedIDs)
-				if deleteErr != nil {
-					keellog.WithError(l, deleteErr).Error("failed to delete definitions")
-					return deleteErr
-				}
+		if len(cmd.RedirectsToUpsert) > 0 {
+			updateErr := repo.UpsertMany(ctx, cmd.RedirectsToUpsert)
+			if updateErr != nil {
+				keellog.WithError(l, updateErr).Error("failed to updated definitions")
+				return updateErr
 			}
 		}
-
+		if len(cmd.RedirectsToDelete) > 0 {
+			deleteErr := repo.DeleteMany(ctx, cmd.RedirectsToDelete)
+			if deleteErr != nil {
+				keellog.WithError(l, deleteErr).Error("failed to delete definitions")
+				return deleteErr
+			}
+		}
 		l.Info("successfully finished create automatic redirects")
 		return nil
 	}
@@ -123,11 +81,79 @@ func CreateRedirectsPublishMiddleware(updateSignal *redirectnats.UpdateSignal) C
 			if err != nil {
 				return err
 			}
+			l.Info("publishing update signal")
 			err = updateSignal.Publish()
 			if err != nil {
 				return err
 			}
 			return nil
+		}
+	}
+}
+
+// CreateRedirectsAutoCreateMiddleware ...
+func CreateRedirectsAutoCreateMiddleware() CreateRedirectsMiddlewareFn {
+	return func(next CreateRedirectsHandlerFn) CreateRedirectsHandlerFn {
+		return func(ctx context.Context, l *zap.Logger, cmd CreateRedirects) error {
+			l.Info("auto creating redirects")
+			dimensions := map[string]struct{}{}
+			for dim := range cmd.OldState {
+				dimensions[dim] = struct{}{}
+			}
+
+			for dim := range cmd.NewState {
+				dimensions[dim] = struct{}{}
+			}
+
+			for dimension := range dimensions {
+				oldNodeMap := redirectdefinitionutils.CreateFlatRepoNodeMap(cmd.OldState[dimension], make(map[string]*content.RepoNode))
+				newNodeMap := redirectdefinitionutils.CreateFlatRepoNodeMap(cmd.NewState[dimension], make(map[string]*content.RepoNode))
+
+				newDefinitions, err := redirectdefinitionutils.AutoCreateRedirectDefinitions(
+					l,
+					oldNodeMap,
+					newNodeMap,
+					redirectstore.Dimension(dimension),
+				)
+				if err != nil {
+					keellog.WithError(l, err).Error("failed to execute auto create redirects")
+					return err
+				}
+				cmd.RedirectsToUpsert = append(cmd.RedirectsToUpsert, newDefinitions...)
+			}
+			return next(ctx, l, cmd)
+		}
+	}
+}
+
+// CreateRedirectsConsolidateMiddleware ...
+func CreateRedirectsConsolidateMiddleware(repo redirectrepository.RedirectsDefinitionRepository) CreateRedirectsMiddlewareFn {
+	return func(next CreateRedirectsHandlerFn) CreateRedirectsHandlerFn {
+		return func(ctx context.Context, l *zap.Logger, cmd CreateRedirects) error {
+			l.Info("consolidating redirect definitions")
+			redirectsToUpsert := []*redirectstore.RedirectDefinition{}
+			redirectsToDelete := []redirectstore.EntityID{}
+
+			// get all current definitions for the dimension from the database
+			allCurrentDefinitions, err := repo.FindAll(ctx)
+			if err != nil {
+				l.Error("failed to fetch existing definitions", zap.Error(err))
+				return err
+			}
+			for dimension, currentDefinitions := range allCurrentDefinitions {
+				defs, ids := redirectdefinitionutils.ConsolidateRedirectDefinitions(
+					l,
+					cmd.RedirectsToUpsert,
+					currentDefinitions,
+					redirectdefinitionutils.CreateFlatRepoNodeMap(cmd.NewState[string(dimension)], make(map[string]*content.RepoNode)),
+				)
+				redirectsToUpsert = append(redirectsToUpsert, defs...)
+				redirectsToDelete = append(redirectsToDelete, ids...)
+			}
+			cmd.RedirectsToUpsert = redirectsToUpsert
+			cmd.RedirectsToDelete = redirectsToDelete
+
+			return next(ctx, l, cmd)
 		}
 	}
 }

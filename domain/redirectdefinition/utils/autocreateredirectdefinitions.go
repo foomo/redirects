@@ -14,18 +14,18 @@ func AutoCreateRedirectDefinitions(
 	l *zap.Logger,
 	oldMap, newMap map[string]*content.RepoNode,
 	dimension redirectstore.Dimension,
-) (redirectstore.RedirectDefinitions, error) {
+) ([]*redirectstore.RedirectDefinition, error) {
 	if len(oldMap) == 0 || len(newMap) == 0 {
 		return nil, errors.New("calling auto create difference with nil arguments")
 	}
-	var redirects = make(redirectstore.RedirectDefinitions)
+	redirects := []*redirectstore.RedirectDefinition{}
 
 	for newNodeID, newNode := range newMap {
 		oldNode, ok := oldMap[newNodeID]
 		if ok {
 			if oldNode.URI != newNode.URI {
 				rd := &redirectstore.RedirectDefinition{
-					ID:              redirectstore.EntityID(redirectstore.NewEntityID()),
+					ID:              redirectstore.NewEntityID(),
 					ContentID:       newNodeID,
 					Source:          redirectstore.RedirectSource(oldNode.URI),
 					Target:          redirectstore.RedirectTarget(newNode.URI),
@@ -35,7 +35,7 @@ func AutoCreateRedirectDefinitions(
 					RedirectionType: redirectstore.Automatic,
 					Dimension:       dimension,
 				}
-				redirects[rd.Source] = rd
+				redirects = append(redirects, rd)
 			}
 		}
 	}

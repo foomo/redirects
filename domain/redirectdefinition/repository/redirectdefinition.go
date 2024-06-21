@@ -19,7 +19,7 @@ type (
 		FindAll(ctx context.Context) (defs map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, err error)
 		Insert(ctx context.Context, def *redirectstore.RedirectDefinition) error
 		Update(ctx context.Context, def *redirectstore.RedirectDefinition) error
-		UpsertMany(ctx context.Context, defs *redirectstore.RedirectDefinitions) error
+		UpsertMany(ctx context.Context, defs []*redirectstore.RedirectDefinition) error
 		Delete(ctx context.Context, id redirectstore.EntityID) error
 		DeleteMany(ctx context.Context, ids []redirectstore.EntityID) error
 	}
@@ -130,13 +130,13 @@ func (rs BaseRedirectsDefinitionRepository) Update(ctx context.Context, def *red
 }
 
 // maybe will be needed for migrating manual redirections?
-func (rs BaseRedirectsDefinitionRepository) UpsertMany(ctx context.Context, defs *redirectstore.RedirectDefinitions) error {
+func (rs BaseRedirectsDefinitionRepository) UpsertMany(ctx context.Context, defs []*redirectstore.RedirectDefinition) error {
 
 	var operations []mongo.WriteModel
 
-	for _, def := range *defs {
+	for _, def := range defs {
 		if def.ID == "" {
-			def.ID = redirectstore.EntityID(redirectstore.NewEntityID())
+			def.ID = redirectstore.NewEntityID()
 		}
 		operation := mongo.NewUpdateOneModel()
 		operation.SetFilter(bson.M{
