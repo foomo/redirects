@@ -1,4 +1,4 @@
-package redirectdefinition
+package redirectdefinitionutils
 
 import (
 	_ "embed"
@@ -30,13 +30,118 @@ func Test_AutoCreateRedirectDefinitionsParse(t *testing.T) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	redirects, err := AutoCreateRedirectDefinitions(zap.L(), p["de"], pChanged["de"])
+	redirects, err := AutoCreateRedirectDefinitions(
+		zap.L(),
+		CreateFlatRepoNodeMap(p["de"], make(map[string]*content.RepoNode)),
+		CreateFlatRepoNodeMap(pChanged["de"], make(map[string]*content.RepoNode)),
+		"HMD-de",
+	)
 	assert.NoError(t, err)
 	assert.Equal(t, 12, len(redirects))
 }
 
+func Test_AutoCreateRedirectDefinitionsCoverAll(t *testing.T) {
+	oldNodes := &content.RepoNode{
+		ID:   "1",
+		URI:  "/main",
+		Name: "Root",
+		Nodes: map[string]*content.RepoNode{
+			"2": {
+				ID:    "2",
+				URI:   "/main/herren",
+				Name:  "Node2",
+				Nodes: nil,
+			},
+			"3": {
+				ID:   "3",
+				URI:  "/main/damen/kleidung",
+				Name: "Node3",
+				Nodes: map[string]*content.RepoNode{
+					"4": {
+						ID:    "4",
+						URI:   "/main/damen/kleidung/schuhe",
+						Name:  "Node4",
+						Nodes: nil,
+					},
+					"5": {
+						ID:    "5",
+						URI:   "/main/damen/kleidung/roecke",
+						Name:  "Node5",
+						Nodes: nil,
+					},
+				},
+			},
+			"6": {
+				ID:   "6",
+				URI:  "/main/kinder",
+				Name: "Node6",
+				Nodes: map[string]*content.RepoNode{
+					"7": {
+						ID:    "7",
+						URI:   "/main/kinder/schuhe",
+						Name:  "Node4",
+						Nodes: nil,
+					},
+				},
+			},
+			"8": {
+				ID:    "8",
+				URI:   "/main/sport",
+				Name:  "Node8",
+				Nodes: nil,
+			},
+		},
+	}
+	newNodes := &content.RepoNode{
+		ID:   "1",
+		URI:  "/main",
+		Name: "Root",
+		Nodes: map[string]*content.RepoNode{
+			"2": {
+				ID:   "2",
+				URI:  "/main/herren",
+				Name: "Node2",
+				Nodes: map[string]*content.RepoNode{
+					"7": {
+						ID:    "7",
+						URI:   "/main/herren/schuhe",
+						Name:  "Node7",
+						Nodes: nil,
+					},
+				},
+			},
+			"3": {
+				ID:   "3",
+				URI:  "/main/damen/kleidung",
+				Name: "Node3",
+				Nodes: map[string]*content.RepoNode{
+					"4": {
+						ID:    "4",
+						URI:   "/main/damen/kleidung/schuhe-new",
+						Name:  "Node4",
+						Nodes: nil,
+					},
+				},
+			},
+			"6": {
+				ID:    "6",
+				URI:   "/main/kinder-new",
+				Name:  "Node6",
+				Nodes: nil,
+			},
+		},
+	}
+	redirects, err := AutoCreateRedirectDefinitions(zap.L(),
+		CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
+		CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
+		"HMD-de",
+	)
+	assert.NoError(t, err)
+	assert.Equal(t, 3, len(redirects))
+}
+
 func Test_AutoCreateRedirectDefinitions(t *testing.T) {
-	old := &content.RepoNode{
+	oldNodes := &content.RepoNode{
 		ID:   "1",
 		URI:  "/main",
 		Name: "Root",
@@ -68,7 +173,7 @@ func Test_AutoCreateRedirectDefinitions(t *testing.T) {
 			},
 		},
 	}
-	new := &content.RepoNode{
+	newNodes := &content.RepoNode{
 		ID:   "1",
 		URI:  "/main",
 		Name: "Root",
@@ -94,7 +199,12 @@ func Test_AutoCreateRedirectDefinitions(t *testing.T) {
 			},
 		},
 	}
-	redirects, err := AutoCreateRedirectDefinitions(zap.L(), old, new)
+	redirects, err := AutoCreateRedirectDefinitions(
+		zap.L(),
+		CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
+		CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
+		"HMD-de",
+	)
 	if err != nil {
 		assert.Error(t, err)
 	}
@@ -103,7 +213,7 @@ func Test_AutoCreateRedirectDefinitions(t *testing.T) {
 }
 
 func Test_AutoCreateRedirectDefinitionsExg1(t *testing.T) {
-	old := &content.RepoNode{
+	oldNodes := &content.RepoNode{
 		ID:   "1",
 		URI:  "/main",
 		Name: "Root",
@@ -142,7 +252,7 @@ func Test_AutoCreateRedirectDefinitionsExg1(t *testing.T) {
 			},
 		},
 	}
-	new := &content.RepoNode{
+	newNodes := &content.RepoNode{
 		ID:   "1",
 		URI:  "/main",
 		Name: "Root",
@@ -181,7 +291,12 @@ func Test_AutoCreateRedirectDefinitionsExg1(t *testing.T) {
 			},
 		},
 	}
-	redirects, err := AutoCreateRedirectDefinitions(zap.L(), old, new)
+	redirects, err := AutoCreateRedirectDefinitions(
+		zap.L(),
+		CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
+		CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
+		"HMD-de",
+	)
 	if err != nil {
 		assert.Error(t, err)
 	}
@@ -190,7 +305,7 @@ func Test_AutoCreateRedirectDefinitionsExg1(t *testing.T) {
 }
 
 func Test_AutoCreateRedirectDefinitionsExg2(t *testing.T) {
-	old := &content.RepoNode{
+	oldNodes := &content.RepoNode{
 		ID:   "1",
 		URI:  "/main",
 		Name: "Root",
@@ -229,7 +344,7 @@ func Test_AutoCreateRedirectDefinitionsExg2(t *testing.T) {
 			},
 		},
 	}
-	new := &content.RepoNode{
+	newNodes := &content.RepoNode{
 		ID:   "1",
 		URI:  "/main",
 		Name: "Root",
@@ -268,7 +383,12 @@ func Test_AutoCreateRedirectDefinitionsExg2(t *testing.T) {
 			},
 		},
 	}
-	redirects, err := AutoCreateRedirectDefinitions(zap.L(), old, new)
+	redirects, err := AutoCreateRedirectDefinitions(
+		zap.L(),
+		CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
+		CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
+		"HMD-de",
+	)
 	if err != nil {
 		assert.Error(t, err)
 	}
@@ -277,7 +397,7 @@ func Test_AutoCreateRedirectDefinitionsExg2(t *testing.T) {
 }
 
 func Test_AutoCreateRedirectDefinitionsExg3(t *testing.T) {
-	old := &content.RepoNode{
+	oldNodes := &content.RepoNode{
 		ID:   "1",
 		URI:  "/main",
 		Name: "Root",
@@ -316,7 +436,7 @@ func Test_AutoCreateRedirectDefinitionsExg3(t *testing.T) {
 			},
 		},
 	}
-	new := &content.RepoNode{
+	newNodes := &content.RepoNode{
 		ID:   "1",
 		URI:  "/main",
 		Name: "Root",
@@ -355,7 +475,12 @@ func Test_AutoCreateRedirectDefinitionsExg3(t *testing.T) {
 			},
 		},
 	}
-	redirects, err := AutoCreateRedirectDefinitions(zap.L(), old, new)
+	redirects, err := AutoCreateRedirectDefinitions(
+		zap.L(),
+		CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
+		CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
+		"HMD-de",
+	)
 	if err != nil {
 		assert.Error(t, err)
 	}
@@ -364,17 +489,27 @@ func Test_AutoCreateRedirectDefinitionsExg3(t *testing.T) {
 }
 
 func Test_AutoCreateRedirectDefinitionsEmptyAndNilArgs(t *testing.T) {
-	old := &content.RepoNode{}
-	new := &content.RepoNode{}
-	redirects, err := AutoCreateRedirectDefinitions(zap.L(), old, new)
+	oldNodes := &content.RepoNode{}
+	newNodes := &content.RepoNode{}
+	redirects, err := AutoCreateRedirectDefinitions(
+		zap.L(),
+		CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
+		CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
+		"HMD-de",
+	)
 	if err != nil {
 		fmt.Print(err)
 	}
 	assert.NoError(t, err)
 	assert.Equal(t, len(redirects), 0)
-	old = nil
-	new = nil
-	redirects, err = AutoCreateRedirectDefinitions(zap.L(), old, new)
+	oldNodes = nil
+	newNodes = nil
+	redirects, err = AutoCreateRedirectDefinitions(
+		zap.L(),
+		CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
+		CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
+		"HMD-de",
+	)
 	assert.Error(t, err)
 	assert.Equal(t, len(redirects), 0)
 }
