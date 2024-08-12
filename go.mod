@@ -4,9 +4,7 @@ go 1.20
 
 require (
 	github.com/foomo/contentserver v1.10.2
-	github.com/foomo/gotsrpc/v2 v2.7.2
-	github.com/google/uuid v1.3.0
-	github.com/nats-io/nats.go v1.24.0
+	github.com/foomo/gotsrpc/v2 v2.7.3
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/zap v1.26.0
@@ -47,8 +45,8 @@ require (
 	github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d // indirect
 	go.mongodb.org/mongo-driver v1.11.9
 	go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo v0.32.0
-	go.opentelemetry.io/otel v1.21.0 // indirect
-	go.opentelemetry.io/otel/trace v1.21.0
+	go.opentelemetry.io/otel v1.7.0 // indirect
+	go.opentelemetry.io/otel/trace v1.7.0
 	golang.org/x/crypto v0.12.0 // indirect
 	golang.org/x/sync v0.3.0 // indirect
 	golang.org/x/text v0.12.0 // indirect
