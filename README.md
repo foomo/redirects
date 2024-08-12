@@ -47,64 +47,52 @@ The redirects service provides an API that the frontend and the site-gateway ser
 
   ##### CreateRedirectsFromContentserverexport
 
-    ```go
-    // CreateRedirectsFromContentserverexport creates redirects from contentserverexport
-    func (rs *Service) CreateRedirectsFromContentserverexport(
-      _ http.ResponseWriter,
-      r *http.Request,
-      old,
-      new map[string]*content.RepoNode,
-    ) error
-    ```
-
-  ##### CreateRedirectsFromContentserverexport
-
-    ```go
-    // CreateRedirectsFromContentserverexport creates redirects from contentserverexport
-    func (rs *Service) CreateRedirectsFromContentserverexport(
-      _ http.ResponseWriter,
-      r *http.Request,
-      old,
-      new map[string]*content.RepoNode,
-    ) error
-    ```
+  ```go
+  func (rs *Service) CreateRedirectsFromContentserverexport(
+    _ http.ResponseWriter,
+    r *http.Request,
+    old,
+    new map[string]*content.RepoNode,
+  ) error
+  ```
+  Creates redirects from contentserverexport based on old/new state comparison.
 
   ##### GetRedirects
 
-    ```go
-    func (rs *Service) GetRedirects(_ http.ResponseWriter, r *http.Request) (map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error)
-    ```
-    Returns all redirects.
+  ```go
+  func (rs *Service) GetRedirects(_ http.ResponseWriter, r *http.Request) (map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error)
+  ```
+  Returns all redirects.
 
 #### Public (used by frontend)
 
   ##### Search
 
-    ```go
-    func (rs *Service) Search(_ http.ResponseWriter, r *http.Request, locale, path string) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, *redirectstore.RedirectDefinitionError)
-    ```
-    Search for a redirect.
+  ```go
+  func (rs *Service) Search(_ http.ResponseWriter, r *http.Request, locale, path string) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, *redirectstore.RedirectDefinitionError)
+  ```
+  Search for a redirect.
 
   ##### Create
 
-    ```go
-    func (rs *Service) Create(_ http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition, locale string) (redirectstore.EntityID, *redirectstore.RedirectDefinitionError)
-    ```
-    Create a redirect.
+  ```go
+  func (rs *Service) Create(_ http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition, locale string) (redirectstore.EntityID, *redirectstore.RedirectDefinitionError)
+  ```
+  Create a redirect.
 
   ##### Delete
 
-    ```go
-    func (rs *Service) Delete(_ http.ResponseWriter, r *http.Request, id string) *redirectstore.RedirectDefinitionError
-    ```
-    Delete a redirect.
+  ```go
+  func (rs *Service) Delete(_ http.ResponseWriter, r *http.Request, id string) *redirectstore.RedirectDefinitionError
+  ```
+  Delete a redirect.
 
   ##### Update
 
-    ```go
-    func (rs *Service) Update(_ http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition) *redirectstore.RedirectDefinitionError
-    ```
-    Update a redirect.
+  ```go
+  func (rs *Service) Update(_ http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition) *redirectstore.RedirectDefinitionError
+  ```
+  Update a redirect.
 
 ## Usage
 
