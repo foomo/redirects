@@ -8,90 +8,51 @@ import (
 	"go.uber.org/zap"
 )
 
-var (
-	nilError = "calling auto create difference with nil arg"
-)
-
-func AutoCreateRedirectDefinitions(l *zap.Logger, old, new *content.RepoNode) (redirectstore.RedirectDefinitions, error) {
-	l.Info("calling auto create difference between old and new repo node state")
-	if old == nil || new == nil {
-		l.Error(nilError)
-		return nil, errors.New(nilError)
+// AutoCreateRedirectDefinitions generates automatic redirects based on the difference between the old and new content tree.
+// find new.ID to old.ID and check if the URI is different, if it is different, create a redirect
+func AutoCreateRedirectDefinitions(
+	l *zap.Logger,
+	oldMap, newMap map[string]*content.RepoNode,
+	dimension redirectstore.Dimension,
+) ([]*redirectstore.RedirectDefinition, error) {
+	if len(oldMap) == 0 || len(newMap) == 0 {
+		return nil, errors.New("calling auto create difference with nil arguments")
 	}
-	var redirects = make(redirectstore.RedirectDefinitions)
-	var newTree = new
-	var generateRedirects func(old, new *content.RepoNode)
+	redirects := []*redirectstore.RedirectDefinition{}
 
-	generateRedirects = func(old, new *content.RepoNode) {
-		sourceURI := old.URI
-		targetURI := new.URI
-		if sourceURI != targetURI {
-			rd := &redirectstore.RedirectDefinition{
-				Source:         redirectstore.RedirectSource(sourceURI),
-				Target:         redirectstore.RedirectTarget(targetURI),
-				Code:           301,
-				RespectParams:  true,
-				TransferParams: true,
-			}
-			redirects[rd.Source] = rd
-		}
-		for key, oldchild := range old.Nodes {
-			if newchild, ok := new.Nodes[key]; ok {
-				generateRedirects(oldchild, newchild)
-			} else {
-				findInNewTree := FindNodeById(newTree, key)
-				if findInNewTree != nil {
-					generateRedirects(oldchild, findInNewTree)
-				} else {
-					found := false
-					for _, redirect := range redirects {
-						if string(redirect.Source) == oldchild.URI {
-							found = true
-							break
-						}
-					}
-					if !found {
-						rd := &redirectstore.RedirectDefinition{
-							Source:         redirectstore.RedirectSource(oldchild.URI),
-							Target:         "",
-							Code:           301,
-							RespectParams:  true,
-							TransferParams: true,
-						}
-						redirects[rd.Source] = rd
-					}
+	for newNodeID, newNode := range newMap {
+		oldNode, ok := oldMap[newNodeID]
+		if ok {
+			if oldNode.URI != newNode.URI {
+				rd := &redirectstore.RedirectDefinition{
+					ID:              redirectstore.NewEntityID(),
+					ContentID:       newNodeID,
+					Source:          redirectstore.RedirectSource(oldNode.URI),
+					Target:          redirectstore.RedirectTarget(newNode.URI),
+					Code:            301,
+					RespectParams:   true,
+					TransferParams:  true,
+					RedirectionType: redirectstore.Automatic,
+					Dimension:       dimension,
 				}
+				redirects = append(redirects, rd)
 			}
 		}
 	}
-	// Start generating redirects
-	generateRedirects(old, new)
+
 	return redirects, nil
 }
 
-// GetAllNodes recursively retrieves all nodes from the tree.
-func GetAllNodes(node *content.RepoNode, nodesList []*content.RepoNode) []*content.RepoNode {
+// CreateFlatRepoNodeMap recursively retrieves all nodes from the tree and returns them in a flat map.
+func CreateFlatRepoNodeMap(node *content.RepoNode, nodeMap map[string]*content.RepoNode) map[string]*content.RepoNode {
 	if node == nil {
-		return nodesList
+		return nodeMap
 	}
 	// Add the current node to the list.
-	nodesList = append(nodesList, node)
+	nodeMap[node.ID] = node
 	// Recursively process child nodes.
 	for _, child := range node.Nodes {
-		nodesList = GetAllNodes(child, nodesList)
+		nodeMap = CreateFlatRepoNodeMap(child, nodeMap)
 	}
-	return nodesList
-}
-
-func FindNodeById(root *content.RepoNode, id string) *content.RepoNode {
-	if root.ID == id {
-		return root
-	}
-	for _, child := range root.Nodes {
-		found := FindNodeById(child, id)
-		if found != nil {
-			return found
-		}
-	}
-	return nil
+	return nodeMap
 }
