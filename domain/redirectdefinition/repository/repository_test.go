@@ -39,8 +39,8 @@ func TestGetAllRedirects(t *testing.T) {
 	if err != nil {
 		fmt.Print(err)
 	}
-	redirectDefinitions, err := repo.FindAll(context.Background())
-	assert.Equal(t, 1, len(*redirectDefinitions))
+	redirectDefinitions, err := repo.FindAll(context.Background(), false)
+	assert.Equal(t, 1, len(redirectDefinitions))
 	assert.NoError(t, err)
 
 }
@@ -61,7 +61,7 @@ func TestGenerateAutoRedirects(t *testing.T) {
 		fmt.Print(err)
 	}
 
-	api, err := redirectapi.NewAPI(l, *repo)
+	api, err := redirectapi.NewAPI(l, *repo, nil)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -84,7 +84,7 @@ func TestGenerateAutoRedirects(t *testing.T) {
 		fmt.Println(err)
 	}
 
-	redirectDefinitions, err := repo.FindAll(context.Background())
-	assert.Equal(t, 116, len(*redirectDefinitions))
+	redirectDefinitions, err := repo.FindAll(context.Background(), false)
+	assert.Equal(t, 116, len(redirectDefinitions["de"]))
 	assert.NoError(t, err)
 }

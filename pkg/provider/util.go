@@ -1,39 +1,20 @@
 package redirectprovider
 
 import (
+	"net/http"
 	"net/url"
-	"path/filepath"
 	"strings"
-
-	store "github.com/foomo/redirects/domain/redirectdefinition/store"
 )
 
-func extractLegacyID(request store.RedirectRequest) (string, error) {
-	url, err := url.Parse(string(request))
+func normalizeRedirectRequest(r *http.Request) (*http.Request, error) {
+	request := r.Clone(r.Context())
+	request.URL.Path = strings.TrimSuffix(request.URL.Path, "/")
+	query, err := normalizeQueryString(request.URL.RawQuery)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-
-	_, fileName := filepath.Split(url.Path)
-	legacyID := strings.TrimSuffix(fileName, filepath.Ext(fileName))
-	return legacyID, nil
-}
-
-func normalizeRedirectRequest(request store.RedirectRequest) (store.RedirectRequest, error) {
-	url, err := url.Parse(string(request))
-	if err != nil {
-		return "", err
-	}
-
-	url.Path = strings.TrimSuffix(url.Path, "/")
-
-	query, err := normalizeQueryString(url.RawQuery)
-	if err != nil {
-		return "", err
-	}
-	url.RawQuery = query
-
-	return store.RedirectRequest(url.RequestURI()), nil
+	request.URL.RawQuery = query
+	return request, nil
 }
 
 func normalizeQueryString(rawQueryString string) (string, error) {

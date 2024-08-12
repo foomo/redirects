@@ -30,13 +30,18 @@ func Test_AutoCreateRedirectDefinitionsParse(t *testing.T) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	redirects, err := AutoCreateRedirectDefinitions(zap.L(), p["de"], pChanged["de"])
+	redirects, err := AutoCreateRedirectDefinitions(
+		zap.L(),
+		CreateFlatRepoNodeMap(p["de"], make(map[string]*content.RepoNode)),
+		CreateFlatRepoNodeMap(pChanged["de"], make(map[string]*content.RepoNode)),
+		"HMD-de",
+	)
 	assert.NoError(t, err)
 	assert.Equal(t, 12, len(redirects))
 }
 
 func Test_AutoCreateRedirectDefinitionsCoverAll(t *testing.T) {
-	old := &content.RepoNode{
+	oldNodes := &content.RepoNode{
 		ID:   "1",
 		URI:  "/main",
 		Name: "Root",
@@ -87,7 +92,7 @@ func Test_AutoCreateRedirectDefinitionsCoverAll(t *testing.T) {
 			},
 		},
 	}
-	new := &content.RepoNode{
+	newNodes := &content.RepoNode{
 		ID:   "1",
 		URI:  "/main",
 		Name: "Root",
@@ -100,7 +105,7 @@ func Test_AutoCreateRedirectDefinitionsCoverAll(t *testing.T) {
 					"7": {
 						ID:    "7",
 						URI:   "/main/herren/schuhe",
-						Name:  "Node4",
+						Name:  "Node7",
 						Nodes: nil,
 					},
 				},
@@ -126,16 +131,17 @@ func Test_AutoCreateRedirectDefinitionsCoverAll(t *testing.T) {
 			},
 		},
 	}
-	redirects, err := AutoCreateRedirectDefinitions(zap.L(), old, new)
-	if err != nil {
-		assert.Error(t, err)
-	}
+	redirects, err := AutoCreateRedirectDefinitions(zap.L(),
+		CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
+		CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
+		"HMD-de",
+	)
 	assert.NoError(t, err)
-	assert.Equal(t, 5, len(redirects))
+	assert.Equal(t, 3, len(redirects))
 }
 
 func Test_AutoCreateRedirectDefinitions(t *testing.T) {
-	old := &content.RepoNode{
+	oldNodes := &content.RepoNode{
 		ID:   "1",
 		URI:  "/main",
 		Name: "Root",
@@ -167,7 +173,7 @@ func Test_AutoCreateRedirectDefinitions(t *testing.T) {
 			},
 		},
 	}
-	new := &content.RepoNode{
+	newNodes := &content.RepoNode{
 		ID:   "1",
 		URI:  "/main",
 		Name: "Root",
@@ -193,7 +199,12 @@ func Test_AutoCreateRedirectDefinitions(t *testing.T) {
 			},
 		},
 	}
-	redirects, err := AutoCreateRedirectDefinitions(zap.L(), old, new)
+	redirects, err := AutoCreateRedirectDefinitions(
+		zap.L(),
+		CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
+		CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
+		"HMD-de",
+	)
 	if err != nil {
 		assert.Error(t, err)
 	}
@@ -202,7 +213,7 @@ func Test_AutoCreateRedirectDefinitions(t *testing.T) {
 }
 
 func Test_AutoCreateRedirectDefinitionsExg1(t *testing.T) {
-	old := &content.RepoNode{
+	oldNodes := &content.RepoNode{
 		ID:   "1",
 		URI:  "/main",
 		Name: "Root",
@@ -241,7 +252,7 @@ func Test_AutoCreateRedirectDefinitionsExg1(t *testing.T) {
 			},
 		},
 	}
-	new := &content.RepoNode{
+	newNodes := &content.RepoNode{
 		ID:   "1",
 		URI:  "/main",
 		Name: "Root",
@@ -280,7 +291,12 @@ func Test_AutoCreateRedirectDefinitionsExg1(t *testing.T) {
 			},
 		},
 	}
-	redirects, err := AutoCreateRedirectDefinitions(zap.L(), old, new)
+	redirects, err := AutoCreateRedirectDefinitions(
+		zap.L(),
+		CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
+		CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
+		"HMD-de",
+	)
 	if err != nil {
 		assert.Error(t, err)
 	}
@@ -289,7 +305,7 @@ func Test_AutoCreateRedirectDefinitionsExg1(t *testing.T) {
 }
 
 func Test_AutoCreateRedirectDefinitionsExg2(t *testing.T) {
-	old := &content.RepoNode{
+	oldNodes := &content.RepoNode{
 		ID:   "1",
 		URI:  "/main",
 		Name: "Root",
@@ -328,7 +344,7 @@ func Test_AutoCreateRedirectDefinitionsExg2(t *testing.T) {
 			},
 		},
 	}
-	new := &content.RepoNode{
+	newNodes := &content.RepoNode{
 		ID:   "1",
 		URI:  "/main",
 		Name: "Root",
@@ -367,7 +383,12 @@ func Test_AutoCreateRedirectDefinitionsExg2(t *testing.T) {
 			},
 		},
 	}
-	redirects, err := AutoCreateRedirectDefinitions(zap.L(), old, new)
+	redirects, err := AutoCreateRedirectDefinitions(
+		zap.L(),
+		CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
+		CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
+		"HMD-de",
+	)
 	if err != nil {
 		assert.Error(t, err)
 	}
@@ -376,7 +397,7 @@ func Test_AutoCreateRedirectDefinitionsExg2(t *testing.T) {
 }
 
 func Test_AutoCreateRedirectDefinitionsExg3(t *testing.T) {
-	old := &content.RepoNode{
+	oldNodes := &content.RepoNode{
 		ID:   "1",
 		URI:  "/main",
 		Name: "Root",
@@ -415,7 +436,7 @@ func Test_AutoCreateRedirectDefinitionsExg3(t *testing.T) {
 			},
 		},
 	}
-	new := &content.RepoNode{
+	newNodes := &content.RepoNode{
 		ID:   "1",
 		URI:  "/main",
 		Name: "Root",
@@ -454,7 +475,12 @@ func Test_AutoCreateRedirectDefinitionsExg3(t *testing.T) {
 			},
 		},
 	}
-	redirects, err := AutoCreateRedirectDefinitions(zap.L(), old, new)
+	redirects, err := AutoCreateRedirectDefinitions(
+		zap.L(),
+		CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
+		CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
+		"HMD-de",
+	)
 	if err != nil {
 		assert.Error(t, err)
 	}
@@ -463,17 +489,27 @@ func Test_AutoCreateRedirectDefinitionsExg3(t *testing.T) {
 }
 
 func Test_AutoCreateRedirectDefinitionsEmptyAndNilArgs(t *testing.T) {
-	old := &content.RepoNode{}
-	new := &content.RepoNode{}
-	redirects, err := AutoCreateRedirectDefinitions(zap.L(), old, new)
+	oldNodes := &content.RepoNode{}
+	newNodes := &content.RepoNode{}
+	redirects, err := AutoCreateRedirectDefinitions(
+		zap.L(),
+		CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
+		CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
+		"HMD-de",
+	)
 	if err != nil {
 		fmt.Print(err)
 	}
 	assert.NoError(t, err)
 	assert.Equal(t, len(redirects), 0)
-	old = nil
-	new = nil
-	redirects, err = AutoCreateRedirectDefinitions(zap.L(), old, new)
+	oldNodes = nil
+	newNodes = nil
+	redirects, err = AutoCreateRedirectDefinitions(
+		zap.L(),
+		CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
+		CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
+		"HMD-de",
+	)
 	assert.Error(t, err)
 	assert.Equal(t, len(redirects), 0)
 }
