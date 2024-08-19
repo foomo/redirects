@@ -21,6 +21,6 @@ type AdminService interface {
 // the service is responsible for the internal endpoints
 // will not be exposed only to other backend services
 type InternalService interface {
-	CreateRedirectsFromContentserverexport(w http.ResponseWriter, r *http.Request, old, new map[string]*content.RepoNode) error
+	CreateRedirectsFromContentserverexport(w http.ResponseWriter, r *http.Request, oldState, newState map[string]*content.RepoNode) error
 	GetRedirects(w http.ResponseWriter, r *http.Request) (map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error)
 }

@@ -50,7 +50,7 @@ func NewBaseRedirectsDefinitionRepository(l *zap.Logger, persistor *keelmongo.Pe
 		),
 	)
 
-	_, err = collection.Col().Indexes().DropOne(context.TODO(), "source_1")
+	_, _ = collection.Col().Indexes().DropOne(context.TODO(), "source_1")
 
 	if cErr != nil {
 		return nil, cErr
@@ -123,7 +123,7 @@ func (rs BaseRedirectsDefinitionRepository) FindAll(ctx context.Context, onlyAct
 
 func (rs BaseRedirectsDefinitionRepository) Insert(ctx context.Context, def *redirectstore.RedirectDefinition) error {
 	if def.ID == "" {
-		def.ID = redirectstore.EntityID(redirectstore.NewEntityID())
+		def.ID = redirectstore.NewEntityID()
 	}
 	_, err := rs.collection.Col().InsertOne(ctx, def)
 	return err
@@ -135,12 +135,10 @@ func (rs BaseRedirectsDefinitionRepository) Update(ctx context.Context, def *red
 
 	_, err := rs.collection.Col().UpdateOne(ctx, filter, update)
 	return err
-
 }
 
 // maybe will be needed for migrating manual redirections?
 func (rs BaseRedirectsDefinitionRepository) UpsertMany(ctx context.Context, defs []*redirectstore.RedirectDefinition) error {
-
 	var operations []mongo.WriteModel
 
 	for _, def := range defs {

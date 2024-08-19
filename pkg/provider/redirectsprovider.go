@@ -54,9 +54,11 @@ func (p *RedirectsProvider) loadRedirects(ctx context.Context) error {
 	redirectDefinitions, err, clientErr := p.redirectsProviderFunc(ctx)
 	if err != nil {
 		return err
-	} else if clientErr != nil {
+	}
+	if clientErr != nil {
 		return clientErr
-	} else if redirectDefinitions != nil {
+	}
+	if redirectDefinitions != nil {
 		p.Lock()
 		p.redirects = redirectDefinitions
 		p.Unlock()
@@ -84,7 +86,7 @@ func (p *RedirectsProvider) Start(ctx context.Context) error {
 	return nil
 }
 
-func (p *RedirectsProvider) Close(ctx context.Context) error {
+func (p *RedirectsProvider) Close(_ context.Context) error {
 	return nil
 }
 
@@ -149,7 +151,6 @@ func (p *RedirectsProvider) Process(r *http.Request) (*store.Redirect, error) {
 
 // matchRedirectDefinition checks if there is a redirect definition matching the request
 func (p *RedirectsProvider) matchRedirectDefinition(r *http.Request, dimension store.Dimension) (*store.RedirectDefinition, error) {
-
 	// 1. full url from cache
 	definition := p.definitionForDimensionAndSource(dimension, store.RedirectSource(r.URL.RequestURI()))
 	if definition != nil {

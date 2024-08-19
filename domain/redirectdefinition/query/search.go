@@ -27,7 +27,7 @@ type (
 
 // SearchHandler ...
 func SearchHandler(repo redirectrepository.RedirectsDefinitionRepository) SearchHandlerFn {
-	return func(ctx context.Context, l *zap.Logger, qry Search) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
+	return func(ctx context.Context, _ *zap.Logger, qry Search) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
 		return repo.FindMany(ctx, string(qry.Source), string(qry.Dimension), qry.OnlyActive)
 	}
 }

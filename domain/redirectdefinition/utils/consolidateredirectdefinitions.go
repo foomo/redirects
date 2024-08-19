@@ -11,12 +11,11 @@ import (
 // * Making list for deleting for definitions with empty target id
 // * If target of one is source to another one, consolidate those into one definition to prevent multiple redirections
 func ConsolidateRedirectDefinitions(
-	l *zap.Logger,
-	new []*redirectstore.RedirectDefinition,
+	_ *zap.Logger,
+	newDefinitions []*redirectstore.RedirectDefinition,
 	current redirectstore.RedirectDefinitions,
 	newNodeMap map[string]*content.RepoNode,
 ) ([]*redirectstore.RedirectDefinition, []redirectstore.EntityID) {
-
 	upsertRedirectDefinitions := []*redirectstore.RedirectDefinition{}
 	deletedIDs := []redirectstore.EntityID{}
 
@@ -33,7 +32,7 @@ func ConsolidateRedirectDefinitions(
 	}
 
 	// iterate over the incoming redirects and add the new redirects to the list that should be upserted
-	for _, redirectDefinition := range new {
+	for _, redirectDefinition := range newDefinitions {
 		upsertRedirectDefinitions = append(upsertRedirectDefinitions, redirectDefinition)
 		// check if the ID of the new redirect is already in the current list of redirects
 		currentDefinitions, ok := currentRedirectsByID[redirectDefinition.ContentID]

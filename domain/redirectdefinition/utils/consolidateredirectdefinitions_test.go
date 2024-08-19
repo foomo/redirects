@@ -1,10 +1,11 @@
-package redirectdefinitionutils
+package redirectdefinitionutils_test
 
 import (
 	"testing"
 
 	"github.com/foomo/contentserver/content"
 	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
+	rdutils "github.com/foomo/redirects/domain/redirectdefinition/utils"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )
@@ -29,7 +30,7 @@ func Test_ConsolidateRedirectDefinitions(t *testing.T) {
 
 	deletedExpected := []redirectstore.RedirectSource{}
 
-	updatedDefs, deletedSources := ConsolidateRedirectDefinitions(
+	updatedDefs, deletedSources := rdutils.ConsolidateRedirectDefinitions(
 		zap.L(),
 		newRedirects,
 		oldRedirects,
@@ -38,7 +39,7 @@ func Test_ConsolidateRedirectDefinitions(t *testing.T) {
 	assert.Equal(t, len(updatedExpected), len(updatedDefs))
 	assert.Equal(t, len(deletedExpected), len(deletedSources))
 
-	//make sure that consolidated definitions exist in expected
+	// make sure that consolidated definitions exist in expected
 	for source, definition := range updatedDefs {
 		assert.NotNil(t, updatedDefs[source])
 		assert.Equal(t, definition, updatedDefs[source])

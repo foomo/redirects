@@ -20,11 +20,11 @@ type UpdateSignal struct {
 func NewUpdateSignalSubscribeChannel(
 	ctx context.Context,
 	l *zap.Logger,
-	natsUri,
+	natsURI,
 	clientID,
 	topic string,
 ) (chan *nats.Msg, error) {
-	updateSignal, err := NewUpdateSignal(ctx, l, natsUri, clientID, topic)
+	updateSignal, err := NewUpdateSignal(ctx, l, natsURI, clientID, topic)
 	if err != nil {
 		return nil, err
 	}
@@ -36,14 +36,14 @@ func NewUpdateSignalSubscribeChannel(
 	return channel, nil
 }
 
-func NewUpdateSignal(ctx context.Context, l *zap.Logger, natsUri, clientID, topic string) (*UpdateSignal, error) {
+func NewUpdateSignal(ctx context.Context, l *zap.Logger, natsURI, clientID, topic string) (*UpdateSignal, error) {
 	var err error
 	c := &UpdateSignal{
 		topic:    topic,
 		l:        l,
 		messages: make(chan *nats.Msg),
 	}
-	c.connection, err = nats.Connect(natsUri, DefaultConnectOptions(clientID)...)
+	c.connection, err = nats.Connect(natsURI, DefaultConnectOptions(clientID)...)
 	if err != nil {
 		keellog.WithError(c.l, err).Error("error when connecting to nats")
 		return nil, err

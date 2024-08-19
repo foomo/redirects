@@ -1,4 +1,4 @@
-package redirectdefinitionutils
+package redirectdefinitionutils_test
 
 import (
 	_ "embed"
@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/foomo/contentserver/content"
+	rdutils "github.com/foomo/redirects/domain/redirectdefinition/utils"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )
@@ -30,10 +31,10 @@ func Test_AutoCreateRedirectDefinitionsParse(t *testing.T) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	redirects, err := AutoCreateRedirectDefinitions(
+	redirects, err := rdutils.AutoCreateRedirectDefinitions(
 		zap.L(),
-		CreateFlatRepoNodeMap(p["de"], make(map[string]*content.RepoNode)),
-		CreateFlatRepoNodeMap(pChanged["de"], make(map[string]*content.RepoNode)),
+		rdutils.CreateFlatRepoNodeMap(p["de"], make(map[string]*content.RepoNode)),
+		rdutils.CreateFlatRepoNodeMap(pChanged["de"], make(map[string]*content.RepoNode)),
 		"HMD-de",
 	)
 	assert.NoError(t, err)
@@ -131,9 +132,9 @@ func Test_AutoCreateRedirectDefinitionsCoverAll(t *testing.T) {
 			},
 		},
 	}
-	redirects, err := AutoCreateRedirectDefinitions(zap.L(),
-		CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
-		CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
+	redirects, err := rdutils.AutoCreateRedirectDefinitions(zap.L(),
+		rdutils.CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
+		rdutils.CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
 		"HMD-de",
 	)
 	assert.NoError(t, err)
@@ -199,10 +200,10 @@ func Test_AutoCreateRedirectDefinitions(t *testing.T) {
 			},
 		},
 	}
-	redirects, err := AutoCreateRedirectDefinitions(
+	redirects, err := rdutils.AutoCreateRedirectDefinitions(
 		zap.L(),
-		CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
-		CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
+		rdutils.CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
+		rdutils.CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
 		"HMD-de",
 	)
 	if err != nil {
@@ -291,10 +292,10 @@ func Test_AutoCreateRedirectDefinitionsExg1(t *testing.T) {
 			},
 		},
 	}
-	redirects, err := AutoCreateRedirectDefinitions(
+	redirects, err := rdutils.AutoCreateRedirectDefinitions(
 		zap.L(),
-		CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
-		CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
+		rdutils.CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
+		rdutils.CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
 		"HMD-de",
 	)
 	if err != nil {
@@ -383,10 +384,10 @@ func Test_AutoCreateRedirectDefinitionsExg2(t *testing.T) {
 			},
 		},
 	}
-	redirects, err := AutoCreateRedirectDefinitions(
+	redirects, err := rdutils.AutoCreateRedirectDefinitions(
 		zap.L(),
-		CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
-		CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
+		rdutils.CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
+		rdutils.CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
 		"HMD-de",
 	)
 	if err != nil {
@@ -475,10 +476,10 @@ func Test_AutoCreateRedirectDefinitionsExg3(t *testing.T) {
 			},
 		},
 	}
-	redirects, err := AutoCreateRedirectDefinitions(
+	redirects, err := rdutils.AutoCreateRedirectDefinitions(
 		zap.L(),
-		CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
-		CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
+		rdutils.CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
+		rdutils.CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
 		"HMD-de",
 	)
 	if err != nil {
@@ -491,10 +492,10 @@ func Test_AutoCreateRedirectDefinitionsExg3(t *testing.T) {
 func Test_AutoCreateRedirectDefinitionsEmptyAndNilArgs(t *testing.T) {
 	oldNodes := &content.RepoNode{}
 	newNodes := &content.RepoNode{}
-	redirects, err := AutoCreateRedirectDefinitions(
+	redirects, err := rdutils.AutoCreateRedirectDefinitions(
 		zap.L(),
-		CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
-		CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
+		rdutils.CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
+		rdutils.CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
 		"HMD-de",
 	)
 	if err != nil {
@@ -504,10 +505,10 @@ func Test_AutoCreateRedirectDefinitionsEmptyAndNilArgs(t *testing.T) {
 	assert.Equal(t, len(redirects), 0)
 	oldNodes = nil
 	newNodes = nil
-	redirects, err = AutoCreateRedirectDefinitions(
+	redirects, err = rdutils.AutoCreateRedirectDefinitions(
 		zap.L(),
-		CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
-		CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
+		rdutils.CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
+		rdutils.CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
 		"HMD-de",
 	)
 	assert.Error(t, err)

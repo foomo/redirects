@@ -42,7 +42,6 @@ func TestGetAllRedirects(t *testing.T) {
 	redirectDefinitions, err := repo.FindAll(context.Background(), false)
 	assert.Equal(t, 1, len(redirectDefinitions))
 	assert.NoError(t, err)
-
 }
 func TestGenerateAutoRedirects(t *testing.T) {
 	l := zap.L()
