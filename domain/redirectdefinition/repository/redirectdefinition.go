@@ -139,7 +139,7 @@ func (rs BaseRedirectsDefinitionRepository) Update(ctx context.Context, def *red
 
 // maybe will be needed for migrating manual redirections?
 func (rs BaseRedirectsDefinitionRepository) UpsertMany(ctx context.Context, defs []*redirectstore.RedirectDefinition) error {
-	var operations []mongo.WriteModel
+	operations := make([]mongo.WriteModel, 0, len(defs))
 
 	for _, def := range defs {
 		if def.ID == "" {
