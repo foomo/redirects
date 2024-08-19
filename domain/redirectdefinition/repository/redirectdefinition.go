@@ -36,7 +36,7 @@ func NewRedirectsDefinitionRepository(l *zap.Logger, collection *keelmongo.Colle
 	}
 }
 
-func NewBaseRedirectsDefinitionRepository(l *zap.Logger, persistor *keelmongo.Persistor) (rs *BaseRedirectsDefinitionRepository, err error) {
+func NewBaseRedirectsDefinitionRepository(l *zap.Logger, persistor *keelmongo.Persistor) (*BaseRedirectsDefinitionRepository, error) {
 	collection, cErr := persistor.Collection(
 		"redirects",
 		keelmongo.CollectionWithIndexes(
