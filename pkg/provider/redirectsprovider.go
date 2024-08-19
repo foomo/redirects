@@ -217,7 +217,6 @@ func (p *RedirectsProvider) execMatcherFuncs(r *http.Request) (*store.RedirectDe
 
 // createRedirect creates a redirect response based on the definition
 func (p *RedirectsProvider) createRedirect(r *http.Request, definition *store.RedirectDefinition) (*store.Redirect, error) {
-
 	redirect := &store.Redirect{
 		Code: definition.Code,
 	}
