@@ -136,16 +136,19 @@ func (p *RedirectsProvider) Process(r *http.Request) (redirect *store.Redirect, 
 		keellog.WithError(l, err).Error("could not check for standard redirect")
 		return nil, err
 	}
-	if definition != nil {
-		redirect, err = p.createRedirect(request, definition)
-		if err != nil {
-			keellog.WithError(l, err).Error("could not create redirect response")
-			return nil, err
-		}
-		l.Debug("redirect based on standard rules")
+
+	if definition == nil {
+		l.Debug("no redirect necessary")
 		return redirect, nil
 	}
-	l.Debug("no redirect necessary")
+
+	redirect, err = p.createRedirect(request, definition)
+	if err != nil {
+		keellog.WithError(l, err).Error("could not create redirect response")
+		return nil, err
+	}
+
+	l.Debug("redirect based on standard rules")
 	return redirect, nil
 }
 
@@ -235,6 +238,7 @@ func (p *RedirectsProvider) createRedirect(r *http.Request, definition *store.Re
 }
 
 // checkForStandardRedirect checks if the request needs to be redirected based on generic rules
+// it's possible to get no error and also to have no definition value, so the value needs to be checket after the method is called.
 func (p *RedirectsProvider) checkForStandardRedirect(r *http.Request) (definition *store.RedirectDefinition, err error) {
 	redirectRequest := store.RedirectRequest(r.URL.RequestURI())
 
