@@ -26,7 +26,7 @@ type (
 
 // UpdateRedirectHandler ...
 func UpdateRedirectHandler(repo redirectrepository.RedirectsDefinitionRepository) UpdateRedirectHandlerFn {
-	return func(ctx context.Context, l *zap.Logger, cmd UpdateRedirect) error {
+	return func(ctx context.Context, _ *zap.Logger, cmd UpdateRedirect) error {
 		return repo.Update(ctx, cmd.RedirectDefinition)
 	}
 }

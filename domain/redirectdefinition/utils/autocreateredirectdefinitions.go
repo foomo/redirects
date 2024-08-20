@@ -11,7 +11,7 @@ import (
 // AutoCreateRedirectDefinitions generates automatic redirects based on the difference between the old and new content tree.
 // find new.ID to old.ID and check if the URI is different, if it is different, create a redirect
 func AutoCreateRedirectDefinitions(
-	l *zap.Logger,
+	_ *zap.Logger,
 	oldMap, newMap map[string]*content.RepoNode,
 	dimension redirectstore.Dimension,
 ) ([]*redirectstore.RedirectDefinition, error) {

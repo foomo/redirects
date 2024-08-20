@@ -37,8 +37,8 @@ func NewService(l *zap.Logger, api *API, options ...ServiceOption) *Service {
 func (rs *Service) CreateRedirectsFromContentserverexport(
 	_ http.ResponseWriter,
 	r *http.Request,
-	old,
-	new map[string]*content.RepoNode,
+	oldState,
+	newState map[string]*content.RepoNode,
 ) error {
 	rs.l.Info("CreateRedirectsFromContentserverexport called ")
 	if !rs.enableCreationOfAutomaticRedirects() {
@@ -47,8 +47,8 @@ func (rs *Service) CreateRedirectsFromContentserverexport(
 	}
 	return rs.api.CreateRedirects(r.Context(),
 		redirectcommand.CreateRedirects{
-			OldState: old,
-			NewState: new,
+			OldState: oldState,
+			NewState: newState,
 		})
 }
 

@@ -170,7 +170,7 @@ func softDeleteStrategy(
 	idsToDelete []redirectstore.EntityID,
 	newRedirects []*redirectstore.RedirectDefinition,
 	currentDefinitions map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition,
-) (redirectsToUpsert []*redirectstore.RedirectDefinition) {
+) []*redirectstore.RedirectDefinition {
 	additionalRedirects := []*redirectstore.RedirectDefinition{}
 	for _, id := range idsToDelete {
 		for _, def := range newRedirects {

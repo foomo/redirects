@@ -31,7 +31,6 @@ func NewAPI(
 	updateSignal *redirectnats.UpdateSignal,
 	opts ...Option,
 ) (*API, error) {
-
 	inst := &API{
 		l:    l,
 		repo: repo,
@@ -79,20 +78,19 @@ func NewAPI(
 // ~ Public methods
 // ------------------------------------------------------------------------------------------------
 
-func (a *API) CreateRedirects(ctx context.Context, cmd redirectcommand.CreateRedirects) (err error) {
+func (a *API) CreateRedirects(ctx context.Context, cmd redirectcommand.CreateRedirects) error {
 	return a.cmd.CreateRedirects(ctx, a.l, cmd)
 }
 
-func (a *API) CreateRedirect(ctx context.Context, cmd redirectcommand.CreateRedirect) (err error) {
+func (a *API) CreateRedirect(ctx context.Context, cmd redirectcommand.CreateRedirect) error {
 	return a.cmd.CreateRedirect(ctx, a.l, cmd)
-
 }
 
-func (a *API) UpdateRedirect(ctx context.Context, cmd redirectcommand.UpdateRedirect) (err error) {
+func (a *API) UpdateRedirect(ctx context.Context, cmd redirectcommand.UpdateRedirect) error {
 	return a.cmd.UpdateRedirect(ctx, a.l, cmd)
 }
 
-func (a *API) DeleteRedirect(ctx context.Context, cmd redirectcommand.DeleteRedirect) (err error) {
+func (a *API) DeleteRedirect(ctx context.Context, cmd redirectcommand.DeleteRedirect) error {
 	return a.cmd.DeleteRedirect(ctx, a.l, cmd)
 }
 

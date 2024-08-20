@@ -26,7 +26,7 @@ type (
 
 // CreateRedirectHandler ...
 func CreateRedirectHandler(repo redirectrepository.RedirectsDefinitionRepository) CreateRedirectHandlerFn {
-	return func(ctx context.Context, l *zap.Logger, cmd CreateRedirect) error {
+	return func(ctx context.Context, _ *zap.Logger, cmd CreateRedirect) error {
 		return repo.Insert(ctx, cmd.RedirectDefinition)
 	}
 }
