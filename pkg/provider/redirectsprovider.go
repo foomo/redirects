@@ -90,7 +90,7 @@ func (p *RedirectsProvider) Close(_ context.Context) error {
 	return nil
 }
 
-func (p *RedirectsProvider) Process(r *http.Request) (*store.Redirect, error) {
+func (p *RedirectsProvider) Process(r *http.Request) (redirect *store.Redirect, err error) {
 	l := keellog.With(p.l, keellog.FCodeMethod("Process"))
 	l.Debug("process redirect request")
 
@@ -110,7 +110,7 @@ func (p *RedirectsProvider) Process(r *http.Request) (*store.Redirect, error) {
 	// check if the request is on the blacklist
 	if isBlacklisted(request) {
 		l.Debug("request is on black list")
-		return nil, nil
+		return redirect, nil
 	}
 
 	definition, err := p.matchRedirectDefinition(request, dimension)
@@ -121,7 +121,7 @@ func (p *RedirectsProvider) Process(r *http.Request) (*store.Redirect, error) {
 
 	// we found a redirect definition and process to create the response
 	if definition != nil {
-		redirect, err := p.createRedirect(request, definition)
+		redirect, err = p.createRedirect(request, definition)
 		if err != nil {
 			keellog.WithError(l, err).Error("could not create redirect response")
 			return nil, err
@@ -137,7 +137,7 @@ func (p *RedirectsProvider) Process(r *http.Request) (*store.Redirect, error) {
 		return nil, err
 	}
 	if definition != nil {
-		redirect, err := p.createRedirect(request, definition)
+		redirect, err = p.createRedirect(request, definition)
 		if err != nil {
 			keellog.WithError(l, err).Error("could not create redirect response")
 			return nil, err
@@ -146,7 +146,7 @@ func (p *RedirectsProvider) Process(r *http.Request) (*store.Redirect, error) {
 		return redirect, nil
 	}
 	l.Debug("no redirect necessary")
-	return nil, nil
+	return redirect, nil
 }
 
 // matchRedirectDefinition checks if there is a redirect definition matching the request
@@ -169,11 +169,9 @@ func (p *RedirectsProvider) matchRedirectDefinition(r *http.Request, dimension s
 	if err != nil {
 		// no need to log anything here as logging is already done in .matcherFuncs
 		return nil, err
-	} else if definition != nil {
-		return definition, nil
 	}
 
-	return nil, nil
+	return definition, nil
 }
 
 func (p *RedirectsProvider) definitionForDimensionAndSource(dimension store.Dimension, source store.RedirectSource) *store.RedirectDefinition {
@@ -206,13 +204,13 @@ func isBlacklisted(r *http.Request) bool {
 }
 
 // execMatcherFuncs executes the matcher functions
-func (p *RedirectsProvider) execMatcherFuncs(r *http.Request) (*store.RedirectDefinition, error) {
+func (p *RedirectsProvider) execMatcherFuncs(r *http.Request) (definition *store.RedirectDefinition, err error) {
 	for _, matcherFunc := range p.matcherFuncs {
-		if definition, err := matcherFunc(r); err != nil && definition != nil {
+		if definition, err = matcherFunc(r); err != nil && definition != nil {
 			return definition, nil
 		}
 	}
-	return nil, nil
+	return definition, err
 }
 
 // createRedirect creates a redirect response based on the definition
@@ -237,7 +235,7 @@ func (p *RedirectsProvider) createRedirect(r *http.Request, definition *store.Re
 }
 
 // checkForStandardRedirect checks if the request needs to be redirected based on generic rules
-func (p *RedirectsProvider) checkForStandardRedirect(r *http.Request) (*store.RedirectDefinition, error) {
+func (p *RedirectsProvider) checkForStandardRedirect(r *http.Request) (definition *store.RedirectDefinition, err error) {
 	redirectRequest := store.RedirectRequest(r.URL.RequestURI())
 
 	newRequest, redirectNeeded, err := redirectRequest.GenericTransform()
@@ -245,14 +243,14 @@ func (p *RedirectsProvider) checkForStandardRedirect(r *http.Request) (*store.Re
 		return nil, err
 	}
 	if redirectNeeded {
-		return &store.RedirectDefinition{
+		definition = &store.RedirectDefinition{
 			ID:             "",
 			Source:         store.RedirectSource(redirectRequest),
 			Target:         store.RedirectTarget(newRequest),
 			Code:           store.RedirectCodePermanent,
 			RespectParams:  false,
 			TransferParams: false,
-		}, nil
+		}
 	}
-	return nil, nil
+	return definition, nil
 }
