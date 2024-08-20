@@ -141,6 +141,16 @@ func Test_AutoCreateRedirectDefinitionsCoverAll(t *testing.T) {
 	assert.Equal(t, 3, len(redirects))
 }
 
+// if newMap is missing node:
+//
+//	"5": {
+//		ID:    "5",
+//		URI:   "/main/damen/kleidung/schuhe-1-new",
+//		Name:  "Node5",
+//		Nodes: nil,
+//	}
+//
+// should we have 2 or 1 redirects?
 func Test_AutoCreateRedirectDefinitions(t *testing.T) {
 	oldNodes := &content.RepoNode{
 		ID:   "1",
@@ -194,6 +204,12 @@ func Test_AutoCreateRedirectDefinitions(t *testing.T) {
 						ID:    "4",
 						URI:   "/main/damen/kleidung/schuhe-new",
 						Name:  "Node4",
+						Nodes: nil,
+					},
+					"5": {
+						ID:    "5",
+						URI:   "/main/damen/kleidung/schuhe-1-new",
+						Name:  "Node5",
 						Nodes: nil,
 					},
 				},
