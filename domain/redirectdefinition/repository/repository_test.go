@@ -8,8 +8,6 @@ import (
 	"testing"
 
 	"github.com/foomo/contentserver/content"
-	testingx "github.com/foomo/go/testing"
-	tagx "github.com/foomo/go/testing/tag"
 	keelmongo "github.com/foomo/keel/persistence/mongo"
 	redirectapi "github.com/foomo/redirects/domain/redirectdefinition"
 	redirectcommand "github.com/foomo/redirects/domain/redirectdefinition/command"
@@ -26,7 +24,6 @@ var contentNodes []byte
 var contentNodesChanged []byte
 
 func TestGetAllRedirects(t *testing.T) {
-	testingx.Tags(t, tagx.Skip) // needs mongodb
 	l := zap.L()
 	mongoURI := "mongodb://localhost:27017/local"
 	remotePersistor, err := keelmongo.New(
@@ -47,7 +44,6 @@ func TestGetAllRedirects(t *testing.T) {
 	assert.NoError(t, err)
 }
 func TestGenerateAutoRedirects(t *testing.T) {
-	testingx.Tags(t, tagx.Skip) // needs mongodb
 	l := zap.L()
 	mongoURI := "mongodb://localhost:27017/local"
 	remotePersistor, err := keelmongo.New(
