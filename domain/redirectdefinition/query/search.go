@@ -22,14 +22,14 @@ type (
 		PageSize   int                          `json:"pageSize"`
 	}
 	// SearchHandlerFn handler
-	SearchHandlerFn func(ctx context.Context, l *zap.Logger, qry Search) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error)
+	SearchHandlerFn func(ctx context.Context, l *zap.Logger, qry Search) (*redirectrepository.PaginatedResult, error)
 	// SearchMiddlewareFn middleware
 	SearchMiddlewareFn func(next SearchHandlerFn) SearchHandlerFn
 )
 
 // SearchHandler ...
 func SearchHandler(repo redirectrepository.RedirectsDefinitionRepository) SearchHandlerFn {
-	return func(ctx context.Context, _ *zap.Logger, qry Search) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
+	return func(ctx context.Context, _ *zap.Logger, qry Search) (*redirectrepository.PaginatedResult, error) {
 		// Default pagination values if not provided
 		page := qry.Page
 		if page < 1 {
@@ -54,7 +54,7 @@ func SearchHandlerComposed(handler SearchHandlerFn, middlewares ...SearchMiddlew
 		for _, middleware := range middlewares {
 			localNext := next
 			middlewareName := strings.Split(runtime.FuncForPC(reflect.ValueOf(middleware).Pointer()).Name(), ".")[2]
-			next = middleware(func(ctx context.Context, l *zap.Logger, qry Search) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
+			next = middleware(func(ctx context.Context, l *zap.Logger, qry Search) (*redirectrepository.PaginatedResult, error) {
 				trace.SpanFromContext(ctx).AddEvent(middlewareName)
 				return localNext(ctx, l, qry)
 			})
@@ -62,7 +62,7 @@ func SearchHandlerComposed(handler SearchHandlerFn, middlewares ...SearchMiddlew
 		return next
 	}
 	handlerName := strings.Split(runtime.FuncForPC(reflect.ValueOf(handler).Pointer()).Name(), ".")[2]
-	return composed(func(ctx context.Context, l *zap.Logger, qry Search) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
+	return composed(func(ctx context.Context, l *zap.Logger, qry Search) (*redirectrepository.PaginatedResult, error) {
 		trace.SpanFromContext(ctx).AddEvent(handlerName)
 		return handler(ctx, l, qry)
 	})

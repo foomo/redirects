@@ -22,10 +22,17 @@ type Sort struct {
 	Direction int    `json:"direction"` // 1 for ascending, -1 for descending
 }
 
+type PaginatedResult struct {
+	Results  map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition `json:"results"`
+	Total    int                                                                `json:"total"`
+	Page     int                                                                `json:"page"`
+	PageSize int                                                                `json:"pageSize"`
+}
+
 type (
 	RedirectsDefinitionRepository interface {
 		FindOne(ctx context.Context, id, source string) (*redirectstore.RedirectDefinition, error)
-		FindMany(ctx context.Context, source, dimension string, onlyActive bool, pagination Pagination, sort Sort) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error)
+		FindMany(ctx context.Context, source, dimension string, onlyActive bool, pagination Pagination, sort Sort) (*PaginatedResult, error)
 		FindAll(ctx context.Context, onlyActive bool) (defs map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, err error)
 		Insert(ctx context.Context, def *redirectstore.RedirectDefinition) error
 		Update(ctx context.Context, def *redirectstore.RedirectDefinition) error
@@ -77,46 +84,68 @@ func (rs BaseRedirectsDefinitionRepository) FindOne(ctx context.Context, id, sou
 	return &result, nil
 }
 
-func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, source, dimension string, onlyActive bool, pagination Pagination, sort Sort) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
+func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, source, dimension string, onlyActive bool, pagination Pagination, sort Sort) (*PaginatedResult, error) {
+	// Validate pagination
+	if pagination.Page < 1 {
+		pagination.Page = 1
+	}
+	if pagination.PageSize < 1 {
+		pagination.PageSize = 20 // Default page size
+	}
+
 	var result []*redirectstore.RedirectDefinition
 	filter := bson.M{}
 
 	if source != "" {
-		// Create a regex pattern for fuzzy match
-		pattern := primitive.Regex{Pattern: source, Options: "i"} // "i" for case-insensitive match
-		filter["source"] = primitive.Regex{Pattern: pattern.Pattern, Options: pattern.Options}
+		pattern := primitive.Regex{Pattern: source, Options: "i"} // Case-insensitive regex
+		filter["source"] = pattern
 	}
-
 	if dimension != "" {
 		filter["dimension"] = dimension
 	}
-
 	if onlyActive {
 		filter["stale"] = false
 	}
 
-	// Calculate skip and limit for pagination
 	skip := (pagination.Page - 1) * pagination.PageSize
-	limit := pagination.PageSize
-
-	// Add pagination and sorting options
-	opts := options.Find().SetSkip(int64(skip)).SetLimit(int64(limit))
+	opts := options.Find().SetSkip(int64(skip)).SetLimit(int64(pagination.PageSize))
 	if sort.Field != "" {
 		opts.SetSort(bson.D{{Key: sort.Field, Value: sort.Direction}})
 	}
 
-	findErr := rs.collection.Find(ctx, filter, &result, opts)
-	var retResult = make(map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition)
+	// Query MongoDB
+	cursor, err := rs.collection.Col().Find(ctx, filter, opts)
+	if err != nil {
+		return &PaginatedResult{}, err
+	}
+	defer cursor.Close(ctx)
+
+	for cursor.Next(ctx) {
+		var red redirectstore.RedirectDefinition
+		if err := cursor.Decode(&red); err != nil {
+			return &PaginatedResult{}, err
+		}
+		result = append(result, &red)
+	}
+
+	total, err := rs.collection.Col().CountDocuments(ctx, filter)
+	if err != nil {
+		return &PaginatedResult{}, err
+	}
+
+	retResult := make(map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition)
 	for _, red := range result {
 		if _, ok := retResult[red.Source]; !ok {
 			retResult[red.Source] = red
 		}
 	}
 
-	if findErr != nil {
-		return nil, findErr
-	}
-	return retResult, nil
+	return &PaginatedResult{
+		Results:  retResult,
+		Total:    int(total),
+		Page:     pagination.Page,
+		PageSize: pagination.PageSize,
+	}, nil
 }
 
 func (rs BaseRedirectsDefinitionRepository) FindAll(ctx context.Context, onlyActive bool) (map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
