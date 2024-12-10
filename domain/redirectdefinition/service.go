@@ -86,39 +86,7 @@ func (rs *Service) Search(
 		return nil, redirectstore.NewRedirectDefinitionError(err.Error())
 	}
 
-	paginatedResult := paginateResult(result, page, pageSize)
-
-	return paginatedResult, nil
-}
-
-func paginateResult(
-	results map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition,
-	page, pageSize int,
-) map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition {
-	keys := make([]redirectstore.RedirectSource, 0, len(results))
-	for key := range results {
-		keys = append(keys, key)
-	}
-
-	// Determine the start and end indices for the requested page
-	start := (page - 1) * pageSize
-	end := start + pageSize
-
-	// Ensure indices are within bounds
-	if start > len(keys) {
-		return nil // No results for this page
-	}
-
-	if end > len(keys) {
-		end = len(keys)
-	}
-
-	paginated := make(map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, end-start)
-	for _, key := range keys[start:end] {
-		paginated[key] = results[key]
-	}
-
-	return paginated
+	return result, nil
 }
 
 // Create a redirect

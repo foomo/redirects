@@ -18,6 +18,8 @@ type (
 		Source     redirectstore.RedirectSource `json:"source"`
 		Dimension  redirectstore.Dimension      `json:"dimension"`
 		OnlyActive bool                         `json:"onlyActive"`
+		Page       int                          `json:"page"`
+		PageSize   int                          `json:"pageSize"`
 	}
 	// SearchHandlerFn handler
 	SearchHandlerFn func(ctx context.Context, l *zap.Logger, qry Search) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error)
@@ -28,7 +30,21 @@ type (
 // SearchHandler ...
 func SearchHandler(repo redirectrepository.RedirectsDefinitionRepository) SearchHandlerFn {
 	return func(ctx context.Context, _ *zap.Logger, qry Search) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
-		return repo.FindMany(ctx, string(qry.Source), string(qry.Dimension), qry.OnlyActive)
+		// Default pagination values if not provided
+		page := qry.Page
+		if page < 1 {
+			page = 1
+		}
+		pageSize := qry.PageSize
+		if pageSize < 1 {
+			pageSize = 20 // Default page size
+		}
+		// Create pagination struct
+		pagination := redirectrepository.Pagination{Page: page, PageSize: pageSize}
+
+		// Define sort logic (example: sort by "source" ascending)
+		sort := redirectrepository.Sort{Field: "source", Direction: 1}
+		return repo.FindMany(ctx, string(qry.Source), string(qry.Dimension), qry.OnlyActive, pagination, sort)
 	}
 }
 

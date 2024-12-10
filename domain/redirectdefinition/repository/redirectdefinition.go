@@ -12,10 +12,20 @@ import (
 	"go.uber.org/zap"
 )
 
+type Pagination struct {
+	Page     int `json:"page"`
+	PageSize int `json:"pageSize"`
+}
+
+type Sort struct {
+	Field     string `json:"field"`
+	Direction int    `json:"direction"` // 1 for ascending, -1 for descending
+}
+
 type (
 	RedirectsDefinitionRepository interface {
 		FindOne(ctx context.Context, id, source string) (*redirectstore.RedirectDefinition, error)
-		FindMany(ctx context.Context, source, dimension string, onlyActive bool) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error)
+		FindMany(ctx context.Context, source, dimension string, onlyActive bool, pagination Pagination, sort Sort) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error)
 		FindAll(ctx context.Context, onlyActive bool) (defs map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, err error)
 		Insert(ctx context.Context, def *redirectstore.RedirectDefinition) error
 		Update(ctx context.Context, def *redirectstore.RedirectDefinition) error
@@ -67,7 +77,7 @@ func (rs BaseRedirectsDefinitionRepository) FindOne(ctx context.Context, id, sou
 	return &result, nil
 }
 
-func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, source, dimension string, onlyActive bool) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
+func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, source, dimension string, onlyActive bool, pagination Pagination, sort Sort) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
 	var result []*redirectstore.RedirectDefinition
 	filter := bson.M{}
 
@@ -85,7 +95,17 @@ func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, source
 		filter["stale"] = false
 	}
 
-	findErr := rs.collection.Find(ctx, filter, &result)
+	// Calculate skip and limit for pagination
+	skip := (pagination.Page - 1) * pagination.PageSize
+	limit := pagination.PageSize
+
+	// Add pagination and sorting options
+	opts := options.Find().SetSkip(int64(skip)).SetLimit(int64(limit))
+	if sort.Field != "" {
+		opts.SetSort(bson.D{{Key: sort.Field, Value: sort.Direction}})
+	}
+
+	findErr := rs.collection.Find(ctx, filter, &result, opts)
 	var retResult = make(map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition)
 	for _, red := range result {
 		if _, ok := retResult[red.Source]; !ok {
