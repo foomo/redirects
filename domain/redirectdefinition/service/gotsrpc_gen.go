@@ -55,17 +55,17 @@ func (p *InternalServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.R
 			rets []interface{}
 		)
 		var (
-			arg_old map[string]*github_com_foomo_contentserver_content.RepoNode
-			arg_new map[string]*github_com_foomo_contentserver_content.RepoNode
+			arg_oldState map[string]*github_com_foomo_contentserver_content.RepoNode
+			arg_newState map[string]*github_com_foomo_contentserver_content.RepoNode
 		)
-		args = []interface{}{&arg_old, &arg_new}
+		args = []interface{}{&arg_oldState, &arg_newState}
 		if err := gotsrpc.LoadArgs(&args, callStats, r); err != nil {
 			gotsrpc.ErrorCouldNotLoadArgs(w)
 			return
 		}
 		executionStart := time.Now()
 		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
-		createRedirectsFromContentserverexportRet := p.service.CreateRedirectsFromContentserverexport(&rw, r, arg_old, arg_new)
+		createRedirectsFromContentserverexportRet := p.service.CreateRedirectsFromContentserverexport(&rw, r, arg_oldState, arg_newState)
 		callStats.Execution = time.Since(executionStart)
 		if rw.Status() == http.StatusOK {
 			rets = []interface{}{createRedirectsFromContentserverexportRet}
@@ -198,17 +198,19 @@ func (p *AdminServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Requ
 			rets []interface{}
 		)
 		var (
-			arg_locale string
-			arg_path   string
+			arg_locale   string
+			arg_path     string
+			arg_page     int
+			arg_pageSize int
 		)
-		args = []interface{}{&arg_locale, &arg_path}
+		args = []interface{}{&arg_locale, &arg_path, &arg_page, &arg_pageSize}
 		if err := gotsrpc.LoadArgs(&args, callStats, r); err != nil {
 			gotsrpc.ErrorCouldNotLoadArgs(w)
 			return
 		}
 		executionStart := time.Now()
 		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
-		searchRet, searchRet_1 := p.service.Search(&rw, r, arg_locale, arg_path)
+		searchRet, searchRet_1 := p.service.Search(&rw, r, arg_locale, arg_path, arg_page, arg_pageSize)
 		callStats.Execution = time.Since(executionStart)
 		if rw.Status() == http.StatusOK {
 			rets = []interface{}{searchRet, searchRet_1}
