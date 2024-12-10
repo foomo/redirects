@@ -82,6 +82,8 @@ func (rs *Service) Search(
 	result, err := rs.api.Search(r.Context(), redirectquery.Search{
 		Source:    redirectstore.RedirectSource(path),
 		Dimension: redirectstore.Dimension(fmt.Sprintf("%s-%s", site, locale)),
+		Page:      page,
+		PageSize:  pageSize,
 	})
 	if err != nil {
 		return nil, redirectstore.NewRedirectDefinitionError(err.Error())
