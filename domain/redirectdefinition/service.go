@@ -60,7 +60,19 @@ func (rs *Service) GetRedirects(_ http.ResponseWriter, r *http.Request) (map[red
 
 // Search for a redirect
 // used by frontend
-func (rs *Service) Search(_ http.ResponseWriter, r *http.Request, locale, path string) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, *redirectstore.RedirectDefinitionError) {
+func (rs *Service) Search(
+	_ http.ResponseWriter,
+	r *http.Request,
+	locale, path string,
+	page, pageSize int,
+) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, *redirectstore.RedirectDefinitionError) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 10 // Default page size
+	}
+
 	site, err := rs.api.getSiteIdentifierProvider(r)
 	if err != nil {
 		return nil, redirectstore.NewRedirectDefinitionError(err.Error())
@@ -73,7 +85,40 @@ func (rs *Service) Search(_ http.ResponseWriter, r *http.Request, locale, path s
 	if err != nil {
 		return nil, redirectstore.NewRedirectDefinitionError(err.Error())
 	}
-	return result, nil
+
+	paginatedResult := paginateResult(result, page, pageSize)
+
+	return paginatedResult, nil
+}
+
+func paginateResult(
+	results map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition,
+	page, pageSize int,
+) map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition {
+	keys := make([]redirectstore.RedirectSource, 0, len(results))
+	for key := range results {
+		keys = append(keys, key)
+	}
+
+	// Determine the start and end indices for the requested page
+	start := (page - 1) * pageSize
+	end := start + pageSize
+
+	// Ensure indices are within bounds
+	if start > len(keys) {
+		return nil // No results for this page
+	}
+
+	if end > len(keys) {
+		end = len(keys)
+	}
+
+	paginated := make(map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, end-start)
+	for _, key := range keys[start:end] {
+		paginated[key] = results[key]
+	}
+
+	return paginated
 }
 
 // Create a redirect
