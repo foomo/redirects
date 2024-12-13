@@ -2,6 +2,8 @@ package redirectrepository
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	keelmongo "github.com/foomo/keel/persistence/mongo"
 	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
@@ -186,8 +188,44 @@ func (rs BaseRedirectsDefinitionRepository) Update(ctx context.Context, def *red
 	return err
 }
 
-// maybe will be needed for migrating manual redirections?
 func (rs BaseRedirectsDefinitionRepository) UpsertMany(ctx context.Context, defs []*redirectstore.RedirectDefinition) error {
+	chunkSize := 1000
+	retries := 3
+
+	for i := 0; i < len(defs); i += chunkSize {
+		end := i + chunkSize
+		if end > len(defs) {
+			end = len(defs)
+		}
+
+		err := rs.upsertChunkWithRetry(ctx, defs[i:end], retries)
+		if err != nil {
+			rs.l.Error("failed to upsert chunk",
+				zap.Int("start", i),
+				zap.Int("end", end),
+				zap.Error(err))
+			return err
+		}
+	}
+	return nil
+}
+
+func (rs BaseRedirectsDefinitionRepository) upsertChunkWithRetry(ctx context.Context, defs []*redirectstore.RedirectDefinition, retries int) error {
+	for i := 0; i < retries; i++ {
+		err := rs.upsertChunk(ctx, defs)
+		if err == nil {
+			return nil // Success
+		}
+
+		// Log the retry and wait briefly before retrying
+		rs.l.Info("Retrying chunk upsert...", zap.Int("retry no", i+1), zap.Error(err))
+		time.Sleep(2 * time.Second)
+	}
+
+	return fmt.Errorf("failed to upsert chunk after %d retries", retries)
+}
+
+func (rs BaseRedirectsDefinitionRepository) upsertChunk(ctx context.Context, defs []*redirectstore.RedirectDefinition) error {
 	operations := make([]mongo.WriteModel, 0, len(defs))
 
 	for _, def := range defs {
@@ -206,12 +244,19 @@ func (rs BaseRedirectsDefinitionRepository) UpsertMany(ctx context.Context, defs
 	bulkOption := options.BulkWriteOptions{}
 	bulkOption.SetOrdered(false)
 
-	_, err := rs.collection.Col().BulkWrite(ctx, operations, &bulkOption)
+	result, err := rs.collection.Col().BulkWrite(ctx, operations, &bulkOption)
 	if err != nil {
+		rs.l.Error("Bulk write error", zap.Error(err))
 		return err
 	}
 
-	return err
+	// Log results
+	rs.l.Info("Bulk write result",
+		zap.Int("Inserted", int(result.InsertedCount)),
+		zap.Int("Matched", int(result.MatchedCount)),
+		zap.Int("Modified", int(result.ModifiedCount)),
+		zap.Int("Upserted", len(result.UpsertedIDs)))
+	return nil
 }
 
 func (rs BaseRedirectsDefinitionRepository) Delete(ctx context.Context, id redirectstore.EntityID) error {
