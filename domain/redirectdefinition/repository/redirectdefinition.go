@@ -34,7 +34,7 @@ type PaginatedResult struct {
 type (
 	RedirectsDefinitionRepository interface {
 		FindOne(ctx context.Context, id, source string) (*redirectstore.RedirectDefinition, error)
-		FindMany(ctx context.Context, source, dimension string, onlyActive bool, pagination Pagination, sort Sort) (*PaginatedResult, error)
+		FindMany(ctx context.Context, source, dimension, redirectType string, onlyActive bool, pagination Pagination) (*PaginatedResult, error)
 		FindAll(ctx context.Context, onlyActive bool) (defs map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, err error)
 		Insert(ctx context.Context, def *redirectstore.RedirectDefinition) error
 		Update(ctx context.Context, def *redirectstore.RedirectDefinition) error
@@ -86,7 +86,7 @@ func (rs BaseRedirectsDefinitionRepository) FindOne(ctx context.Context, id, sou
 	return &result, nil
 }
 
-func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, source, dimension string, onlyActive bool, pagination Pagination, sort Sort) (*PaginatedResult, error) {
+func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, source, dimension, redirectType string, onlyActive bool, pagination Pagination) (*PaginatedResult, error) {
 	// Validate pagination
 	if pagination.Page < 1 {
 		pagination.Page = 1
@@ -105,15 +105,20 @@ func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, source
 	if dimension != "" {
 		filter["dimension"] = dimension
 	}
+	if redirectType != "" {
+		filter["redirectType"] = redirectType
+	}
 	if onlyActive {
 		filter["stale"] = false
 	}
 
 	skip := (pagination.Page - 1) * pagination.PageSize
-	opts := options.Find().SetSkip(int64(skip)).SetLimit(int64(pagination.PageSize))
-	if sort.Field != "" {
-		opts.SetSort(bson.D{{Key: sort.Field, Value: sort.Direction}})
-	}
+	opts := options.Find().
+		SetSkip(int64(skip)).
+		SetLimit(int64(pagination.PageSize)).
+		SetSort(bson.D{
+			{Key: "source", Value: 1}, // Sort by source in ascending order
+		})
 
 	// Query MongoDB
 	cursor, err := rs.collection.Col().Find(ctx, filter, opts)

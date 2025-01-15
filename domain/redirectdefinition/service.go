@@ -12,6 +12,14 @@ import (
 	"go.uber.org/zap"
 )
 
+type SearchParams struct {
+	Locale       string                        `json:"locale"`
+	Path         string                        `json:"path"`
+	Page         int                           `json:"page"`
+	PageSize     int                           `json:"pageSize"`
+	RedirectType redirectstore.RedirectionType `json:"type,omitempty"`
+}
+
 type Service struct {
 	l   *zap.Logger
 	api *API
@@ -65,13 +73,13 @@ func (rs *Service) Search(
 	_ http.ResponseWriter,
 	r *http.Request,
 	locale, path string,
-	page, pageSize int,
+	params SearchParams,
 ) (*redirectrepository.PaginatedResult, *redirectstore.RedirectDefinitionError) {
-	if page < 1 {
-		page = 1
+	if params.Page < 1 {
+		params.Page = 1
 	}
-	if pageSize < 1 {
-		pageSize = 10 // Default page size
+	if params.PageSize < 1 {
+		params.PageSize = 10 // Default page size
 	}
 
 	site, err := rs.api.getSiteIdentifierProvider(r)
@@ -80,10 +88,11 @@ func (rs *Service) Search(
 	}
 
 	result, err := rs.api.Search(r.Context(), redirectquery.Search{
-		Source:    redirectstore.RedirectSource(path),
-		Dimension: redirectstore.Dimension(fmt.Sprintf("%s-%s", site, locale)),
-		Page:      page,
-		PageSize:  pageSize,
+		Source:       redirectstore.RedirectSource(path),
+		Dimension:    redirectstore.Dimension(fmt.Sprintf("%s-%s", site, locale)),
+		Page:         params.Page,
+		PageSize:     params.PageSize,
+		RedirectType: params.RedirectType,
 	})
 	if err != nil {
 		return nil, redirectstore.NewRedirectDefinitionError(err.Error())

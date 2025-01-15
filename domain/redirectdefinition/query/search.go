@@ -2,6 +2,7 @@ package redirectquery
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"runtime"
 	"strings"
@@ -15,11 +16,12 @@ import (
 type (
 	// Search query
 	Search struct {
-		Source     redirectstore.RedirectSource `json:"source"`
-		Dimension  redirectstore.Dimension      `json:"dimension"`
-		OnlyActive bool                         `json:"onlyActive"`
-		Page       int                          `json:"page"`
-		PageSize   int                          `json:"pageSize"`
+		Source       redirectstore.RedirectSource  `json:"source"`
+		Dimension    redirectstore.Dimension       `json:"dimension"`
+		OnlyActive   bool                          `json:"onlyActive"`
+		Page         int                           `json:"page"`
+		PageSize     int                           `json:"pageSize"`
+		RedirectType redirectstore.RedirectionType `json:"type,omitempty"`
 	}
 	// SearchHandlerFn handler
 	SearchHandlerFn func(ctx context.Context, l *zap.Logger, qry Search) (*redirectrepository.PaginatedResult, error)
@@ -39,12 +41,16 @@ func SearchHandler(repo redirectrepository.RedirectsDefinitionRepository) Search
 		if pageSize < 1 {
 			pageSize = 20 // Default page size
 		}
+
+		// Validate RedirectType
+		if qry.RedirectType != "" && qry.RedirectType != redirectstore.Manual && qry.RedirectType != redirectstore.Automatic {
+			return nil, fmt.Errorf("invalid redirect type: '%s'; should be empty, 'manual' or 'automatic'", qry.RedirectType)
+		}
+
 		// Create pagination struct
 		pagination := redirectrepository.Pagination{Page: page, PageSize: pageSize}
 
-		// Define sort logic (example: sort by "source" ascending)
-		sort := redirectrepository.Sort{Field: "source", Direction: 1}
-		return repo.FindMany(ctx, string(qry.Source), string(qry.Dimension), qry.OnlyActive, pagination, sort)
+		return repo.FindMany(ctx, string(qry.Source), string(qry.Dimension), string(qry.RedirectType), qry.OnlyActive, pagination)
 	}
 }
 
