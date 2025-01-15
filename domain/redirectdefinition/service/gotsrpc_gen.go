@@ -9,6 +9,7 @@ import (
 
 	github_com_foomo_contentserver_content "github.com/foomo/contentserver/content"
 	gotsrpc "github.com/foomo/gotsrpc/v2"
+	github_com_foomo_redirects_domain_redirectdefinition "github.com/foomo/redirects/domain/redirectdefinition"
 	github_com_foomo_redirects_domain_redirectdefinition_store "github.com/foomo/redirects/domain/redirectdefinition/store"
 )
 
@@ -198,19 +199,16 @@ func (p *AdminServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Requ
 			rets []interface{}
 		)
 		var (
-			arg_locale   string
-			arg_path     string
-			arg_page     int
-			arg_pageSize int
+			arg_params *github_com_foomo_redirects_domain_redirectdefinition.SearchParams
 		)
-		args = []interface{}{&arg_locale, &arg_path, &arg_page, &arg_pageSize}
+		args = []interface{}{&arg_params}
 		if err := gotsrpc.LoadArgs(&args, callStats, r); err != nil {
 			gotsrpc.ErrorCouldNotLoadArgs(w)
 			return
 		}
 		executionStart := time.Now()
 		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
-		searchRet, searchRet_1 := p.service.Search(&rw, r, arg_locale, arg_path, arg_page, arg_pageSize)
+		searchRet, searchRet_1 := p.service.Search(&rw, r, arg_params)
 		callStats.Execution = time.Since(executionStart)
 		if rw.Status() == http.StatusOK {
 			rets = []interface{}{searchRet, searchRet_1}
