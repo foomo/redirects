@@ -72,7 +72,7 @@ func (rs *Service) GetRedirects(_ http.ResponseWriter, r *http.Request) (map[red
 func (rs *Service) Search(
 	_ http.ResponseWriter,
 	r *http.Request,
-	params SearchParams,
+	params *SearchParams,
 ) (*redirectrepository.PaginatedResult, *redirectstore.RedirectDefinitionError) {
 	if params.Page < 1 {
 		params.Page = 1
