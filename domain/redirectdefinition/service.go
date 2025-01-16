@@ -72,7 +72,6 @@ func (rs *Service) GetRedirects(_ http.ResponseWriter, r *http.Request) (map[red
 func (rs *Service) Search(
 	_ http.ResponseWriter,
 	r *http.Request,
-	locale, path string,
 	params SearchParams,
 ) (*redirectrepository.PaginatedResult, *redirectstore.RedirectDefinitionError) {
 	if params.Page < 1 {
@@ -88,8 +87,8 @@ func (rs *Service) Search(
 	}
 
 	result, err := rs.api.Search(r.Context(), redirectquery.Search{
-		Source:       redirectstore.RedirectSource(path),
-		Dimension:    redirectstore.Dimension(fmt.Sprintf("%s-%s", site, locale)),
+		Source:       redirectstore.RedirectSource(params.Path),
+		Dimension:    redirectstore.Dimension(fmt.Sprintf("%s-%s", site, params.Locale)),
 		Page:         params.Page,
 		PageSize:     params.PageSize,
 		RedirectType: params.RedirectType,
