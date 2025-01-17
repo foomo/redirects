@@ -92,6 +92,22 @@ func NewBaseRedirectsDefinitionRepository(l *zap.Logger, persistor *keelmongo.Pe
 				},
 				Options: options.Index().SetUnique(true),
 			},
+			mongo.IndexModel{
+				Keys: bson.D{
+					{Key: string(SortFieldUpdated), Value: 1},
+				},
+			},
+			mongo.IndexModel{
+				Keys: bson.D{
+					{Key: string(SortFieldLastUpdatedBy), Value: 1},
+				},
+			},
+			// Index for 'source' field (optional for search optimization)
+			mongo.IndexModel{
+				Keys: bson.D{
+					{Key: string(SortFieldSource), Value: 1},
+				},
+			},
 		),
 	)
 
@@ -143,9 +159,15 @@ func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, source
 		SetSkip(int64(skip)).
 		SetLimit(int64(pagination.PageSize))
 
-	if sort.Field != "" {
-		opts.SetSort(bson.D{{Key: string(sort.Field), Value: sort.Direction.GetSortValue()}})
+	sortField := sort.Field
+	if sortField == "" {
+		sortField = SortFieldSource
 	}
+
+	opts.SetSort(bson.D{
+		{Key: string(sortField), Value: sort.Direction.GetSortValue()},
+		{Key: "_id", Value: 1}, // Secondary sort for consistent results
+	})
 
 	// Query MongoDB
 	cursor, err := rs.collection.Col().Find(ctx, filter, opts)
