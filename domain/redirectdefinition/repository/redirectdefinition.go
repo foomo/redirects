@@ -19,9 +19,24 @@ type Pagination struct {
 	PageSize int `json:"pageSize"`
 }
 
+type SortField string
+
+const (
+	SortFieldSource        SortField = "source"
+	SortFieldUpdated       SortField = "updated"
+	SortFieldLastUpdatedBy SortField = "lastUpdatedBy"
+)
+
+type Direction int
+
+const (
+	DirectionAscending  Direction = 1
+	DirectionDescending Direction = -1
+)
+
 type Sort struct {
-	Field     string `json:"field"`
-	Direction int    `json:"direction"` // 1 for ascending, -1 for descending
+	Field     SortField `json:"field"`
+	Direction Direction `json:"direction"`
 }
 
 type PaginatedResult struct {
@@ -34,7 +49,7 @@ type PaginatedResult struct {
 type (
 	RedirectsDefinitionRepository interface {
 		FindOne(ctx context.Context, id, source string) (*redirectstore.RedirectDefinition, error)
-		FindMany(ctx context.Context, source, dimension, redirectType string, onlyActive bool, pagination Pagination) (*PaginatedResult, error)
+		FindMany(ctx context.Context, source, dimension, redirectType string, onlyActive bool, pagination Pagination, sort Sort) (*PaginatedResult, error)
 		FindAll(ctx context.Context, onlyActive bool) (defs map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, err error)
 		Insert(ctx context.Context, def *redirectstore.RedirectDefinition) error
 		Update(ctx context.Context, def *redirectstore.RedirectDefinition) error
@@ -86,7 +101,7 @@ func (rs BaseRedirectsDefinitionRepository) FindOne(ctx context.Context, id, sou
 	return &result, nil
 }
 
-func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, source, dimension, redirectType string, onlyActive bool, pagination Pagination) (*PaginatedResult, error) {
+func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, source, dimension, redirectType string, onlyActive bool, pagination Pagination, sort Sort) (*PaginatedResult, error) {
 	// Validate pagination
 	if pagination.Page < 1 {
 		pagination.Page = 1
@@ -115,10 +130,11 @@ func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, source
 	skip := (pagination.Page - 1) * pagination.PageSize
 	opts := options.Find().
 		SetSkip(int64(skip)).
-		SetLimit(int64(pagination.PageSize)).
-		SetSort(bson.D{
-			{Key: "source", Value: 1}, // Sort by source in ascending order
-		})
+		SetLimit(int64(pagination.PageSize))
+
+	if sort.Field != "" {
+		opts.SetSort(bson.D{{Key: string(sort.Field), Value: sort.Direction}})
+	}
 
 	// Query MongoDB
 	cursor, err := rs.collection.Col().Find(ctx, filter, opts)

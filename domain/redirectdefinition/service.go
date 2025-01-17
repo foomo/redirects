@@ -19,6 +19,7 @@ type SearchParams struct {
 	Page         int                           `json:"page"`
 	PageSize     int                           `json:"pageSize"`
 	RedirectType redirectstore.RedirectionType `json:"type,omitempty"`
+	Sort         redirectrepository.Sort       `json:"sort"`
 }
 
 type Service struct {
@@ -93,6 +94,7 @@ func (rs *Service) Search(
 		Page:         params.Page,
 		PageSize:     params.PageSize,
 		RedirectType: params.RedirectType,
+		Sort:         params.Sort,
 	})
 	if err != nil {
 		return nil, redirectstore.NewRedirectDefinitionError(err.Error())

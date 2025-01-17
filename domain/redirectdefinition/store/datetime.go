@@ -16,12 +16,12 @@ type DateTime string
 
 // NewDateTime constructor
 func NewDateTime(t time.Time) DateTime {
-	return DateTime(t.Format(DateTimeLayoutDE))
+	return DateTime(t.Format(DateTimeLayout))
 }
 
 // Time returns the date time as Time
 func (d DateTime) Time() (time.Time, error) {
-	return time.Parse(DateTimeLayoutDE, string(d))
+	return time.Parse(DateTimeLayout, string(d))
 }
 
 // MustTime returns the date time as Time and panics on failure
