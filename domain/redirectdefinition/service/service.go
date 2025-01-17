@@ -14,9 +14,9 @@ import (
 // will be exposed to the frontend
 type AdminService interface {
 	Search(w http.ResponseWriter, r *http.Request, params *redirectdefinition.SearchParams) (*redirectrepository.PaginatedResult, *redirectstore.RedirectDefinitionError)
-	Create(w http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition, locale string) (redirectstore.EntityID, *redirectstore.RedirectDefinitionError)
+	Create(w http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition, locale string, user string) (redirectstore.EntityID, *redirectstore.RedirectDefinitionError)
 	Delete(w http.ResponseWriter, r *http.Request, id string) *redirectstore.RedirectDefinitionError
-	Update(w http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition) *redirectstore.RedirectDefinitionError
+	Update(w http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition, user string) *redirectstore.RedirectDefinitionError
 }
 
 // InternalService is the interface for the internal service

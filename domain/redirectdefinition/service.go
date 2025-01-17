@@ -3,6 +3,7 @@ package redirectdefinition
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/foomo/contentserver/content"
 	redirectcommand "github.com/foomo/redirects/domain/redirectdefinition/command"
@@ -102,12 +103,16 @@ func (rs *Service) Search(
 
 // Create a redirect
 // used by frontend
-func (rs *Service) Create(_ http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition, locale string) (redirectstore.EntityID, *redirectstore.RedirectDefinitionError) {
+func (rs *Service) Create(_ http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition, locale string, user string) (redirectstore.EntityID, *redirectstore.RedirectDefinitionError) {
 	site, err := rs.api.getSiteIdentifierProvider(r)
 	if err != nil {
 		return "", redirectstore.NewRedirectDefinitionError(err.Error())
 	}
 	def.Dimension = redirectstore.Dimension(fmt.Sprintf("%s-%s", site, locale))
+	def.Updated = redirectstore.NewDateTime(time.Now())
+	if user != "" {
+		def.LastUpdatedBy = user
+	}
 
 	err = rs.api.CreateRedirect(r.Context(),
 		redirectcommand.CreateRedirect{
@@ -134,7 +139,11 @@ func (rs *Service) Delete(_ http.ResponseWriter, r *http.Request, id string) *re
 
 // Update a redirect
 // used by frontend
-func (rs *Service) Update(_ http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition) *redirectstore.RedirectDefinitionError {
+func (rs *Service) Update(_ http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition, user string) *redirectstore.RedirectDefinitionError {
+	def.Updated = redirectstore.NewDateTime(time.Now())
+	if user != "" {
+		def.LastUpdatedBy = user
+	}
 	err := rs.api.UpdateRedirect(r.Context(),
 		redirectcommand.UpdateRedirect{
 			RedirectDefinition: def,

@@ -2,6 +2,7 @@ package redirectdefinitionutils
 
 import (
 	"errors"
+	"time"
 
 	"github.com/foomo/contentserver/content"
 	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
@@ -34,6 +35,8 @@ func AutoCreateRedirectDefinitions(
 					TransferParams:  true,
 					RedirectionType: redirectstore.Automatic,
 					Dimension:       dimension,
+					Updated:         redirectstore.NewDateTime(time.Now()),
+					LastUpdatedBy:   "System",
 				}
 				redirects = append(redirects, rd)
 			}
