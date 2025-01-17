@@ -23,8 +23,8 @@ type RedirectDefinition struct {
 	RedirectionType RedirectionType `json:"redirectType" bson:"redirectType"`
 	Dimension       Dimension       `json:"dimension" bson:"dimension"`
 	Stale           bool            `json:"stale" bson:"stale"`
-	Updated         DateTime        `json:"updated" bson:"updated"`             // Timestamp of the last update
-	LastUpdatedBy   string          `json:"lastUpdatedBy" bson:"lastUpdatedBy"` // User who made the last update
+	Updated         DateTime        `json:"updated,omitempty" bson:"updated"`             // Timestamp of the last update
+	LastUpdatedBy   string          `json:"lastUpdatedBy,omitempty" bson:"lastUpdatedBy"` // User who made the last update
 }
 
 type RedirectDefinitions map[RedirectSource]*RedirectDefinition
