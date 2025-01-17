@@ -51,10 +51,10 @@ func (d Direction) GetSortValue() int {
 }
 
 type PaginatedResult struct {
-	Results  map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition `json:"results"`
-	Total    int                                                                `json:"total"`
-	Page     int                                                                `json:"page"`
-	PageSize int                                                                `json:"pageSize"`
+	Results  []*redirectstore.RedirectDefinition `json:"results"`
+	Total    int                                 `json:"total"`
+	Page     int                                 `json:"page"`
+	PageSize int                                 `json:"pageSize"`
 }
 
 type (
@@ -128,7 +128,13 @@ func (rs BaseRedirectsDefinitionRepository) FindOne(ctx context.Context, id, sou
 	return &result, nil
 }
 
-func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, source, dimension, redirectType string, onlyActive bool, pagination Pagination, sort Sort) (*PaginatedResult, error) {
+func (rs BaseRedirectsDefinitionRepository) FindMany(
+	ctx context.Context,
+	source, dimension, redirectType string,
+	onlyActive bool,
+	pagination Pagination,
+	sort Sort,
+) (*PaginatedResult, error) {
 	// Validate pagination
 	if pagination.Page < 1 {
 		pagination.Page = 1
@@ -140,6 +146,7 @@ func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, source
 	var result []*redirectstore.RedirectDefinition
 	filter := bson.M{}
 
+	// Apply filters
 	if source != "" {
 		pattern := primitive.Regex{Pattern: source, Options: "i"} // Case-insensitive regex
 		filter["source"] = pattern
@@ -154,19 +161,20 @@ func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, source
 		filter["stale"] = false
 	}
 
+	// Pagination settings
 	skip := (pagination.Page - 1) * pagination.PageSize
 	opts := options.Find().
 		SetSkip(int64(skip)).
 		SetLimit(int64(pagination.PageSize))
 
+	// Sorting settings
 	sortField := sort.Field
 	if sortField == "" {
-		sortField = SortFieldSource
+		sortField = SortFieldSource // Default sort field
 	}
-
 	opts.SetSort(bson.D{
 		{Key: string(sortField), Value: sort.Direction.GetSortValue()},
-		{Key: "_id", Value: 1}, // Secondary sort for consistent results
+		{Key: "_id", Value: 1}, // Tie-breaker for consistent results
 	})
 
 	// Query MongoDB
@@ -176,6 +184,7 @@ func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, source
 	}
 	defer cursor.Close(ctx)
 
+	// Decode results
 	for cursor.Next(ctx) {
 		var red redirectstore.RedirectDefinition
 		if err := cursor.Decode(&red); err != nil {
@@ -189,15 +198,8 @@ func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, source
 		return &PaginatedResult{}, err
 	}
 
-	retResult := make(map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition)
-	for _, red := range result {
-		if _, ok := retResult[red.Source]; !ok {
-			retResult[red.Source] = red
-		}
-	}
-
 	return &PaginatedResult{
-		Results:  retResult,
+		Results:  result,
 		Total:    int(total),
 		Page:     pagination.Page,
 		PageSize: pagination.PageSize,
