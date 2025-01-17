@@ -27,16 +27,27 @@ const (
 	SortFieldLastUpdatedBy SortField = "lastUpdatedBy"
 )
 
-type Direction int
+type Direction string
 
 const (
-	DirectionAscending  Direction = 1
-	DirectionDescending Direction = -1
+	DirectionAscending  Direction = "ascending"
+	DirectionDescending Direction = "descending"
 )
 
 type Sort struct {
 	Field     SortField `json:"field"`
 	Direction Direction `json:"direction"`
+}
+
+func (d Direction) GetSortValue() int {
+	switch d {
+	case DirectionAscending:
+		return 1
+	case DirectionDescending:
+		return -1
+	default:
+		return 1
+	}
 }
 
 type PaginatedResult struct {
@@ -133,7 +144,7 @@ func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, source
 		SetLimit(int64(pagination.PageSize))
 
 	if sort.Field != "" {
-		opts.SetSort(bson.D{{Key: string(sort.Field), Value: sort.Direction}})
+		opts.SetSort(bson.D{{Key: string(sort.Field), Value: sort.Direction.GetSortValue()}})
 	}
 
 	// Query MongoDB
