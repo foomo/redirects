@@ -35,10 +35,17 @@ func NewAPI(
 	inst := &API{
 		l:    l,
 		repo: repo,
+		// Set a default restrictedPathsProvider
+		restrictedPathsProvider: func() []string { return []string{} },
 	}
 	if inst.l == nil {
 		return nil, errors.New("missing logger")
 	}
+
+	for _, opt := range opts {
+		opt(inst)
+	}
+
 	inst.cmd = Commands{
 		CreateRedirects: redirectcommand.CreateRedirectsHandlerComposed(
 			redirectcommand.CreateRedirectsHandler(inst.repo),
@@ -67,10 +74,6 @@ func NewAPI(
 		Search: redirectquery.SearchHandlerComposed(
 			redirectquery.SearchHandler(inst.repo),
 		),
-	}
-
-	for _, opt := range opts {
-		opt(inst)
 	}
 
 	return inst, nil
