@@ -3,6 +3,7 @@ package redirectcommand
 import (
 	"context"
 	"fmt"
+	"path"
 	"reflect"
 	"runtime"
 	"strings"
@@ -75,25 +76,25 @@ func ValidateRedirectMiddleware(restrictedPathsProvider redirectprovider.Restric
 		return func(ctx context.Context, l *zap.Logger, cmd CreateRedirect) error {
 			redirect := cmd.RedirectDefinition
 
-			// Prevent '/' as source
-			if redirect.Source == "/" {
-				return fmt.Errorf("redirect source '/' is not allowed")
+			// Get restricted paths
+			restrictedPaths := []string{}
+			if restrictedPathsProvider != nil {
+				restrictedPaths = restrictedPathsProvider()
 			}
 
-			// Prevent same source and target
-			if string(redirect.Source) == string(redirect.Target) {
+			// Convert source and target to lowercase
+			source := strings.ToLower(string(redirect.Source))
+			target := strings.ToLower(string(redirect.Target))
+
+			if source == target {
 				return fmt.Errorf("redirect source and target cannot be the same")
 			}
 
-			// Prevent restricted restrictedPaths as source
-			restrictedPaths := restrictedPathsProvider()
-			if restrictedPaths == nil {
-				restrictedPaths = []string{}
-			}
-
 			for _, restricted := range restrictedPaths {
-				if strings.HasPrefix(string(redirect.Source), restricted) {
-					return fmt.Errorf("source '%s' is restricted", redirect.Source)
+				restricted = strings.ToLower(restricted)
+				matched, _ := path.Match(restricted, source)
+				if matched {
+					return fmt.Errorf("source '%s' is restricted due to pattern '%s'", redirect.Source, restricted)
 				}
 			}
 
