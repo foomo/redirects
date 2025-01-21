@@ -21,7 +21,7 @@ type (
 		cmd                       Commands
 		getSiteIdentifierProvider redirectprovider.SiteIdentifierProviderFunc
 		repo                      redirectrepository.RedirectsDefinitionRepository
-		restrictedPathsProvider   redirectprovider.RestrictedPathsProviderFunc
+		restrictedSourcesProvider redirectprovider.RestrictedSourcesProviderFunc
 	}
 	Option func(api *API)
 )
@@ -35,8 +35,8 @@ func NewAPI(
 	inst := &API{
 		l:    l,
 		repo: repo,
-		// Set a default restrictedPathsProvider
-		restrictedPathsProvider: func() []string { return []string{} },
+		// Set a default restrictedSourcesProvider
+		restrictedSourcesProvider: func() []string { return []string{} },
 	}
 	if inst.l == nil {
 		return nil, errors.New("missing logger")
@@ -55,7 +55,7 @@ func NewAPI(
 		),
 		CreateRedirect: redirectcommand.CreateRedirectHandlerComposed(
 			redirectcommand.CreateRedirectHandler(inst.repo),
-			redirectcommand.ValidateRedirectMiddleware(inst.restrictedPathsProvider),
+			redirectcommand.ValidateRedirectMiddleware(inst.restrictedSourcesProvider),
 			redirectcommand.CreateRedirectPublishMiddleware(updateSignal),
 		),
 		UpdateRedirect: redirectcommand.UpdateRedirectHandlerComposed(

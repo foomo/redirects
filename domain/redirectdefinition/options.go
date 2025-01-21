@@ -10,8 +10,8 @@ func WithSiteIdentifierProvider(siteIdentifierFunc redirectprovider.SiteIdentifi
 	}
 }
 
-func WithRestrictedPathsProvider(provider redirectprovider.RestrictedPathsProviderFunc) Option {
+func WithRestrictedSourcesProvider(provider redirectprovider.RestrictedSourcesProviderFunc) Option {
 	return func(api *API) {
-		api.restrictedPathsProvider = provider
+		api.restrictedSourcesProvider = provider
 	}
 }

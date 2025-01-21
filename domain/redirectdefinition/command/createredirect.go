@@ -71,15 +71,15 @@ func CreateRedirectPublishMiddleware(updateSignal *redirectnats.UpdateSignal) Cr
 	}
 }
 
-func ValidateRedirectMiddleware(restrictedPathsProvider redirectprovider.RestrictedPathsProviderFunc) CreateRedirectMiddlewareFn {
+func ValidateRedirectMiddleware(restrictedSourcesProvider redirectprovider.RestrictedSourcesProviderFunc) CreateRedirectMiddlewareFn {
 	return func(next CreateRedirectHandlerFn) CreateRedirectHandlerFn {
 		return func(ctx context.Context, l *zap.Logger, cmd CreateRedirect) error {
 			redirect := cmd.RedirectDefinition
 
-			// Get restricted paths
-			restrictedPaths := []string{}
-			if restrictedPathsProvider != nil {
-				restrictedPaths = restrictedPathsProvider()
+			// Get restricted sources
+			restrictedSources := []string{}
+			if restrictedSourcesProvider != nil {
+				restrictedSources = restrictedSourcesProvider()
 			}
 
 			// Convert source and target to lowercase
@@ -90,7 +90,7 @@ func ValidateRedirectMiddleware(restrictedPathsProvider redirectprovider.Restric
 				return fmt.Errorf("redirect source and target cannot be the same")
 			}
 
-			for _, restricted := range restrictedPaths {
+			for _, restricted := range restrictedSources {
 				restricted = strings.ToLower(restricted)
 				matched, _ := path.Match(restricted, source)
 				if matched {
