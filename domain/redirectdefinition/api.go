@@ -21,7 +21,7 @@ type (
 		cmd                       Commands
 		getSiteIdentifierProvider redirectprovider.SiteIdentifierProviderFunc
 		repo                      redirectrepository.RedirectsDefinitionRepository
-		restrictedPathsProvider   redirectprovider.RestrictedPathsProvider
+		restrictedPathsProvider   redirectprovider.RestrictedPathsProviderFunc
 	}
 	Option func(api *API)
 )

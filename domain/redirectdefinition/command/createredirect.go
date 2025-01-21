@@ -70,7 +70,7 @@ func CreateRedirectPublishMiddleware(updateSignal *redirectnats.UpdateSignal) Cr
 	}
 }
 
-func ValidateRedirectMiddleware(restrictedPathsProvider redirectprovider.RestrictedPathsProvider) CreateRedirectMiddlewareFn {
+func ValidateRedirectMiddleware(restrictedPathsProvider redirectprovider.RestrictedPathsProviderFunc) CreateRedirectMiddlewareFn {
 	return func(next CreateRedirectHandlerFn) CreateRedirectHandlerFn {
 		return func(ctx context.Context, l *zap.Logger, cmd CreateRedirect) error {
 			redirect := cmd.RedirectDefinition
