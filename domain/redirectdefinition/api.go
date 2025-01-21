@@ -21,6 +21,7 @@ type (
 		cmd                       Commands
 		getSiteIdentifierProvider redirectprovider.SiteIdentifierProviderFunc
 		repo                      redirectrepository.RedirectsDefinitionRepository
+		restrictedPathsProvider   redirectprovider.RestrictedPathsProvider
 	}
 	Option func(api *API)
 )
@@ -47,6 +48,7 @@ func NewAPI(
 		),
 		CreateRedirect: redirectcommand.CreateRedirectHandlerComposed(
 			redirectcommand.CreateRedirectHandler(inst.repo),
+			redirectcommand.ValidateRedirectMiddleware(inst.restrictedPathsProvider),
 			redirectcommand.CreateRedirectPublishMiddleware(updateSignal),
 		),
 		UpdateRedirect: redirectcommand.UpdateRedirectHandlerComposed(

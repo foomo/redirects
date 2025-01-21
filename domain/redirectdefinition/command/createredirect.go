@@ -2,6 +2,7 @@ package redirectcommand
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"runtime"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	redirectrepository "github.com/foomo/redirects/domain/redirectdefinition/repository"
 	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
 	redirectnats "github.com/foomo/redirects/pkg/nats"
+	redirectprovider "github.com/foomo/redirects/pkg/provider"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
@@ -64,6 +66,39 @@ func CreateRedirectPublishMiddleware(updateSignal *redirectnats.UpdateSignal) Cr
 				return err
 			}
 			return nil
+		}
+	}
+}
+
+func ValidateRedirectMiddleware(restrictedPathsProvider redirectprovider.RestrictedPathsProvider) CreateRedirectMiddlewareFn {
+	return func(next CreateRedirectHandlerFn) CreateRedirectHandlerFn {
+		return func(ctx context.Context, l *zap.Logger, cmd CreateRedirect) error {
+			redirect := cmd.RedirectDefinition
+
+			// Prevent '/' as source
+			if redirect.Source == "/" {
+				return fmt.Errorf("redirect source '/' is not allowed")
+			}
+
+			// Prevent same source and target
+			if string(redirect.Source) == string(redirect.Target) {
+				return fmt.Errorf("redirect source and target cannot be the same")
+			}
+
+			// Prevent restricted restrictedPaths as source
+			restrictedPaths := restrictedPathsProvider()
+			if restrictedPaths == nil {
+				restrictedPaths = []string{}
+			}
+
+			for _, restricted := range restrictedPaths {
+				if strings.HasPrefix(string(redirect.Source), restricted) {
+					return fmt.Errorf("source '%s' is restricted", redirect.Source)
+				}
+			}
+
+			// Proceed to next handler
+			return next(ctx, l, cmd)
 		}
 	}
 }
