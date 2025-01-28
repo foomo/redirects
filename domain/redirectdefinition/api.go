@@ -3,6 +3,7 @@ package redirectdefinition
 import (
 	"context"
 	"errors"
+	"time"
 
 	redirectcommand "github.com/foomo/redirects/domain/redirectdefinition/command"
 	redirectquery "github.com/foomo/redirects/domain/redirectdefinition/query"
@@ -90,12 +91,10 @@ func (a *API) CreateRedirects(ctx context.Context, cmd redirectcommand.CreateRed
 }
 
 func (a *API) CreateRedirect(ctx context.Context, cmd redirectcommand.CreateRedirect) error {
-	a.setLastUpdatedBy(ctx, cmd.RedirectDefinition)
 	return a.cmd.CreateRedirect(ctx, a.l, cmd)
 }
 
 func (a *API) UpdateRedirect(ctx context.Context, cmd redirectcommand.UpdateRedirect) error {
-	a.setLastUpdatedBy(ctx, cmd.RedirectDefinition)
 	return a.cmd.UpdateRedirect(ctx, a.l, cmd)
 }
 
@@ -113,6 +112,11 @@ func (a *API) Search(ctx context.Context, qry redirectquery.Search) (*redirectre
 
 func (a *API) setLastUpdatedBy(ctx context.Context, definition *redirectstore.RedirectDefinition) {
 	if definition != nil {
-		definition.LastUpdatedBy = a.userProvider(ctx)
+		username := a.userProvider(ctx)
+		if username == "" {
+			username = "unknown"
+		}
+		definition.LastUpdatedBy = username
+		definition.Updated = redirectstore.NewDateTime(time.Now())
 	}
 }

@@ -112,12 +112,7 @@ func (rs *Service) Create(_ http.ResponseWriter, r *http.Request, def *redirects
 		return "", redirectstore.NewRedirectDefinitionError(err.Error())
 	}
 	def.Dimension = redirectstore.Dimension(fmt.Sprintf("%s-%s", site, locale))
-	def.Updated = redirectstore.NewDateTime(time.Now())
-	user := "Unknown" // TODO: get user from request
-	if user != "" {
-		def.LastUpdatedBy = user
-	}
-
+	rs.api.setLastUpdatedBy(r.Context(), def)
 	err = rs.api.CreateRedirect(r.Context(),
 		redirectcommand.CreateRedirect{
 			RedirectDefinition: def,
@@ -145,10 +140,7 @@ func (rs *Service) Delete(_ http.ResponseWriter, r *http.Request, id string) *re
 // used by frontend
 func (rs *Service) Update(_ http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition) *redirectstore.RedirectDefinitionError {
 	def.Updated = redirectstore.NewDateTime(time.Now())
-	user := "Unknown" // TODO: get user from request
-	if user != "" {
-		def.LastUpdatedBy = user
-	}
+	rs.api.setLastUpdatedBy(r.Context(), def)
 	err := rs.api.UpdateRedirect(r.Context(),
 		redirectcommand.UpdateRedirect{
 			RedirectDefinition: def,
