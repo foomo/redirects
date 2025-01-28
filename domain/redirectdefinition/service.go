@@ -95,6 +95,7 @@ func (rs *Service) Search(
 		Page:         params.Page,
 		PageSize:     params.PageSize,
 		RedirectType: params.RedirectType,
+		ActiveState:  params.ActiveState,
 		Sort:         params.Sort,
 	})
 	if err != nil {
