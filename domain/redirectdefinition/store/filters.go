@@ -16,9 +16,9 @@ func (a ActiveStateType) IsValid() bool {
 func (a ActiveStateType) ToFilter() (interface{}, bool) {
 	switch a {
 	case ActiveStateTypeEnabled:
-		return true, true
-	case ActiveStateTypeDisabled:
 		return false, true
+	case ActiveStateTypeDisabled:
+		return true, true
 	default: // ActiveStateAll
 		return nil, false
 	}
