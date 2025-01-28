@@ -4,20 +4,20 @@ type RedirectionType string
 type ActiveStateType string
 
 const (
-	ActiveStateAll      ActiveStateType = "all"
-	ActiveStateEnabled  ActiveStateType = "enabled"
-	ActiveStateDisabled ActiveStateType = "disabled"
+	ActiveStateTypeAll      ActiveStateType = "all"
+	ActiveStateTypeEnabled  ActiveStateType = "enabled"
+	ActiveStateTypeDisabled ActiveStateType = "disabled"
 )
 
 func (a ActiveStateType) IsValid() bool {
-	return a == ActiveStateEnabled || a == ActiveStateDisabled || a == ActiveStateAll
+	return a == ActiveStateTypeEnabled || a == ActiveStateTypeDisabled || a == ActiveStateTypeAll
 }
 
 func (a ActiveStateType) ToFilter() (interface{}, bool) {
 	switch a {
-	case ActiveStateEnabled:
+	case ActiveStateTypeEnabled:
 		return true, true
-	case ActiveStateDisabled:
+	case ActiveStateTypeDisabled:
 		return false, true
 	default: // ActiveStateAll
 		return nil, false
