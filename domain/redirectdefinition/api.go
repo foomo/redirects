@@ -22,6 +22,7 @@ type (
 		getSiteIdentifierProvider redirectprovider.SiteIdentifierProviderFunc
 		repo                      redirectrepository.RedirectsDefinitionRepository
 		restrictedSourcesProvider redirectprovider.RestrictedSourcesProviderFunc
+		userProvider              redirectprovider.UserProviderFunc
 	}
 	Option func(api *API)
 )
@@ -37,6 +38,7 @@ func NewAPI(
 		repo: repo,
 		// Set a default restrictedSourcesProvider
 		restrictedSourcesProvider: func() []string { return []string{} },
+		userProvider:              func(_ context.Context) string { return "unknown" },
 	}
 	if inst.l == nil {
 		return nil, errors.New("missing logger")
@@ -88,10 +90,12 @@ func (a *API) CreateRedirects(ctx context.Context, cmd redirectcommand.CreateRed
 }
 
 func (a *API) CreateRedirect(ctx context.Context, cmd redirectcommand.CreateRedirect) error {
+	a.setLastUpdatedBy(ctx, cmd.RedirectDefinition)
 	return a.cmd.CreateRedirect(ctx, a.l, cmd)
 }
 
 func (a *API) UpdateRedirect(ctx context.Context, cmd redirectcommand.UpdateRedirect) error {
+	a.setLastUpdatedBy(ctx, cmd.RedirectDefinition)
 	return a.cmd.UpdateRedirect(ctx, a.l, cmd)
 }
 
@@ -105,4 +109,10 @@ func (a *API) GetRedirects(ctx context.Context) (map[redirectstore.Dimension]map
 
 func (a *API) Search(ctx context.Context, qry redirectquery.Search) (*redirectrepository.PaginatedResult, error) {
 	return a.qry.Search(ctx, a.l, qry)
+}
+
+func (a *API) setLastUpdatedBy(ctx context.Context, definition *redirectstore.RedirectDefinition) {
+	if definition != nil {
+		definition.LastUpdatedBy = a.userProvider(ctx)
+	}
 }

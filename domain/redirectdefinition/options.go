@@ -15,3 +15,9 @@ func WithRestrictedSourcesProvider(provider redirectprovider.RestrictedSourcesPr
 		api.restrictedSourcesProvider = provider
 	}
 }
+
+func WithUserProvider(provider redirectprovider.UserProviderFunc) Option {
+	return func(api *API) {
+		api.userProvider = provider
+	}
+}
