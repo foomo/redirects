@@ -16,16 +16,16 @@ func Test_ConsolidateRedirectDefinitions(t *testing.T) {
 	}
 
 	oldRedirects := redirectstore.RedirectDefinitions{
-		"/redirects-test-de-01": {ID: "1", ContentID: "1", Source: "/redirects-test-de-01", Target: "/redirects-test-de-02", RedirectionType: redirectstore.Automatic},
+		"/redirects-test-de-01": {ID: "1", ContentID: "1", Source: "/redirects-test-de-01", Target: "/redirects-test-de-02", RedirectionType: redirectstore.RedirectionTypeAutomatic},
 	}
 
 	newRedirects := []*redirectstore.RedirectDefinition{
-		{ID: "2", ContentID: "1", Source: "/redirects-test-de-02", Target: "/redirects-test-de-03", RedirectionType: redirectstore.Automatic},
+		{ID: "2", ContentID: "1", Source: "/redirects-test-de-02", Target: "/redirects-test-de-03", RedirectionType: redirectstore.RedirectionTypeAutomatic},
 	}
 
 	updatedExpected := redirectstore.RedirectDefinitions{
-		"/redirects-test-de-01": {ID: "1", ContentID: "1", Source: "/redirects-test-de-01", Target: "/redirects-test-de-03", RedirectionType: redirectstore.Automatic},
-		"/redirects-test-de-02": {ID: "2", ContentID: "1", Source: "/redirects-test-de-02", Target: "/redirects-test-de-03", RedirectionType: redirectstore.Automatic},
+		"/redirects-test-de-01": {ID: "1", ContentID: "1", Source: "/redirects-test-de-01", Target: "/redirects-test-de-03", RedirectionType: redirectstore.RedirectionTypeAutomatic},
+		"/redirects-test-de-02": {ID: "2", ContentID: "1", Source: "/redirects-test-de-02", Target: "/redirects-test-de-03", RedirectionType: redirectstore.RedirectionTypeAutomatic},
 	}
 
 	deletedExpected := []redirectstore.RedirectSource{}

@@ -19,6 +19,7 @@ type SearchParams struct {
 	Page         int                           `json:"page"`
 	PageSize     int                           `json:"pageSize"`
 	RedirectType redirectstore.RedirectionType `json:"type,omitempty"`
+	ActiveState  redirectstore.ActiveStateType `json:"activeState,omitempty"`
 	Sort         redirectrepository.Sort       `json:"sort"`
 }
 
@@ -105,13 +106,14 @@ func (rs *Service) Search(
 
 // Create a redirect
 // used by frontend
-func (rs *Service) Create(_ http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition, locale string, user string) (redirectstore.EntityID, *redirectstore.RedirectDefinitionError) {
+func (rs *Service) Create(_ http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition, locale string) (redirectstore.EntityID, *redirectstore.RedirectDefinitionError) {
 	site, err := rs.api.getSiteIdentifierProvider(r)
 	if err != nil {
 		return "", redirectstore.NewRedirectDefinitionError(err.Error())
 	}
 	def.Dimension = redirectstore.Dimension(fmt.Sprintf("%s-%s", site, locale))
 	def.Updated = redirectstore.NewDateTime(time.Now())
+	user := "Unknown" // TODO: get user from request
 	if user != "" {
 		def.LastUpdatedBy = user
 	}
@@ -141,8 +143,9 @@ func (rs *Service) Delete(_ http.ResponseWriter, r *http.Request, id string) *re
 
 // Update a redirect
 // used by frontend
-func (rs *Service) Update(_ http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition, user string) *redirectstore.RedirectDefinitionError {
+func (rs *Service) Update(_ http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition) *redirectstore.RedirectDefinitionError {
 	def.Updated = redirectstore.NewDateTime(time.Now())
+	user := "Unknown" // TODO: get user from request
 	if user != "" {
 		def.LastUpdatedBy = user
 	}

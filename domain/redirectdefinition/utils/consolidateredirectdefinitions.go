@@ -40,7 +40,7 @@ func ConsolidateRedirectDefinitions(
 			for _, currentDefinition := range currentDefinitions {
 				// if a new redirect points to the same ID as an existing redirect we need to reset
 				// the target of the existing redirect to the new target
-				if currentDefinition.RedirectionType == redirectstore.Automatic {
+				if currentDefinition.RedirectionType == redirectstore.RedirectionTypeAutomatic {
 					currentDefinition.Target = redirectDefinition.Target
 					upsertRedirectDefinitions = append(upsertRedirectDefinitions, currentDefinition)
 				}
@@ -59,7 +59,7 @@ func ConsolidateRedirectDefinitions(
 		// we should only handle automatic redirects - manually created redirects
 		// might point to URLs that are not handled by contentful and thus might not be part
 		// of the new contentserverexport
-		if redirectDefinition.RedirectionType == redirectstore.Automatic {
+		if redirectDefinition.RedirectionType == redirectstore.RedirectionTypeAutomatic {
 			_, ok := availableTargets[string(redirectDefinition.Target)]
 			if !ok {
 				deletedIDs = append(deletedIDs, redirectDefinition.ID)

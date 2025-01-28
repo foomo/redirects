@@ -86,6 +86,10 @@ func ValidateRedirectMiddleware(restrictedSourcesProvider redirectprovider.Restr
 			source := strings.ToLower(string(redirect.Source))
 			target := strings.ToLower(string(redirect.Target))
 
+			if source == "/" {
+				return fmt.Errorf("redirect from homepage is not allowed")
+			}
+
 			if source == target {
 				return fmt.Errorf("redirect source and target cannot be the same")
 			}

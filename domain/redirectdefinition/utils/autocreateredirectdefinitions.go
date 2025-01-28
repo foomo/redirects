@@ -33,7 +33,7 @@ func AutoCreateRedirectDefinitions(
 					Code:            301,
 					RespectParams:   true,
 					TransferParams:  true,
-					RedirectionType: redirectstore.Automatic,
+					RedirectionType: redirectstore.RedirectionTypeAutomatic,
 					Dimension:       dimension,
 					Updated:         redirectstore.NewDateTime(time.Now()),
 					LastUpdatedBy:   "System",

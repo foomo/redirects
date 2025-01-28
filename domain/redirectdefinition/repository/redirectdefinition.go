@@ -60,7 +60,7 @@ type PaginatedResult struct {
 type (
 	RedirectsDefinitionRepository interface {
 		FindOne(ctx context.Context, id, source string) (*redirectstore.RedirectDefinition, error)
-		FindMany(ctx context.Context, source, dimension, redirectType string, onlyActive bool, pagination Pagination, sort Sort) (*PaginatedResult, error)
+		FindMany(ctx context.Context, source, dimension string, redirectType redirectstore.RedirectionType, activeState redirectstore.ActiveStateType, pagination Pagination, sort Sort) (*PaginatedResult, error)
 		FindAll(ctx context.Context, onlyActive bool) (defs map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, err error)
 		Insert(ctx context.Context, def *redirectstore.RedirectDefinition) error
 		Update(ctx context.Context, def *redirectstore.RedirectDefinition) error
@@ -130,8 +130,9 @@ func (rs BaseRedirectsDefinitionRepository) FindOne(ctx context.Context, id, sou
 
 func (rs BaseRedirectsDefinitionRepository) FindMany(
 	ctx context.Context,
-	source, dimension, redirectType string,
-	onlyActive bool,
+	source, dimension string,
+	redirectType redirectstore.RedirectionType,
+	activeState redirectstore.ActiveStateType,
 	pagination Pagination,
 	sort Sort,
 ) (*PaginatedResult, error) {
@@ -154,11 +155,15 @@ func (rs BaseRedirectsDefinitionRepository) FindMany(
 	if dimension != "" {
 		filter["dimension"] = dimension
 	}
-	if redirectType != "" {
-		filter["redirectType"] = redirectType
+
+	// Apply redirect type filter
+	if redirectValue, apply := redirectType.ToFilter(); apply {
+		filter["redirectType"] = redirectValue
 	}
-	if onlyActive {
-		filter["stale"] = false
+
+	// Apply active state filter
+	if stateValue, apply := activeState.ToFilter(); apply {
+		filter["stale"] = stateValue
 	}
 
 	// Pagination settings

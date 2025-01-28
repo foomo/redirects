@@ -148,16 +148,15 @@ func (p *AdminServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Requ
 		var (
 			arg_def    *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition
 			arg_locale string
-			arg_user   string
 		)
-		args = []interface{}{&arg_def, &arg_locale, &arg_user}
+		args = []interface{}{&arg_def, &arg_locale}
 		if err := gotsrpc.LoadArgs(&args, callStats, r); err != nil {
 			gotsrpc.ErrorCouldNotLoadArgs(w)
 			return
 		}
 		executionStart := time.Now()
 		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
-		createRet, createRet_1 := p.service.Create(&rw, r, arg_def, arg_locale, arg_user)
+		createRet, createRet_1 := p.service.Create(&rw, r, arg_def, arg_locale)
 		callStats.Execution = time.Since(executionStart)
 		if rw.Status() == http.StatusOK {
 			rets = []interface{}{createRet, createRet_1}
@@ -226,17 +225,16 @@ func (p *AdminServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Requ
 			rets []interface{}
 		)
 		var (
-			arg_def  *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition
-			arg_user string
+			arg_def *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition
 		)
-		args = []interface{}{&arg_def, &arg_user}
+		args = []interface{}{&arg_def}
 		if err := gotsrpc.LoadArgs(&args, callStats, r); err != nil {
 			gotsrpc.ErrorCouldNotLoadArgs(w)
 			return
 		}
 		executionStart := time.Now()
 		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
-		updateRet := p.service.Update(&rw, r, arg_def, arg_user)
+		updateRet := p.service.Update(&rw, r, arg_def)
 		callStats.Execution = time.Since(executionStart)
 		if rw.Status() == http.StatusOK {
 			rets = []interface{}{updateRet}

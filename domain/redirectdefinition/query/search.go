@@ -18,7 +18,7 @@ type (
 	Search struct {
 		Source       redirectstore.RedirectSource  `json:"source"`
 		Dimension    redirectstore.Dimension       `json:"dimension"`
-		OnlyActive   bool                          `json:"onlyActive"`
+		ActiveState  redirectstore.ActiveStateType `json:"activeState"`
 		Page         int                           `json:"page"`
 		PageSize     int                           `json:"pageSize"`
 		RedirectType redirectstore.RedirectionType `json:"type,omitempty"`
@@ -44,14 +44,19 @@ func SearchHandler(repo redirectrepository.RedirectsDefinitionRepository) Search
 		}
 
 		// Validate RedirectType
-		if qry.RedirectType != "" && qry.RedirectType != redirectstore.Manual && qry.RedirectType != redirectstore.Automatic {
+		if !qry.RedirectType.IsValid() {
 			return nil, fmt.Errorf("invalid redirect type: '%s'; should be empty, 'manual' or 'automatic'", qry.RedirectType)
+		}
+
+		// Validate ActiveState
+		if !qry.ActiveState.IsValid() {
+			return nil, fmt.Errorf("invalid active state: '%s'; should be empty, 'enabled' or 'disabled'", qry.RedirectType)
 		}
 
 		// Create pagination struct
 		pagination := redirectrepository.Pagination{Page: page, PageSize: pageSize}
 
-		return repo.FindMany(ctx, string(qry.Source), string(qry.Dimension), string(qry.RedirectType), qry.OnlyActive, pagination, qry.Sort)
+		return repo.FindMany(ctx, string(qry.Source), string(qry.Dimension), qry.RedirectType, qry.ActiveState, pagination, qry.Sort)
 	}
 }
 

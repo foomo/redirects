@@ -3,14 +3,8 @@ package redirectstore
 type RedirectSource string
 type RedirectTarget string
 type RedirectRequest string
-type RedirectionType string
 type Dimension string
 type Site string
-
-const (
-	Manual    RedirectionType = "manual"
-	Automatic RedirectionType = "automatic"
-)
 
 type RedirectDefinition struct {
 	ID              EntityID        `json:"id" bson:"id"`
