@@ -21,6 +21,7 @@ type RedirectsProviderInterface interface {
 type DimensionProviderFunc func(r *http.Request) (store.Dimension, error)
 type SiteIdentifierProviderFunc func(r *http.Request) (store.Site, error)
 type RestrictedSourcesProviderFunc func() []string
+type IsAutomaticRedirectInitiallyStaleProviderFunc func() bool
 type UserProviderFunc func(ctx context.Context) string
 type RedirectsProviderFunc func(ctx context.Context) (map[store.Dimension]map[store.RedirectSource]*store.RedirectDefinition, error, error)
 type MatcherFunc func(r *http.Request) (*store.RedirectDefinition, error)

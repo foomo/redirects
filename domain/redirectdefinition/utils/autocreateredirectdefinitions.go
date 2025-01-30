@@ -15,6 +15,7 @@ func AutoCreateRedirectDefinitions(
 	_ *zap.Logger,
 	oldMap, newMap map[string]*content.RepoNode,
 	dimension redirectstore.Dimension,
+	initialStaleValue bool,
 ) ([]*redirectstore.RedirectDefinition, error) {
 	if len(oldMap) == 0 || len(newMap) == 0 {
 		return nil, errors.New("calling auto create difference with nil arguments")
@@ -37,6 +38,7 @@ func AutoCreateRedirectDefinitions(
 					Dimension:       dimension,
 					Updated:         redirectstore.NewDateTime(time.Now()),
 					LastUpdatedBy:   "System",
+					Stale:           initialStaleValue,
 				}
 				redirects = append(redirects, rd)
 			}

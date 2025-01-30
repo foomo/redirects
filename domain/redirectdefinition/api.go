@@ -17,13 +17,14 @@ import (
 // API for the domain
 type (
 	API struct {
-		l                         *zap.Logger
-		qry                       Queries
-		cmd                       Commands
-		getSiteIdentifierProvider redirectprovider.SiteIdentifierProviderFunc
-		repo                      redirectrepository.RedirectsDefinitionRepository
-		restrictedSourcesProvider redirectprovider.RestrictedSourcesProviderFunc
-		userProvider              redirectprovider.UserProviderFunc
+		l                                         *zap.Logger
+		qry                                       Queries
+		cmd                                       Commands
+		repo                                      redirectrepository.RedirectsDefinitionRepository
+		getSiteIdentifierProvider                 redirectprovider.SiteIdentifierProviderFunc
+		restrictedSourcesProvider                 redirectprovider.RestrictedSourcesProviderFunc
+		userProvider                              redirectprovider.UserProviderFunc
+		isAutomaticRedirectInitiallyStaleProvider redirectprovider.IsAutomaticRedirectInitiallyStaleProviderFunc
 	}
 	Option func(api *API)
 )
@@ -35,11 +36,11 @@ func NewAPI(
 	opts ...Option,
 ) (*API, error) {
 	inst := &API{
-		l:    l,
-		repo: repo,
-		// Set a default restrictedSourcesProvider
-		restrictedSourcesProvider: func() []string { return []string{} },
-		userProvider:              func(_ context.Context) string { return "unknown" },
+		l:                         l,
+		repo:                      repo,
+		restrictedSourcesProvider: defaultRestrictedSourcesProvider,
+		userProvider:              defaultUserProvider,
+		isAutomaticRedirectInitiallyStaleProvider: defaultIsAutomaticRedirectInitiallyStaleProvider,
 	}
 	if inst.l == nil {
 		return nil, errors.New("missing logger")
@@ -53,7 +54,7 @@ func NewAPI(
 		CreateRedirects: redirectcommand.CreateRedirectsHandlerComposed(
 			redirectcommand.CreateRedirectsHandler(inst.repo),
 			redirectcommand.CreateRedirectsConsolidateMiddleware(repo, false),
-			redirectcommand.CreateRedirectsAutoCreateMiddleware(),
+			redirectcommand.CreateRedirectsAutoCreateMiddleware(inst.isAutomaticRedirectInitiallyStaleProvider()),
 			redirectcommand.CreateRedirectsPublishMiddleware(updateSignal),
 		),
 		CreateRedirect: redirectcommand.CreateRedirectHandlerComposed(

@@ -92,7 +92,7 @@ func CreateRedirectsPublishMiddleware(updateSignal *redirectnats.UpdateSignal) C
 }
 
 // CreateRedirectsAutoCreateMiddleware ...
-func CreateRedirectsAutoCreateMiddleware() CreateRedirectsMiddlewareFn {
+func CreateRedirectsAutoCreateMiddleware(initialStaleState bool) CreateRedirectsMiddlewareFn {
 	return func(next CreateRedirectsHandlerFn) CreateRedirectsHandlerFn {
 		return func(ctx context.Context, l *zap.Logger, cmd CreateRedirects) error {
 			l.Info("auto creating redirects")
@@ -114,6 +114,7 @@ func CreateRedirectsAutoCreateMiddleware() CreateRedirectsMiddlewareFn {
 					oldNodeMap,
 					newNodeMap,
 					redirectstore.Dimension(dimension),
+					initialStaleState,
 				)
 				if err != nil {
 					keellog.WithError(l, err).Error("failed to execute auto create redirects")

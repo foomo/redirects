@@ -36,6 +36,7 @@ func Test_AutoCreateRedirectDefinitionsParse(t *testing.T) {
 		rdutils.CreateFlatRepoNodeMap(p["de"], make(map[string]*content.RepoNode)),
 		rdutils.CreateFlatRepoNodeMap(pChanged["de"], make(map[string]*content.RepoNode)),
 		"HMD-de",
+		false,
 	)
 	assert.NoError(t, err)
 	assert.Equal(t, 12, len(redirects))
@@ -136,6 +137,7 @@ func Test_AutoCreateRedirectDefinitionsCoverAll(t *testing.T) {
 		rdutils.CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
 		rdutils.CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
 		"HMD-de",
+		false,
 	)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(redirects))
@@ -221,6 +223,7 @@ func Test_AutoCreateRedirectDefinitions(t *testing.T) {
 		rdutils.CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
 		rdutils.CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
 		"HMD-de",
+		false,
 	)
 	if err != nil {
 		assert.Error(t, err)
@@ -313,6 +316,7 @@ func Test_AutoCreateRedirectDefinitionsExg1(t *testing.T) {
 		rdutils.CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
 		rdutils.CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
 		"HMD-de",
+		false,
 	)
 	if err != nil {
 		assert.Error(t, err)
@@ -405,6 +409,7 @@ func Test_AutoCreateRedirectDefinitionsExg2(t *testing.T) {
 		rdutils.CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
 		rdutils.CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
 		"HMD-de",
+		false,
 	)
 	if err != nil {
 		assert.Error(t, err)
@@ -497,6 +502,7 @@ func Test_AutoCreateRedirectDefinitionsExg3(t *testing.T) {
 		rdutils.CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
 		rdutils.CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
 		"HMD-de",
+		false,
 	)
 	if err != nil {
 		assert.Error(t, err)
@@ -513,6 +519,7 @@ func Test_AutoCreateRedirectDefinitionsEmptyAndNilArgs(t *testing.T) {
 		rdutils.CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
 		rdutils.CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
 		"HMD-de",
+		false,
 	)
 	if err != nil {
 		fmt.Print(err)
@@ -526,6 +533,7 @@ func Test_AutoCreateRedirectDefinitionsEmptyAndNilArgs(t *testing.T) {
 		rdutils.CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
 		rdutils.CreateFlatRepoNodeMap(newNodes, make(map[string]*content.RepoNode)),
 		"HMD-de",
+		false,
 	)
 	assert.Error(t, err)
 	assert.Equal(t, len(redirects), 0)
