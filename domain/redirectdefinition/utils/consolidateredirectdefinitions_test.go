@@ -16,16 +16,16 @@ func Test_ConsolidateRedirectDefinitions(t *testing.T) {
 	}
 
 	oldRedirects := redirectstore.RedirectDefinitions{
-		"/redirects-test-de-01": {ID: "1", ContentID: "1", Source: "/redirects-test-de-01", Target: "/redirects-test-de-02", RedirectionType: redirectstore.RedirectionTypeAutomatic},
+		"/redirects-test-de-01": {ID: "1", ContentID: "1", Source: "/redirects-test-de-01", Target: "/redirects-test-de-02", RedirectionType: redirectstore.RedirectionTypeAutomatic, Dimension: "HMD-de"},
 	}
 
 	newRedirects := []*redirectstore.RedirectDefinition{
-		{ID: "2", ContentID: "1", Source: "/redirects-test-de-02", Target: "/redirects-test-de-03", RedirectionType: redirectstore.RedirectionTypeAutomatic},
+		{ID: "2", ContentID: "1", Source: "/redirects-test-de-02", Target: "/redirects-test-de-03", RedirectionType: redirectstore.RedirectionTypeAutomatic, Dimension: "HMD-de"},
 	}
 
 	updatedExpected := redirectstore.RedirectDefinitions{
-		"/redirects-test-de-01": {ID: "1", ContentID: "1", Source: "/redirects-test-de-01", Target: "/redirects-test-de-03", RedirectionType: redirectstore.RedirectionTypeAutomatic},
-		"/redirects-test-de-02": {ID: "2", ContentID: "1", Source: "/redirects-test-de-02", Target: "/redirects-test-de-03", RedirectionType: redirectstore.RedirectionTypeAutomatic},
+		"/redirects-test-de-01": {ID: "1", ContentID: "1", Source: "/redirects-test-de-01", Target: "/redirects-test-de-03", RedirectionType: redirectstore.RedirectionTypeAutomatic, Dimension: "HMD-de"},
+		"/redirects-test-de-02": {ID: "2", ContentID: "1", Source: "/redirects-test-de-02", Target: "/redirects-test-de-03", RedirectionType: redirectstore.RedirectionTypeAutomatic, Dimension: "HMD-de"},
 	}
 
 	deletedExpected := []redirectstore.RedirectSource{}

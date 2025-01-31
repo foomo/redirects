@@ -9,6 +9,7 @@ import (
 	redirectrepository "github.com/foomo/redirects/domain/redirectdefinition/repository"
 	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
 	redirectnats "github.com/foomo/redirects/pkg/nats"
+	redirectprovider "github.com/foomo/redirects/pkg/provider"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
@@ -64,6 +65,14 @@ func UpdateRedirectPublishMiddleware(updateSignal *redirectnats.UpdateSignal) Up
 				return err
 			}
 			return nil
+		}
+	}
+}
+
+func ValidateUpdateRedirectMiddleware(restrictedSourcesProvider redirectprovider.RestrictedSourcesProviderFunc, repo redirectrepository.RedirectsDefinitionRepository) UpdateRedirectMiddlewareFn {
+	return func(next UpdateRedirectHandlerFn) UpdateRedirectHandlerFn {
+		return func(ctx context.Context, l *zap.Logger, cmd UpdateRedirect) error {
+			return validateRedirect(ctx, l, repo, restrictedSourcesProvider, cmd.RedirectDefinition, next)
 		}
 	}
 }

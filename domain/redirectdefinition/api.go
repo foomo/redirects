@@ -59,11 +59,12 @@ func NewAPI(
 		),
 		CreateRedirect: redirectcommand.CreateRedirectHandlerComposed(
 			redirectcommand.CreateRedirectHandler(inst.repo),
-			redirectcommand.ValidateRedirectMiddleware(inst.restrictedSourcesProvider),
+			redirectcommand.ValidateRedirectMiddleware(inst.restrictedSourcesProvider, inst.repo),
 			redirectcommand.CreateRedirectPublishMiddleware(updateSignal),
 		),
 		UpdateRedirect: redirectcommand.UpdateRedirectHandlerComposed(
 			redirectcommand.UpdateRedirectHandler(inst.repo),
+			redirectcommand.ValidateUpdateRedirectMiddleware(inst.restrictedSourcesProvider, inst.repo),
 			redirectcommand.UpdateRedirectPublishMiddleware(updateSignal),
 		),
 		DeleteRedirect: redirectcommand.DeleteRedirectHandlerComposed(

@@ -2,8 +2,6 @@ package redirectcommand
 
 import (
 	"context"
-	"fmt"
-	"path"
 	"reflect"
 	"runtime"
 	"strings"
@@ -71,39 +69,12 @@ func CreateRedirectPublishMiddleware(updateSignal *redirectnats.UpdateSignal) Cr
 	}
 }
 
-func ValidateRedirectMiddleware(restrictedSourcesProvider redirectprovider.RestrictedSourcesProviderFunc) CreateRedirectMiddlewareFn {
+func ValidateRedirectMiddleware(
+	restrictedSourcesProvider redirectprovider.RestrictedSourcesProviderFunc,
+	repo redirectrepository.RedirectsDefinitionRepository) CreateRedirectMiddlewareFn {
 	return func(next CreateRedirectHandlerFn) CreateRedirectHandlerFn {
 		return func(ctx context.Context, l *zap.Logger, cmd CreateRedirect) error {
-			redirect := cmd.RedirectDefinition
-
-			// Get restricted sources
-			restrictedSources := []string{}
-			if restrictedSourcesProvider != nil {
-				restrictedSources = restrictedSourcesProvider()
-			}
-
-			// Convert source and target to lowercase
-			source := strings.ToLower(string(redirect.Source))
-			target := strings.ToLower(string(redirect.Target))
-
-			if source == "/" {
-				return fmt.Errorf("redirect from homepage is not allowed")
-			}
-
-			if source == target {
-				return fmt.Errorf("redirect source and target cannot be the same")
-			}
-
-			for _, restricted := range restrictedSources {
-				restricted = strings.ToLower(restricted)
-				matched, _ := path.Match(restricted, source)
-				if matched {
-					return fmt.Errorf("source '%s' is restricted due to pattern '%s'", redirect.Source, restricted)
-				}
-			}
-
-			// Proceed to next handler
-			return next(ctx, l, cmd)
+			return validateRedirect(ctx, l, repo, restrictedSourcesProvider, cmd.RedirectDefinition, next)
 		}
 	}
 }

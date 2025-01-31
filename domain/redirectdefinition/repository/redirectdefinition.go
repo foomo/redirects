@@ -62,6 +62,7 @@ type (
 		FindOne(ctx context.Context, id, source string) (*redirectstore.RedirectDefinition, error)
 		FindMany(ctx context.Context, source, dimension string, redirectType redirectstore.RedirectionType, activeState redirectstore.ActiveStateType, pagination Pagination, sort Sort) (*PaginatedResult, error)
 		FindAll(ctx context.Context, onlyActive bool) (defs map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, err error)
+		FindAllByDimension(ctx context.Context, dimension redirectstore.Dimension, onlyActive bool) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error)
 		Insert(ctx context.Context, def *redirectstore.RedirectDefinition) error
 		Update(ctx context.Context, def *redirectstore.RedirectDefinition) error
 		UpsertMany(ctx context.Context, defs []*redirectstore.RedirectDefinition) error
@@ -234,6 +235,29 @@ func (rs BaseRedirectsDefinitionRepository) FindAll(ctx context.Context, onlyAct
 	return retResult, nil
 }
 
+func (rs *BaseRedirectsDefinitionRepository) FindAllByDimension(ctx context.Context, dimension redirectstore.Dimension, onlyActive bool) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
+	var results []redirectstore.RedirectDefinition
+	filter := bson.M{"dimension": dimension}
+
+	// If onlyActive is true, fetch only non-stale (active) redirects
+	if onlyActive {
+		filter["stale"] = false
+	}
+
+	err := rs.collection.Find(ctx, filter, &results)
+	if err != nil {
+		return nil, err
+	}
+
+	defs := make(map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition)
+	for _, def := range results {
+		defCopy := def
+		defs[def.Source] = &defCopy
+	}
+
+	return defs, nil
+}
+
 func (rs BaseRedirectsDefinitionRepository) Insert(ctx context.Context, def *redirectstore.RedirectDefinition) error {
 	if def.ID == "" {
 		def.ID = redirectstore.NewEntityID()
@@ -333,7 +357,7 @@ func (rs BaseRedirectsDefinitionRepository) DeleteMany(ctx context.Context, ids 
 	return err
 }
 
-func (rs *BaseRedirectsDefinitionRepository) FindByIDs(ctx context.Context, ids []redirectstore.EntityID) ([]*redirectstore.RedirectDefinition, error) {
+func (rs *BaseRedirectsDefinitionRepository) FindByIDs(ctx context.Context, ids []*redirectstore.EntityID) ([]*redirectstore.RedirectDefinition, error) {
 	var results []*redirectstore.RedirectDefinition
 
 	// Query all redirects matching the given IDs
