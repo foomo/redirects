@@ -65,6 +65,7 @@ type AdminServiceGoTSRPCClient interface {
 	Delete(ctx go_context.Context, id string) (retDelete_0 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error)
 	Search(ctx go_context.Context, params *github_com_foomo_redirects_domain_redirectdefinition.SearchParams) (retSearch_0 *github_com_foomo_redirects_domain_redirectdefinition_repository.PaginatedResult, retSearch_1 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error)
 	Update(ctx go_context.Context, def *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition) (retUpdate_0 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error)
+	UpdateStates(ctx go_context.Context, ids []github_com_foomo_redirects_domain_redirectdefinition_store.EntityID, state bool) (retUpdateStates_0 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error)
 }
 
 type HTTPAdminServiceGoTSRPCClient struct {
@@ -124,6 +125,16 @@ func (tsc *HTTPAdminServiceGoTSRPCClient) Update(ctx go_context.Context, def *gi
 	clientErr = tsc.Client.Call(ctx, tsc.URL, tsc.EndPoint, "Update", args, reply)
 	if clientErr != nil {
 		clientErr = pkg_errors.WithMessage(clientErr, "failed to call service.AdminServiceGoTSRPCProxy Update")
+	}
+	return
+}
+
+func (tsc *HTTPAdminServiceGoTSRPCClient) UpdateStates(ctx go_context.Context, ids []github_com_foomo_redirects_domain_redirectdefinition_store.EntityID, state bool) (retUpdateStates_0 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error) {
+	args := []interface{}{ids, state}
+	reply := []interface{}{&retUpdateStates_0}
+	clientErr = tsc.Client.Call(ctx, tsc.URL, tsc.EndPoint, "UpdateStates", args, reply)
+	if clientErr != nil {
+		clientErr = pkg_errors.WithMessage(clientErr, "failed to call service.AdminServiceGoTSRPCProxy UpdateStates")
 	}
 	return
 }

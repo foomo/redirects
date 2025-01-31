@@ -17,6 +17,7 @@ type AdminService interface {
 	Create(w http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition, locale string) (redirectstore.EntityID, *redirectstore.RedirectDefinitionError)
 	Delete(w http.ResponseWriter, r *http.Request, id string) *redirectstore.RedirectDefinitionError
 	Update(w http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition) *redirectstore.RedirectDefinitionError
+	UpdateStates(w http.ResponseWriter, r *http.Request, ids []redirectstore.EntityID, state bool) *redirectstore.RedirectDefinitionError
 }
 
 // InternalService is the interface for the internal service

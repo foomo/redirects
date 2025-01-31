@@ -65,6 +65,7 @@ type (
 		Insert(ctx context.Context, def *redirectstore.RedirectDefinition) error
 		Update(ctx context.Context, def *redirectstore.RedirectDefinition) error
 		UpsertMany(ctx context.Context, defs []*redirectstore.RedirectDefinition) error
+		FindByIDs(ctx context.Context, ids []*redirectstore.EntityID) ([]*redirectstore.RedirectDefinition, error)
 		Delete(ctx context.Context, id redirectstore.EntityID) error
 		DeleteMany(ctx context.Context, ids []redirectstore.EntityID) error
 	}
@@ -330,4 +331,17 @@ func (rs BaseRedirectsDefinitionRepository) DeleteMany(ctx context.Context, ids 
 	filter := bson.M{"id": bson.M{"$in": ids}}
 	_, err := rs.collection.Col().DeleteMany(ctx, filter)
 	return err
+}
+
+func (rs *BaseRedirectsDefinitionRepository) FindByIDs(ctx context.Context, ids []redirectstore.EntityID) ([]*redirectstore.RedirectDefinition, error) {
+	var results []*redirectstore.RedirectDefinition
+
+	// Query all redirects matching the given IDs
+	err := rs.collection.Find(ctx, bson.M{"_id": bson.M{"$in": ids}}, &results)
+	if err != nil {
+		rs.l.Error("Failed to fetch redirects by IDs", zap.Error(err))
+		return nil, err
+	}
+
+	return results, nil
 }

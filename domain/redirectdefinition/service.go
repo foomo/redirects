@@ -151,3 +151,28 @@ func (rs *Service) Update(_ http.ResponseWriter, r *http.Request, def *redirects
 	}
 	return nil
 }
+
+// Update a redirects state
+// used by frontend
+func (rs *Service) UpdateStates(_ http.ResponseWriter, r *http.Request, ids []*redirectstore.EntityID, state bool) *redirectstore.RedirectDefinitionError {
+	// Fetch all redirects by IDs
+	redirects, err := rs.api.repo.FindByIDs(r.Context(), ids)
+	if err != nil {
+		return redirectstore.NewRedirectDefinitionError("Failed to fetch redirects: " + err.Error())
+	}
+
+	// Update each redirect in memory
+	for _, def := range redirects {
+		def.Stale = !state // flip the value because we are updating the stale field
+		def.Updated = redirectstore.NewDateTime(time.Now())
+		rs.api.setLastUpdatedBy(r.Context(), def)
+	}
+
+	// Perform batch update using UpsertMany
+	err = rs.api.repo.UpsertMany(r.Context(), redirects)
+	if err != nil {
+		return redirectstore.NewRedirectDefinitionError("Failed to update redirects: " + err.Error())
+	}
+
+	return nil
+}

@@ -102,10 +102,11 @@ func (p *InternalServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.R
 }
 
 const (
-	AdminServiceGoTSRPCProxyCreate = "Create"
-	AdminServiceGoTSRPCProxyDelete = "Delete"
-	AdminServiceGoTSRPCProxySearch = "Search"
-	AdminServiceGoTSRPCProxyUpdate = "Update"
+	AdminServiceGoTSRPCProxyCreate       = "Create"
+	AdminServiceGoTSRPCProxyDelete       = "Delete"
+	AdminServiceGoTSRPCProxySearch       = "Search"
+	AdminServiceGoTSRPCProxyUpdate       = "Update"
+	AdminServiceGoTSRPCProxyUpdateStates = "UpdateStates"
 )
 
 type AdminServiceGoTSRPCProxy struct {
@@ -238,6 +239,33 @@ func (p *AdminServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Requ
 		callStats.Execution = time.Since(executionStart)
 		if rw.Status() == http.StatusOK {
 			rets = []interface{}{updateRet}
+			if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
+				gotsrpc.ErrorCouldNotReply(w)
+				return
+			}
+		}
+		gotsrpc.Monitor(w, r, args, rets, callStats)
+		return
+	case AdminServiceGoTSRPCProxyUpdateStates:
+		var (
+			args []interface{}
+			rets []interface{}
+		)
+		var (
+			arg_ids   []github_com_foomo_redirects_domain_redirectdefinition_store.EntityID
+			arg_state bool
+		)
+		args = []interface{}{&arg_ids, &arg_state}
+		if err := gotsrpc.LoadArgs(&args, callStats, r); err != nil {
+			gotsrpc.ErrorCouldNotLoadArgs(w)
+			return
+		}
+		executionStart := time.Now()
+		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
+		updateStatesRet := p.service.UpdateStates(&rw, r, arg_ids, arg_state)
+		callStats.Execution = time.Since(executionStart)
+		if rw.Status() == http.StatusOK {
+			rets = []interface{}{updateStatesRet}
 			if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
 				gotsrpc.ErrorCouldNotReply(w)
 				return
