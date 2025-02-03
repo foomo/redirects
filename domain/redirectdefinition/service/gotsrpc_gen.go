@@ -252,7 +252,7 @@ func (p *AdminServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Requ
 			rets []interface{}
 		)
 		var (
-			arg_ids   []github_com_foomo_redirects_domain_redirectdefinition_store.EntityID
+			arg_ids   []*github_com_foomo_redirects_domain_redirectdefinition_store.EntityID
 			arg_state bool
 		)
 		args = []interface{}{&arg_ids, &arg_state}
