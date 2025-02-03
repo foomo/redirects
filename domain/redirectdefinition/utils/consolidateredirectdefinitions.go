@@ -6,19 +6,29 @@ import (
 	"go.uber.org/zap"
 )
 
-// Consolidate redirect definitions by:
-// * Making a list for update with new and updated definitions
-// * Prevent multiple redirections by consolidating redirects into a single definition.
-// * Detecting and marking cyclic redirects as `stale = true`
-// * Deleting redirects whose target does not exist in `newNodeMap`
-// * Processing both active and inactive redirects, because automatic can be reactivated by user
+// ConsolidateRedirectDefinitions processes and updates redirect definitions by:
+// - Updating existing redirects to their correct targets.
+// - Consolidating chains to prevent multiple unnecessary redirections.
+// - Detecting and marking cycles (`stale = true`) to avoid infinite loops.
+// - Deleting redirects if their target no longer exists in `newNodeMap`.
+// - Processing both active and inactive redirects, since redirects can be reactivated later manually.
+//
+// Parameters:
+// - l: Logger for debug/warning messages.
+// - newDefinitions: New incoming redirects to be added or updated.
+// - current: Existing redirects that need to be consolidated.
+// - newNodeMap: Available content nodes (determines if a target is still valid).
+//
+// Returns:
+// - A list of updated redirect definitions (merged and adjusted).
+// - A list of entity IDs for redirects that should be deleted.
 func ConsolidateRedirectDefinitions(
 	l *zap.Logger,
 	newDefinitions []*redirectstore.RedirectDefinition,
 	current redirectstore.RedirectDefinitions,
 	newNodeMap map[string]*content.RepoNode,
 ) ([]*redirectstore.RedirectDefinition, []redirectstore.EntityID) {
-	upsertRedirectDefinitions := []*redirectstore.RedirectDefinition{}
+	upsertRedirectsMap := make(map[string]*redirectstore.RedirectDefinition)
 	deletedIDs := []redirectstore.EntityID{}
 
 	// Step 1: Map all redirects by source
@@ -29,69 +39,116 @@ func ConsolidateRedirectDefinitions(
 
 	// Step 2: Process new redirects
 	for _, newRedirect := range newDefinitions {
-		// Detect cycles and mark `stale = true` instead of deleting
-		if HasCycle(newRedirect.Source, newRedirect.Target, redirectsBySource) {
-			newRedirect.Stale = true
-			l.Warn("Cycle detected, marking redirect as stale",
-				zap.String("source", string(newRedirect.Source)),
-				zap.String("target", string(newRedirect.Target)),
-			)
-		}
+		handleCycleCheck(l, newRedirect, redirectsBySource)
 
-		upsertRedirectDefinitions = append(upsertRedirectDefinitions, newRedirect)
+		// Store unique redirects
+		upsertRedirectsMap[string(newRedirect.Source)] = newRedirect
 
 		// If an existing redirect exists, update its target
 		if existingRedirect, exists := redirectsBySource[newRedirect.Source]; exists {
-			if existingRedirect.RedirectionType == redirectstore.RedirectionTypeAutomatic {
-				// Propagate updates: if an old redirect points to this new source, update its target
-				for _, redirect := range redirectsBySource {
-					if string(redirect.Target) == string(existingRedirect.Source) {
-						redirect.Target = newRedirect.Target
-						upsertRedirectDefinitions = append(upsertRedirectDefinitions, redirect)
+			updateRedirectTarget(existingRedirect, newRedirect, upsertRedirectsMap)
+		}
+	}
 
-						l.Info("Updated chained redirect",
-							zap.String("source", string(redirect.Source)),
-							zap.String("new_target", string(redirect.Target)),
-						)
-					}
-				}
+	// Step 3: Identify redirects whose targets are no longer available
+	availableTargets := mapAvailableTargets(newNodeMap)
+	validTargets := mapValidTargets(newDefinitions)
 
-				existingRedirect.Target = newRedirect.Target
-				upsertRedirectDefinitions = append(upsertRedirectDefinitions, existingRedirect)
+	// Process old redirects
+	for _, redirectDefinition := range current {
+		if redirectDefinition.RedirectionType == redirectstore.RedirectionTypeAutomatic {
+			// Ensure propagation of target updates
+			if newTarget, exists := upsertRedirectsMap[string(redirectDefinition.Target)]; exists {
+				redirectDefinition.Target = newTarget.Target
+				upsertRedirectsMap[string(redirectDefinition.Source)] = redirectDefinition
+			}
 
-				l.Info("Updated automatic redirect target",
-					zap.String("source", string(existingRedirect.Source)),
-					zap.String("new_target", string(existingRedirect.Target)),
-				)
+			// Detect cycles
+			if handleCycleCheck(l, redirectDefinition, redirectsBySource) {
+				upsertRedirectsMap[string(redirectDefinition.Source)] = redirectDefinition
+				continue
+			}
+
+			// Check if redirect should be deleted
+			if shouldDeleteRedirect(redirectDefinition, availableTargets, validTargets, upsertRedirectsMap) {
+				deletedIDs = append(deletedIDs, redirectDefinition.ID)
+			} else {
+				upsertRedirectsMap[string(redirectDefinition.Source)] = redirectDefinition
 			}
 		}
 	}
 
-	// Step 3: Identify redirects whose targets are no longer available in the current ContentServerExport.
+	// Convert map to slice
+	upsertRedirectDefinitions := mapsToSlice(upsertRedirectsMap)
+
+	return upsertRedirectDefinitions, deletedIDs
+}
+
+// handleCycleCheck detects cyclic redirects and marks them as stale
+func handleCycleCheck(
+	l *zap.Logger,
+	redirect *redirectstore.RedirectDefinition,
+	redirectsBySource map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition,
+) bool {
+	if HasCycle(redirect.Source, redirect.Target, redirectsBySource) {
+		redirect.Stale = true
+		l.Warn("Cycle detected, marking redirect as stale",
+			zap.String("source", string(redirect.Source)),
+			zap.String("target", string(redirect.Target)),
+		)
+		return true
+	}
+	return false
+}
+
+// updateRedirectTarget updates the target of an existing automatic redirect
+func updateRedirectTarget(
+	existingRedirect, newRedirect *redirectstore.RedirectDefinition,
+	upsertRedirectsMap map[string]*redirectstore.RedirectDefinition,
+) {
+	if existingRedirect.RedirectionType == redirectstore.RedirectionTypeAutomatic {
+		existingRedirect.Target = newRedirect.Target
+		upsertRedirectsMap[string(existingRedirect.Source)] = existingRedirect
+	}
+}
+
+// mapAvailableTargets creates a set of available targets from newNodeMap
+func mapAvailableTargets(newNodeMap map[string]*content.RepoNode) map[string]struct{} {
 	availableTargets := make(map[string]struct{})
 	for _, node := range newNodeMap {
 		availableTargets[node.URI] = struct{}{}
 	}
+	return availableTargets
+}
 
-	for _, redirectDefinition := range current {
-		// Process only automatic redirects.
-		// Manually created redirects might point to external URLs or custom cases
-		// that are not covered by the ContentServerExport, so we leave them as is.
-		if redirectDefinition.RedirectionType == redirectstore.RedirectionTypeAutomatic {
-			if _, exists := availableTargets[string(redirectDefinition.Target)]; !exists {
-				// Mark redirect for deletion if its target no longer exists
-				deletedIDs = append(deletedIDs, redirectDefinition.ID)
-
-				l.Warn("Redirect target no longer exists, marking for deletion",
-					zap.String("source", string(redirectDefinition.Source)),
-					zap.String("target", string(redirectDefinition.Target)),
-					zap.String("redirect_id", string(redirectDefinition.ID)),
-				)
-			}
-		}
+// mapValidTargets creates a set of valid targets from newDefinitions
+func mapValidTargets(newDefinitions []*redirectstore.RedirectDefinition) map[string]struct{} {
+	validTargets := make(map[string]struct{})
+	for _, newRedirect := range newDefinitions {
+		validTargets[string(newRedirect.Target)] = struct{}{}
 	}
+	return validTargets
+}
 
-	return upsertRedirectDefinitions, deletedIDs
+// shouldDeleteRedirect determines whether a redirect should be deleted
+func shouldDeleteRedirect(
+	redirectDefinition *redirectstore.RedirectDefinition,
+	availableTargets, validTargets map[string]struct{},
+	upsertRedirectsMap map[string]*redirectstore.RedirectDefinition,
+) bool {
+	_, existsInAvailableTargets := availableTargets[string(redirectDefinition.Target)]
+	_, existsInValidTargets := validTargets[string(redirectDefinition.Target)]
+
+	return !existsInAvailableTargets && !existsInValidTargets && upsertRedirectsMap[string(redirectDefinition.Source)] == nil
+}
+
+// mapsToSlice converts a map of redirects to a slice
+func mapsToSlice(upsertRedirectsMap map[string]*redirectstore.RedirectDefinition) []*redirectstore.RedirectDefinition {
+	upsertRedirectDefinitions := make([]*redirectstore.RedirectDefinition, 0, len(upsertRedirectsMap))
+	for _, redirect := range upsertRedirectsMap {
+		upsertRedirectDefinitions = append(upsertRedirectDefinitions, redirect)
+	}
+	return upsertRedirectDefinitions
 }
 
 // HasCycle checks if adding Source → Target creates a cyclic redirect
