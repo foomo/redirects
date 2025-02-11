@@ -2,7 +2,6 @@ package redirectprovider
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 	"sync"
@@ -96,7 +95,6 @@ func (p *RedirectsProvider) Close(_ context.Context) error {
 
 func (p *RedirectsProvider) Process(r *http.Request) (redirect *store.Redirect, err error) {
 	l := keellog.With(p.l, keellog.FCodeMethod("Process"))
-	l.Debug("process redirect request")
 
 	dimension, err := p.dimensionProviderFunc(r)
 	if err != nil {
@@ -107,7 +105,7 @@ func (p *RedirectsProvider) Process(r *http.Request) (redirect *store.Redirect, 
 	// a-z order of get-parameters
 	request, err := normalizeRedirectRequest(r)
 	if err != nil {
-		keellog.WithError(l, err).Error("could normalized redirect request")
+		keellog.WithError(l, err).Error("could not normalize redirect request")
 		return nil, err
 	}
 
@@ -125,19 +123,21 @@ func (p *RedirectsProvider) Process(r *http.Request) (redirect *store.Redirect, 
 
 	// we found a redirect definition and process to create the response
 	if definition != nil {
+		l.Debug("Matched redirect definition", zap.Any("definition", definition))
 		redirect, err = p.createRedirect(request, definition)
 		if err != nil {
-			keellog.WithError(l, err).Error("could not create redirect response")
+			l.Error("Failed to create redirect response", keellog.FError(err))
 			return nil, err
 		}
+		l.Debug("Redirect created successfully", zap.Any("redirect", redirect))
 		return redirect, nil
 	}
 
-	// if we do not find a specific redirect we check if we need to redirect
-	// base on generic rules - no trailing slash/lowercased
+	// If no specific redirect is found, check for standard redirects
+	l.Debug("Checking for standard redirect (trailing slash/lowercase rules)")
 	definition, err = p.checkForStandardRedirect(request)
 	if err != nil {
-		keellog.WithError(l, err).Error("could not check for standard redirect")
+		l.Error("Failed to check for standard redirect", keellog.FError(err))
 		return nil, err
 	}
 
@@ -159,7 +159,6 @@ func (p *RedirectsProvider) Process(r *http.Request) (redirect *store.Redirect, 
 // matchRedirectDefinition checks if there is a redirect definition matching the request
 func (p *RedirectsProvider) matchRedirectDefinition(r *http.Request, dimension store.Dimension) (*store.RedirectDefinition, error) {
 	// 1. full url from cache
-	fmt.Println("URL.RequestURI", r.URL.RequestURI())
 	definition := p.definitionForDimensionAndSource(dimension, store.RedirectSource(r.URL.RequestURI()))
 	if definition != nil {
 		return definition, nil
