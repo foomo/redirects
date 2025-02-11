@@ -2,6 +2,7 @@ package redirectprovider
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 	"sync"
@@ -158,6 +159,7 @@ func (p *RedirectsProvider) Process(r *http.Request) (redirect *store.Redirect, 
 // matchRedirectDefinition checks if there is a redirect definition matching the request
 func (p *RedirectsProvider) matchRedirectDefinition(r *http.Request, dimension store.Dimension) (*store.RedirectDefinition, error) {
 	// 1. full url from cache
+	fmt.Println("URL.RequestURI", r.URL.RequestURI())
 	definition := p.definitionForDimensionAndSource(dimension, store.RedirectSource(r.URL.RequestURI()))
 	if definition != nil {
 		return definition, nil
