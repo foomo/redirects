@@ -3,12 +3,11 @@ package redirectprovider
 import (
 	"net/http"
 	"net/url"
-	"strings"
 )
 
 func normalizeRedirectRequest(r *http.Request) (*http.Request, error) {
 	request := r.Clone(r.Context())
-	request.URL.Path = strings.TrimSuffix(request.URL.Path, "/")
+	// request.URL.Path = strings.TrimSuffix(request.URL.Path, "/")
 	query, err := normalizeQueryString(request.URL.RawQuery)
 	if err != nil {
 		return nil, err
