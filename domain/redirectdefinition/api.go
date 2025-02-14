@@ -71,6 +71,10 @@ func NewAPI(
 			redirectcommand.DeleteRedirectHandler(inst.repo),
 			redirectcommand.DeleteRedirectPublishMiddleware(updateSignal),
 		),
+		UpdateRedirectsState: redirectcommand.UpdateRedirectsStateHandlerComposed(
+			redirectcommand.UpdateRedirectsStateHandler(inst.repo),
+			redirectcommand.UpdateRedirectsStatePublishMiddleware(updateSignal),
+		),
 	}
 	inst.qry = Queries{
 		GetRedirects: redirectquery.GetRedirectsHandlerComposed(
@@ -98,6 +102,10 @@ func (a *API) CreateRedirect(ctx context.Context, cmd redirectcommand.CreateRedi
 
 func (a *API) UpdateRedirect(ctx context.Context, cmd redirectcommand.UpdateRedirect) error {
 	return a.cmd.UpdateRedirect(ctx, a.l, cmd)
+}
+
+func (a *API) UpdateRedirectsState(ctx context.Context, cmd redirectcommand.UpdateRedirectsState) error {
+	return a.cmd.UpdateRedirectsState(ctx, a.l, cmd)
 }
 
 func (a *API) DeleteRedirect(ctx context.Context, cmd redirectcommand.DeleteRedirect) error {

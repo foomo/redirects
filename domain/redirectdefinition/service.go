@@ -168,8 +168,9 @@ func (rs *Service) UpdateStates(_ http.ResponseWriter, r *http.Request, ids []*r
 		rs.api.setLastUpdatedBy(r.Context(), def)
 	}
 
-	// Perform batch update using UpsertMany
-	err = rs.api.repo.UpsertMany(r.Context(), redirects)
+	err = rs.api.UpdateRedirectsState(r.Context(), redirectcommand.UpdateRedirectsState{
+		RedirectDefinitions: redirects,
+	})
 	if err != nil {
 		return redirectstore.NewRedirectDefinitionError("Failed to update redirects: " + err.Error())
 	}
