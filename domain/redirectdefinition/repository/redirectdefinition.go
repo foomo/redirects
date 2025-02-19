@@ -214,24 +214,37 @@ func (rs BaseRedirectsDefinitionRepository) FindMany(
 }
 
 func (rs BaseRedirectsDefinitionRepository) FindAll(ctx context.Context, onlyActive bool) (map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
-	var result []redirectstore.RedirectDefinition
+	var results []redirectstore.RedirectDefinition
 	filter := bson.M{}
+
 	if onlyActive {
 		filter["stale"] = false
 	}
 
-	err := rs.collection.Find(ctx, filter, &result)
+	cursor, err := rs.collection.Col().Find(ctx, filter)
 	if err != nil {
+		rs.l.Error("Failed to fetch redirects", zap.Error(err))
 		return nil, err
 	}
-	var retResult = make(map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition)
-	for _, res := range result {
-		resCopy := res
-		if _, ok := retResult[res.Dimension]; !ok {
+	defer cursor.Close(ctx)
+
+	// Decode all documents into results
+	if err := cursor.All(ctx, &results); err != nil {
+		rs.l.Error("Failed to decode redirect results", zap.Error(err))
+		return nil, err
+	}
+
+	// Convert results into the expected map format
+	retResult := make(map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition)
+	for _, res := range results {
+		resCopy := res // Create a copy to avoid pointer issues
+
+		if _, exists := retResult[res.Dimension]; !exists {
 			retResult[res.Dimension] = make(map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition)
 		}
 		retResult[res.Dimension][res.Source] = &resCopy
 	}
+
 	return retResult, nil
 }
 
