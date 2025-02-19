@@ -220,7 +220,7 @@ func (rs BaseRedirectsDefinitionRepository) FindAll(ctx context.Context, onlyAct
 		filter["stale"] = false
 	}
 
-	err := rs.collection.Find(ctx, bson.M{}, &result)
+	err := rs.collection.Find(ctx, filter, &result)
 	if err != nil {
 		return nil, err
 	}
