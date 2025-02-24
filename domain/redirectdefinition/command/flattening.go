@@ -9,7 +9,7 @@ import (
 )
 
 // applyFlattening retrieves all active redirects, applies flattening to resolve final targets,
-// and updates the repository with the optimized redirect paths.
+// and updates only the changed redirects in the repository.
 func applyFlattening(
 	ctx context.Context,
 	l *zap.Logger,
@@ -24,25 +24,36 @@ func applyFlattening(
 
 	flattenedRedirects := flattenRedirects(allRedirects)
 
+	// If no redirects changed, avoid unnecessary DB writes
+	if len(flattenedRedirects) == 0 {
+		l.Info("No redirects changed after flattening")
+		return nil
+	}
+
+	// Persist only changed redirects
 	if err := repo.UpsertMany(ctx, flattenedRedirects); err != nil {
 		l.Error("Failed to persist flattened redirects", zap.Error(err))
 		return err
 	}
 
+	l.Info("Successfully updated changed redirects", zap.Int("count", len(flattenedRedirects)))
 	return nil
 }
 
 // flattenRedirects applies flattening logic to active redirects
 func flattenRedirects(allRedirects map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition) []*redirectstore.RedirectDefinition {
-	flattened := []*redirectstore.RedirectDefinition{}
+	var flattened []*redirectstore.RedirectDefinition
 
 	for _, redirectsBySource := range allRedirects {
 		for _, redirect := range redirectsBySource {
 			// Resolve final target by flattening the chain
-			redirect.Target = resolveFinalTarget(redirect.Target, redirectsBySource)
+			finalTarget := resolveFinalTarget(redirect.Target, redirectsBySource)
 
-			// Add to the list of flattened redirects
-			flattened = append(flattened, redirect)
+			// Only store changes (avoid unnecessary updates)
+			if finalTarget != redirect.Target {
+				redirect.Target = finalTarget
+				flattened = append(flattened, redirect)
+			}
 		}
 	}
 
