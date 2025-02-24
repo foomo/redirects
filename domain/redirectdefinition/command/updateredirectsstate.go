@@ -52,11 +52,14 @@ func UpdateRedirectsStateHandlerComposed(handler UpdateRedirectsStateHandlerFn, 
 }
 
 // UpdateRedirectPublishMiddleware ...
-func UpdateRedirectsStatePublishMiddleware(updateSignal *redirectnats.UpdateSignal) UpdateRedirectsStateMiddlewareFn {
+func UpdateRedirectsStatePublishMiddleware(updateSignal *redirectnats.UpdateSignal, repo redirectrepository.RedirectsDefinitionRepository) UpdateRedirectsStateMiddlewareFn {
 	return func(next UpdateRedirectsStateHandlerFn) UpdateRedirectsStateHandlerFn {
 		return func(ctx context.Context, l *zap.Logger, cmd UpdateRedirectsState) error {
 			err := next(ctx, l, cmd)
 			if err != nil {
+				return err
+			}
+			if err := applyFlattening(ctx, l, repo); err != nil {
 				return err
 			}
 			err = updateSignal.Publish()

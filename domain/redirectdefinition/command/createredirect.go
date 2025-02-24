@@ -53,11 +53,14 @@ func CreateRedirectHandlerComposed(handler CreateRedirectHandlerFn, middlewares 
 }
 
 // CreateRedirectPublishMiddleware ...
-func CreateRedirectPublishMiddleware(updateSignal *redirectnats.UpdateSignal) CreateRedirectMiddlewareFn {
+func CreateRedirectPublishMiddleware(updateSignal *redirectnats.UpdateSignal, repo redirectrepository.RedirectsDefinitionRepository) CreateRedirectMiddlewareFn {
 	return func(next CreateRedirectHandlerFn) CreateRedirectHandlerFn {
 		return func(ctx context.Context, l *zap.Logger, cmd CreateRedirect) error {
 			err := next(ctx, l, cmd)
 			if err != nil {
+				return err
+			}
+			if err := applyFlattening(ctx, l, repo); err != nil {
 				return err
 			}
 			err = updateSignal.Publish()

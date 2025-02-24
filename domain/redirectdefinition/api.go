@@ -55,25 +55,25 @@ func NewAPI(
 			redirectcommand.CreateRedirectsHandler(inst.repo),
 			redirectcommand.CreateRedirectsConsolidateMiddleware(repo, false),
 			redirectcommand.CreateRedirectsAutoCreateMiddleware(inst.isAutomaticRedirectInitiallyStaleProvider()),
-			redirectcommand.CreateRedirectsPublishMiddleware(updateSignal),
+			redirectcommand.CreateRedirectsPublishMiddleware(updateSignal, repo),
 		),
 		CreateRedirect: redirectcommand.CreateRedirectHandlerComposed(
 			redirectcommand.CreateRedirectHandler(inst.repo),
 			redirectcommand.ValidateRedirectMiddleware(inst.restrictedSourcesProvider, inst.repo),
-			redirectcommand.CreateRedirectPublishMiddleware(updateSignal),
+			redirectcommand.CreateRedirectPublishMiddleware(updateSignal, repo),
 		),
 		UpdateRedirect: redirectcommand.UpdateRedirectHandlerComposed(
 			redirectcommand.UpdateRedirectHandler(inst.repo),
 			redirectcommand.ValidateUpdateRedirectMiddleware(inst.restrictedSourcesProvider, inst.repo),
-			redirectcommand.UpdateRedirectPublishMiddleware(updateSignal),
+			redirectcommand.UpdateRedirectPublishMiddleware(updateSignal, repo),
 		),
 		DeleteRedirect: redirectcommand.DeleteRedirectHandlerComposed(
 			redirectcommand.DeleteRedirectHandler(inst.repo),
-			redirectcommand.DeleteRedirectPublishMiddleware(updateSignal),
+			redirectcommand.DeleteRedirectPublishMiddleware(updateSignal, repo),
 		),
 		UpdateRedirectsState: redirectcommand.UpdateRedirectsStateHandlerComposed(
 			redirectcommand.UpdateRedirectsStateHandler(inst.repo),
-			redirectcommand.UpdateRedirectsStatePublishMiddleware(updateSignal),
+			redirectcommand.UpdateRedirectsStatePublishMiddleware(updateSignal, repo),
 		),
 	}
 	inst.qry = Queries{
