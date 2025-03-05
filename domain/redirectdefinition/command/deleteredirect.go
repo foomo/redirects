@@ -52,11 +52,14 @@ func DeleteRedirectHandlerComposed(handler DeleteRedirectHandlerFn, middlewares 
 }
 
 // DeleteRedirectPublishMiddleware ...
-func DeleteRedirectPublishMiddleware(updateSignal *redirectnats.UpdateSignal) DeleteRedirectMiddlewareFn {
+func DeleteRedirectPublishMiddleware(updateSignal *redirectnats.UpdateSignal, repo redirectrepository.RedirectsDefinitionRepository) DeleteRedirectMiddlewareFn {
 	return func(next DeleteRedirectHandlerFn) DeleteRedirectHandlerFn {
 		return func(ctx context.Context, l *zap.Logger, cmd DeleteRedirect) error {
 			err := next(ctx, l, cmd)
 			if err != nil {
+				return err
+			}
+			if err := applyFlattening(ctx, l, repo); err != nil {
 				return err
 			}
 			err = updateSignal.Publish()

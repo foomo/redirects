@@ -2,6 +2,7 @@ package redirectdefinitionutils
 
 import (
 	"errors"
+	"time"
 
 	"github.com/foomo/contentserver/content"
 	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
@@ -14,6 +15,7 @@ func AutoCreateRedirectDefinitions(
 	_ *zap.Logger,
 	oldMap, newMap map[string]*content.RepoNode,
 	dimension redirectstore.Dimension,
+	initialStaleValue bool,
 ) ([]*redirectstore.RedirectDefinition, error) {
 	if len(oldMap) == 0 || len(newMap) == 0 {
 		return nil, errors.New("calling auto create difference with nil arguments")
@@ -32,8 +34,11 @@ func AutoCreateRedirectDefinitions(
 					Code:            301,
 					RespectParams:   true,
 					TransferParams:  true,
-					RedirectionType: redirectstore.Automatic,
+					RedirectionType: redirectstore.RedirectionTypeAutomatic,
 					Dimension:       dimension,
+					Updated:         redirectstore.NewDateTime(time.Now()),
+					LastUpdatedBy:   "System",
+					Stale:           initialStaleValue,
 				}
 				redirects = append(redirects, rd)
 			}

@@ -69,7 +69,7 @@ The redirects service provides an API that the frontend and the site-gateway ser
   ##### Search
 
   ```go
-  func (rs *Service) Search(_ http.ResponseWriter, r *http.Request, locale, path string) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, *redirectstore.RedirectDefinitionError)
+func (rs *Service) Search(_ http.ResponseWriter, r *http.Request, locale, path string, page, pageSize int) (*redirectrepository.PaginatedResult, *redirectstore.RedirectDefinitionError)
   ```
   Search for a redirect.
 

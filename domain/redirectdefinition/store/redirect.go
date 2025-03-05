@@ -6,8 +6,11 @@ import (
 )
 
 const (
-	RedirectCodePermanent RedirectCode = 301
-	RedirectCodeTemporary RedirectCode = 307 // will this be needed?
+	RedirectCodePermanent RedirectCode = 301 // Permanent Redirect
+	RedirectCodeFound     RedirectCode = 302 // Temporary Redirect (Found)
+	RedirectCodeTemporary RedirectCode = 307 // Temporary Redirect with method preservation
+	RedirectCodeNotFound  RedirectCode = 404 // Resource Not Found
+	RedirectCodeGone      RedirectCode = 410 // Resource Gone
 )
 
 type RedirectResponse string
@@ -19,11 +22,11 @@ type Redirect struct {
 
 func (r RedirectCode) Valid() bool {
 	switch r {
-	case
-		RedirectCodePermanent:
-		return true
-	case
-		RedirectCodeTemporary: // will this be needed
+	case RedirectCodePermanent,
+		RedirectCodeFound,
+		RedirectCodeTemporary,
+		RedirectCodeNotFound,
+		RedirectCodeGone:
 		return true
 	default:
 		return false
