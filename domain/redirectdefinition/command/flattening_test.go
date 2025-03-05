@@ -1,8 +1,9 @@
-package redirectcommand
+package redirectcommand_test
 
 import (
 	"testing"
 
+	redirectcommand "github.com/foomo/redirects/domain/redirectdefinition/command"
 	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
 	"github.com/stretchr/testify/assert"
 )
@@ -15,8 +16,7 @@ func Test_FlattenRedirects_SimpleChain(t *testing.T) {
 			"/c": {Source: "/c", Target: "/final", RedirectionType: redirectstore.RedirectionTypeAutomatic, Stale: false},
 		},
 	}
-
-	flattened := flattenRedirects(redirects)
+	flattened := redirectcommand.FlattenRedirects(redirects)
 
 	// Assertions
 	assert.Len(t, flattened, 3)
@@ -34,7 +34,7 @@ func Test_FlattenRedirects_TwoFlatten(t *testing.T) {
 		},
 	}
 
-	flattened := flattenRedirects(redirects)
+	flattened := redirectcommand.FlattenRedirects(redirects)
 
 	// Assertions
 	assert.Len(t, flattened, 3)
@@ -52,7 +52,7 @@ func Test_FlattenRedirects_MultipleSourcesToSameTarget(t *testing.T) {
 		},
 	}
 
-	flattened := flattenRedirects(redirects)
+	flattened := redirectcommand.FlattenRedirects(redirects)
 
 	// Assertions: Both /a and /b should point to /final
 	assert.Len(t, flattened, 3)

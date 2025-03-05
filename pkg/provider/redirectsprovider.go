@@ -133,11 +133,11 @@ func (p *RedirectsProvider) Process(r *http.Request) (redirect *store.Redirect, 
 		return redirect, nil
 	}
 
-	// If no specific redirect is found, check for standard redirects
-	l.Debug("Checking for standard redirect (trailing slash/lowercase rules)")
+	// if we do not find a specific redirect we check if we need to redirect
+	// base on generic rules - no trailing slash/lowercased
 	definition, err = p.checkForStandardRedirect(request)
 	if err != nil {
-		l.Error("Failed to check for standard redirect", keellog.FError(err))
+		keellog.WithError(l, err).Error("could not check for standard redirect")
 		return nil, err
 	}
 

@@ -22,7 +22,7 @@ func applyFlattening(
 		return err
 	}
 
-	flattenedRedirects := flattenRedirects(allRedirects)
+	flattenedRedirects := FlattenRedirects(allRedirects)
 
 	// If no redirects changed, avoid unnecessary DB writes
 	if len(flattenedRedirects) == 0 {
@@ -40,8 +40,8 @@ func applyFlattening(
 	return nil
 }
 
-// flattenRedirects applies flattening logic to active redirects
-func flattenRedirects(allRedirects map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition) []*redirectstore.RedirectDefinition {
+// FlattenRedirects applies flattening logic to active redirects
+func FlattenRedirects(allRedirects map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition) []*redirectstore.RedirectDefinition {
 	var flattened []*redirectstore.RedirectDefinition
 
 	for _, redirectsBySource := range allRedirects {
