@@ -39,7 +39,8 @@ func ConsolidateRedirectDefinitions(
 
 	// Step 2: Process new redirects
 	for _, newRedirect := range newDefinitions {
-		handleCycleCheck(l, newRedirect, redirectsBySource)
+		// we are ignoring the return value because cyclistic redirects are marked as stale.
+		_ = handleCycleCheck(l, newRedirect, redirectsBySource)
 
 		// Store unique redirects
 		upsertRedirectsMap[string(newRedirect.Source)] = newRedirect
