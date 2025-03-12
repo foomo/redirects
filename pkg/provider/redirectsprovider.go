@@ -123,13 +123,11 @@ func (p *RedirectsProvider) Process(r *http.Request) (redirect *store.Redirect, 
 
 	// we found a redirect definition and process to create the response
 	if definition != nil {
-		l.Debug("Matched redirect definition", zap.Any("definition", definition))
 		redirect, err = p.createRedirect(request, definition)
 		if err != nil {
-			l.Error("Failed to create redirect response", keellog.FError(err))
+			keellog.WithError(l, err).Error("could not create redirect response")
 			return nil, err
 		}
-		l.Debug("Redirect created successfully", zap.Any("redirect", redirect))
 		return redirect, nil
 	}
 
