@@ -162,11 +162,6 @@ import (
 	redirectrepository "github.com/foomo/redirects/domain/redirectdefinition/repository"
 	redirectservice "github.com/foomo/redirects/domain/redirectdefinition/service"
 	redirectnats "github.com/foomo/redirects/pkg/nats"
-	"github.com/gkk-galeria/galeria/catalogue/packages/config"
-	gconfig "github.com/gkk-galeria/galeria/pkg/config"
-	"github.com/gkk-galeria/galeria/pkg/session"
-	serviceredirects "github.com/gkk-galeria/galeria/site/service-redirects/redirects"
-	"go.uber.org/zap"
 )
 
 func main() {
@@ -180,31 +175,29 @@ func main() {
 	updateSignal, err := redirectnats.NewUpdateSignal(
 		ctx,
 		l,
-		gconfig.GetLocalNatsServer(c)(),
-		"site-redirects",
-		redirectnats.DefaultNatsTopic().String(),
+		"nats_server_uri",
+		"client_id",
+		"nats_topic",
 	)
 	log.Must(l, err, "failed to create update signal")
 
     // initial stale state for automatic redirects
-	isAutomaticRedirectStaleInitally := c.GetBool(ConfigIsAutomaticRedirectStaleInitially)
+	isAutomaticRedirectStaleInitally := true // or false
 
 	api, err := redirectdefinition.NewAPI(
 		l,
 		repo,
 		updateSignal,
-		redirectdefinition.WithSiteIdentifierProvider(serviceredirects.GetSiteIdentifierProviderFunc()),
-		redirectdefinition.WithRestrictedSourcesProvider(serviceredirects.GetRestrictedSourcesProviderFunc()),
-		redirectdefinition.WithUserProvider(serviceredirects.GetUserProviderFunc()),
-		redirectdefinition.WithIsAutomaticRedirectInitiallyStaleProvider(serviceredirects.GetIsAutomaticRedirectStaleInitallyProviderFunc(isAutomaticRedirectStaleInitally)))
+		redirectdefinition.WithSiteIdentifierProvider(SiteIdentifierProviderFunc()),
+		redirectdefinition.WithRestrictedSourcesProvider(RestrictedSourcesProviderFunc()),
+		redirectdefinition.WithUserProvider(UserProviderFunc()),
+		redirectdefinition.WithIsAutomaticRedirectInitiallyStaleProvider(IsAutomaticRedirectStaleInitallyProviderFunc(isAutomaticRedirectStaleInitally)))
 	log.Must(l, err, "could not create redirect api")
 
 	service := redirectdefinition.NewService(
 		l,
 		api,
-		redirectdefinition.WithEnabledFunc(
-			gconfig.GetClusterFleetBool(c, "enabled", true),
-		),
+		redirectdefinition.WithEnabledFunc(EnabledProviderFunc()),
 	)
 
 	// add services
