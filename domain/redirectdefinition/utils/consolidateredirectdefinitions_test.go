@@ -7,6 +7,7 @@ import (
 	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
 	rdutils "github.com/foomo/redirects/domain/redirectdefinition/utils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
 
@@ -98,17 +99,14 @@ func Test_ConsolidateRedirectDefinitions_WithCycle(t *testing.T) {
 		"/c": {ID: "3", ContentID: "3", Source: "/c", Target: "/a", RedirectionType: redirectstore.RedirectionTypeAutomatic, Dimension: "global"}, // Cycle here
 	}
 
-	// New redirects (unchanged, but cycle still exists)
 	newRedirects := []*redirectstore.RedirectDefinition{
-		{ID: "4", ContentID: "1", Source: "/a", Target: "/b", RedirectionType: redirectstore.RedirectionTypeAutomatic, Dimension: "global"},
-		{ID: "5", ContentID: "2", Source: "/b", Target: "/c", RedirectionType: redirectstore.RedirectionTypeAutomatic, Dimension: "global"},
-		{ID: "6", ContentID: "3", Source: "/c", Target: "/a", RedirectionType: redirectstore.RedirectionTypeAutomatic, Dimension: "global"}, // Cycle here
+		{ID: "4", ContentID: "1", Source: "/a", Target: "/b", RedirectionType: redirectstore.RedirectionTypeAutomatic, Dimension: "global", Stale: false},
+		{ID: "5", ContentID: "2", Source: "/b", Target: "/c", RedirectionType: redirectstore.RedirectionTypeAutomatic, Dimension: "global", Stale: false},
+		{ID: "6", ContentID: "3", Source: "/c", Target: "/a", RedirectionType: redirectstore.RedirectionTypeAutomatic, Dimension: "global", Stale: false}, // Cycle here
 	}
 
-	// No content nodes matter here
 	currentNodes := map[string]*content.RepoNode{}
 
-	// Run the function
 	updatedDefs, deletedIDs := rdutils.ConsolidateRedirectDefinitions(
 		zap.L(),
 		newRedirects,
@@ -116,21 +114,18 @@ func Test_ConsolidateRedirectDefinitions_WithCycle(t *testing.T) {
 		currentNodes,
 	)
 
-	// 🔹 Debug: Print updated definitions
-	t.Logf("Updated Redirects: %d", len(updatedDefs))
-	for _, rd := range updatedDefs {
-		t.Logf("Source: %s → Target: %s (Stale: %v)", rd.Source, rd.Target, rd.Stale)
+	require.Len(t, updatedDefs, 3, "All three redirects should remain in the output")
+	assert.Empty(t, deletedIDs, "No redirects should be deleted, only marked as stale")
+
+	expectedStale := map[string]bool{
+		"/a": true,
+		"/b": true,
+		"/c": true,
 	}
 
-	// Assertions
-	assert.Equal(t, len(newRedirects), len(updatedDefs), "Mismatch in updated redirect count")
-	assert.Empty(t, deletedIDs, "No redirects should be deleted, only stale-marked")
-
-	// Ensure cycle redirects are marked as stale
-	for _, updated := range updatedDefs {
-		if updated.Source == "/c" {
-			assert.True(t, updated.Stale, "Redirect with cycle should be marked as stale")
-		}
+	for _, def := range updatedDefs {
+		assert.True(t, expectedStale[string(def.Source)], "Redirect %s should be marked as stale", def.Source)
+		assert.True(t, def.Stale, "Redirect %s should have Stale=true", def.Source)
 	}
 }
 
@@ -172,6 +167,65 @@ func Test_ConsolidateRedirectDefinitions_NoCycle(t *testing.T) {
 			assert.Equal(t, "/d", string(updated.Target), "Redirect target should be updated correctly")
 		}
 	}
+}
+
+func Test_ConsolidateRedirectDefinitions_SkipAndDeleteSelfRedirect(t *testing.T) {
+	currentNodes := map[string]*content.RepoNode{
+		"HMD-de": {ID: "2", URI: "/herren/bekleidung-neu"},
+	}
+
+	// Old redirect: /herren/bekleidung → /herren/bekleidung-neu
+	oldRedirects := redirectstore.RedirectDefinitions{
+		"/herren/bekleidung": {
+			ID:              "1",
+			ContentID:       "1",
+			Source:          "/herren/bekleidung",
+			Target:          "/herren/bekleidung-neu",
+			RedirectionType: redirectstore.RedirectionTypeAutomatic,
+			Dimension:       "HMD-de",
+			Stale:           true,
+		},
+	}
+
+	// New redirect: /herren/bekleidung-neu → /herren/bekleidung (revert)
+	newRedirects := []*redirectstore.RedirectDefinition{
+		{
+			ID:              "2",
+			ContentID:       "1",
+			Source:          "/herren/bekleidung-neu",
+			Target:          "/herren/bekleidung",
+			RedirectionType: redirectstore.RedirectionTypeAutomatic,
+			Dimension:       "HMD-de",
+			Stale:           true,
+		},
+	}
+
+	// Run consolidation
+	updatedDefs, deletedIDs := rdutils.ConsolidateRedirectDefinitions(
+		zap.L(),
+		newRedirects,
+		oldRedirects,
+		currentNodes,
+	)
+
+	// Expect both redirects to remain (even if stale), no deletion
+	require.Len(t, updatedDefs, 2)
+
+	// Assert both sources are in the result
+	expectedSources := map[string]string{
+		"/herren/bekleidung":     "/herren/bekleidung-neu",
+		"/herren/bekleidung-neu": "/herren/bekleidung",
+	}
+
+	for _, def := range updatedDefs {
+		expectedTarget, ok := expectedSources[string(def.Source)]
+		assert.True(t, ok, "unexpected source in updatedDefs: %s", def.Source)
+		assert.Equal(t, expectedTarget, string(def.Target), "unexpected target for %s", def.Source)
+		assert.True(t, def.Stale, "redirect should be marked as stale: %s", def.Source)
+	}
+
+	// No redirect should be deleted
+	assert.Empty(t, deletedIDs, "no redirects should be deleted")
 }
 
 // 🔹 Test Cases for HasCycle 🔹
@@ -239,4 +293,17 @@ func Test_HasCycle_ComplexCase(t *testing.T) {
 	assert.True(t, rdutils.HasCycle("/b", "/c", redirects), "Cycle should be detected for /b → /c")
 	assert.True(t, rdutils.HasCycle("/c", "/d", redirects), "Cycle should be detected for /c → /d")
 	assert.True(t, rdutils.HasCycle("/d", "/b", redirects), "Cycle should be detected for /d → /b")
+}
+
+func Test_HasCycle_RepeatingNodeButNoCycle(t *testing.T) {
+	redirects := map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition{
+		"/a": {Source: "/a", Target: "/b"},
+		"/b": {Source: "/b", Target: "/c"},
+		"/c": {Source: "/c", Target: "/d"},
+		"/d": {Source: "/d", Target: "/e"},
+		"/e": {Source: "/e", Target: "/f"},
+		"/x": {Source: "/x", Target: "/b"}, // points into an existing chain
+	}
+
+	assert.False(t, rdutils.HasCycle("/x", "/b", redirects))
 }
