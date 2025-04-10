@@ -43,11 +43,12 @@ func ConsolidateRedirectDefinitions(
 	// Step 2: Process new redirects
 	for _, def := range newDefinitions {
 		staleIfCyclic(l, def, currentBySource)
-		upserts[string(def.Source)] = def
 
 		if existing, ok := currentBySource[def.Source]; ok {
 			updateRedirectTarget(existing, def, upserts)
+			continue
 		}
+		upserts[string(def.Source)] = def
 	}
 
 	// Step 3: Mark targets from content + new redirects as valid
@@ -67,12 +68,17 @@ func ConsolidateRedirectDefinitions(
 			continue
 		}
 
-		// Flatten if the current target is being redirected further
-		if next, ok := upserts[string(def.Target)]; ok {
-			if def.Source != redirectstore.RedirectSource(next.Target) {
-				def.Target = next.Target
+		// Fully flatten the redirect chain
+		for {
+			next, ok := upserts[string(def.Target)]
+			if !ok || def.Source == redirectstore.RedirectSource(next.Target) {
+				break
 			}
+			def.Target = next.Target
 		}
+
+		// Reinsert updated redirect after flattening
+		upserts[string(def.Source)] = def
 
 		// Detect cycles after flattening
 		staleIfCyclic(l, def, currentBySource)
