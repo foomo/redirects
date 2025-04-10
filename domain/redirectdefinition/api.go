@@ -55,7 +55,7 @@ func NewAPI(
 			redirectcommand.CreateRedirectsHandler(inst.repo),
 			redirectcommand.CreateRedirectsConsolidateMiddleware(repo, false),
 			redirectcommand.CreateRedirectsAutoCreateMiddleware(inst.isAutomaticRedirectInitiallyStaleProvider()),
-			redirectcommand.CreateRedirectsPublishMiddleware(updateSignal, repo),
+			redirectcommand.CreateRedirectsPublishMiddleware(updateSignal),
 		),
 		CreateRedirect: redirectcommand.CreateRedirectHandlerComposed(
 			redirectcommand.CreateRedirectHandler(inst.repo),
