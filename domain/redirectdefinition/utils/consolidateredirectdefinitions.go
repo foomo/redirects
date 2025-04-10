@@ -46,9 +46,12 @@ func ConsolidateRedirectDefinitions(
 
 		if existing, ok := currentBySource[def.Source]; ok {
 			updateRedirectTarget(existing, def, upserts)
+			currentBySource[def.Source] = existing
 			continue
 		}
+
 		upserts[string(def.Source)] = def
+		currentBySource[def.Source] = def
 	}
 
 	// Step 3: Mark targets from content + new redirects as valid
@@ -68,17 +71,23 @@ func ConsolidateRedirectDefinitions(
 			continue
 		}
 
-		// Fully flatten the redirect chain
+		// Fully flatten the redirect chain with cycle protection
+		visited := map[string]struct{}{}
 		for {
-			next, ok := upserts[string(def.Target)]
+			target := string(def.Target)
+			if _, seen := visited[target]; seen {
+				l.Warn("Cycle detected during flattening", zap.String("source", string(def.Source)))
+				def.Stale = true
+				break
+			}
+			visited[target] = struct{}{}
+
+			next, ok := upserts[target]
 			if !ok || def.Source == redirectstore.RedirectSource(next.Target) {
 				break
 			}
 			def.Target = next.Target
 		}
-
-		// Reinsert updated redirect after flattening
-		upserts[string(def.Source)] = def
 
 		// Detect cycles after flattening
 		staleIfCyclic(l, def, currentBySource)
