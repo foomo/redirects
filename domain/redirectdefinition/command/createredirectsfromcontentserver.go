@@ -135,6 +135,8 @@ func CreateRedirectsConsolidateMiddleware(repo redirectrepository.RedirectsDefin
 			redirectsToUpsert := []*redirectstore.RedirectDefinition{}
 			redirectsToDelete := []redirectstore.EntityID{}
 
+			l.Info("redirects to upsert", zap.Any("redirectsToUpsert", cmd.RedirectsToUpsert))
+
 			// get all current definitions for the dimension from the database
 			allCurrentDefinitions, err := repo.FindAll(ctx, true)
 			if err != nil {
