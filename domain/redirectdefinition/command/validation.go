@@ -48,7 +48,7 @@ func validateRedirect(
 	}
 
 	// Fetch all existing redirects for the dimension
-	existingRedirects, err := repo.FindAllByDimension(ctx, redirect.Dimension, false)
+	existingRedirects, err := repo.FindAllByDimension(ctx, redirect.Dimension, true)
 	if err != nil {
 		return fmt.Errorf("failed to fetch existing redirects: %w", err)
 	}
