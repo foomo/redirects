@@ -74,11 +74,14 @@ func CreateRedirectsHandlerComposed(handler CreateRedirectsHandlerFn, middleware
 }
 
 // CreateRedirectsPublishMiddleware ...
-func CreateRedirectsPublishMiddleware(updateSignal *redirectnats.UpdateSignal) CreateRedirectsMiddlewareFn {
+func CreateRedirectsPublishMiddleware(updateSignal *redirectnats.UpdateSignal, repo redirectrepository.RedirectsDefinitionRepository) CreateRedirectsMiddlewareFn {
 	return func(next CreateRedirectsHandlerFn) CreateRedirectsHandlerFn {
 		return func(ctx context.Context, l *zap.Logger, cmd CreateRedirects) error {
 			err := next(ctx, l, cmd)
 			if err != nil {
+				return err
+			}
+			if err := applyFlattening(ctx, l, repo); err != nil {
 				return err
 			}
 			l.Info("publishing update signal")
@@ -134,8 +137,6 @@ func CreateRedirectsConsolidateMiddleware(repo redirectrepository.RedirectsDefin
 			l.Info("consolidating redirect definitions")
 			redirectsToUpsert := []*redirectstore.RedirectDefinition{}
 			redirectsToDelete := []redirectstore.EntityID{}
-
-			l.Info("redirects to upsert", zap.Any("redirectsToUpsert", cmd.RedirectsToUpsert))
 
 			// get all current definitions for the dimension from the database
 			allCurrentDefinitions, err := repo.FindAll(ctx, true)
