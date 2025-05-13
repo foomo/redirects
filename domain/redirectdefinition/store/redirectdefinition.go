@@ -3,14 +3,8 @@ package redirectstore
 type RedirectSource string
 type RedirectTarget string
 type RedirectRequest string
-type RedirectionType string
 type Dimension string
 type Site string
-
-const (
-	Manual    RedirectionType = "manual"
-	Automatic RedirectionType = "automatic"
-)
 
 type RedirectDefinition struct {
 	ID              EntityID        `json:"id" bson:"id"`
@@ -23,6 +17,8 @@ type RedirectDefinition struct {
 	RedirectionType RedirectionType `json:"redirectType" bson:"redirectType"`
 	Dimension       Dimension       `json:"dimension" bson:"dimension"`
 	Stale           bool            `json:"stale" bson:"stale"`
+	Updated         DateTime        `json:"updated,omitempty" bson:"updated"`             // Timestamp of the last update
+	LastUpdatedBy   string          `json:"lastUpdatedBy,omitempty" bson:"lastUpdatedBy"` // User who made the last update
 }
 
 type RedirectDefinitions map[RedirectSource]*RedirectDefinition

@@ -2,6 +2,8 @@ package redirectrepository
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	keelmongo "github.com/foomo/keel/persistence/mongo"
 	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
@@ -12,14 +14,59 @@ import (
 	"go.uber.org/zap"
 )
 
+type Pagination struct {
+	Page     int `json:"page"`
+	PageSize int `json:"pageSize"`
+}
+
+type SortField string
+
+const (
+	SortFieldSource        SortField = "source"
+	SortFieldUpdated       SortField = "updated"
+	SortFieldLastUpdatedBy SortField = "lastUpdatedBy"
+)
+
+type Direction string
+
+const (
+	DirectionAscending  Direction = "ascending"
+	DirectionDescending Direction = "descending"
+)
+
+type Sort struct {
+	Field     SortField `json:"field"`
+	Direction Direction `json:"direction"`
+}
+
+func (d Direction) GetSortValue() int {
+	switch d {
+	case DirectionAscending:
+		return 1
+	case DirectionDescending:
+		return -1
+	default:
+		return 1
+	}
+}
+
+type PaginatedResult struct {
+	Results  []*redirectstore.RedirectDefinition `json:"results"`
+	Total    int                                 `json:"total"`
+	Page     int                                 `json:"page"`
+	PageSize int                                 `json:"pageSize"`
+}
+
 type (
 	RedirectsDefinitionRepository interface {
 		FindOne(ctx context.Context, id, source string) (*redirectstore.RedirectDefinition, error)
-		FindMany(ctx context.Context, source, dimension string, onlyActive bool) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error)
+		FindMany(ctx context.Context, source, dimension string, redirectType redirectstore.RedirectionType, activeState redirectstore.ActiveStateType, pagination Pagination, sort Sort) (*PaginatedResult, error)
 		FindAll(ctx context.Context, onlyActive bool) (defs map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, err error)
+		FindAllByDimension(ctx context.Context, dimension redirectstore.Dimension, onlyActive bool) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error)
 		Insert(ctx context.Context, def *redirectstore.RedirectDefinition) error
 		Update(ctx context.Context, def *redirectstore.RedirectDefinition) error
 		UpsertMany(ctx context.Context, defs []*redirectstore.RedirectDefinition) error
+		FindByIDs(ctx context.Context, ids []*redirectstore.EntityID) ([]*redirectstore.RedirectDefinition, error)
 		Delete(ctx context.Context, id redirectstore.EntityID) error
 		DeleteMany(ctx context.Context, ids []redirectstore.EntityID) error
 	}
@@ -47,6 +94,22 @@ func NewBaseRedirectsDefinitionRepository(l *zap.Logger, persistor *keelmongo.Pe
 				},
 				Options: options.Index().SetUnique(true),
 			},
+			mongo.IndexModel{
+				Keys: bson.D{
+					{Key: string(SortFieldUpdated), Value: 1},
+				},
+			},
+			mongo.IndexModel{
+				Keys: bson.D{
+					{Key: string(SortFieldLastUpdatedBy), Value: 1},
+				},
+			},
+			// Index for 'source' field (optional for search optimization)
+			mongo.IndexModel{
+				Keys: bson.D{
+					{Key: string(SortFieldSource), Value: 1},
+				},
+			},
 		),
 	)
 
@@ -67,58 +130,145 @@ func (rs BaseRedirectsDefinitionRepository) FindOne(ctx context.Context, id, sou
 	return &result, nil
 }
 
-func (rs BaseRedirectsDefinitionRepository) FindMany(ctx context.Context, source, dimension string, onlyActive bool) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
+func (rs BaseRedirectsDefinitionRepository) FindMany(
+	ctx context.Context,
+	source, dimension string,
+	redirectType redirectstore.RedirectionType,
+	activeState redirectstore.ActiveStateType,
+	pagination Pagination,
+	sort Sort,
+) (*PaginatedResult, error) {
+	// Validate pagination
+	if pagination.Page < 1 {
+		pagination.Page = 1
+	}
+	if pagination.PageSize < 1 {
+		pagination.PageSize = 20 // Default page size
+	}
+
 	var result []*redirectstore.RedirectDefinition
 	filter := bson.M{}
 
+	// Apply filters
 	if source != "" {
-		// Create a regex pattern for fuzzy match
-		pattern := primitive.Regex{Pattern: source, Options: "i"} // "i" for case-insensitive match
-		filter["source"] = primitive.Regex{Pattern: pattern.Pattern, Options: pattern.Options}
+		pattern := primitive.Regex{Pattern: source, Options: "i"} // Case-insensitive regex
+		filter["source"] = pattern
 	}
-
 	if dimension != "" {
 		filter["dimension"] = dimension
 	}
 
-	if onlyActive {
-		filter["stale"] = false
+	// Apply redirect type filter
+	if redirectValue, apply := redirectType.ToFilter(); apply {
+		filter["redirectType"] = redirectValue
 	}
 
-	findErr := rs.collection.Find(ctx, filter, &result)
-	var retResult = make(map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition)
-	for _, red := range result {
-		if _, ok := retResult[red.Source]; !ok {
-			retResult[red.Source] = red
+	// Apply active state filter
+	if stateValue, apply := activeState.ToFilter(); apply {
+		filter["stale"] = stateValue
+	}
+
+	// Pagination settings
+	skip := (pagination.Page - 1) * pagination.PageSize
+	opts := options.Find().
+		SetSkip(int64(skip)).
+		SetLimit(int64(pagination.PageSize))
+
+	// Sorting settings
+	sortField := sort.Field
+	if sortField == "" {
+		sortField = SortFieldSource // Default sort field
+	}
+	opts.SetSort(bson.D{
+		{Key: string(sortField), Value: sort.Direction.GetSortValue()},
+		{Key: "_id", Value: 1}, // Tie-breaker for consistent results
+	})
+
+	// Query MongoDB
+	cursor, err := rs.collection.Col().Find(ctx, filter, opts)
+	if err != nil {
+		return &PaginatedResult{}, err
+	}
+	defer cursor.Close(ctx)
+
+	// Decode results
+	for cursor.Next(ctx) {
+		var red redirectstore.RedirectDefinition
+		if err := cursor.Decode(&red); err != nil {
+			return &PaginatedResult{}, err
 		}
+		result = append(result, &red)
 	}
 
-	if findErr != nil {
-		return nil, findErr
+	total, err := rs.collection.Col().CountDocuments(ctx, filter)
+	if err != nil {
+		return &PaginatedResult{}, err
 	}
-	return retResult, nil
+
+	return &PaginatedResult{
+		Results:  result,
+		Total:    int(total),
+		Page:     pagination.Page,
+		PageSize: pagination.PageSize,
+	}, nil
 }
 
 func (rs BaseRedirectsDefinitionRepository) FindAll(ctx context.Context, onlyActive bool) (map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
-	var result []redirectstore.RedirectDefinition
+	var results []redirectstore.RedirectDefinition
 	filter := bson.M{}
+
 	if onlyActive {
 		filter["stale"] = false
 	}
 
-	err := rs.collection.Find(ctx, bson.M{}, &result)
+	cursor, err := rs.collection.Col().Find(ctx, filter)
 	if err != nil {
+		rs.l.Error("Failed to fetch redirects", zap.Error(err))
 		return nil, err
 	}
-	var retResult = make(map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition)
-	for _, res := range result {
-		resCopy := res
-		if _, ok := retResult[res.Dimension]; !ok {
+	defer cursor.Close(ctx)
+
+	// Decode all documents into results
+	if err := cursor.All(ctx, &results); err != nil {
+		rs.l.Error("Failed to decode redirect results", zap.Error(err))
+		return nil, err
+	}
+
+	// Convert results into the expected map format
+	retResult := make(map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition)
+	for _, res := range results {
+		resCopy := res // Create a copy to avoid pointer issues
+
+		if _, exists := retResult[res.Dimension]; !exists {
 			retResult[res.Dimension] = make(map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition)
 		}
 		retResult[res.Dimension][res.Source] = &resCopy
 	}
+
 	return retResult, nil
+}
+
+func (rs *BaseRedirectsDefinitionRepository) FindAllByDimension(ctx context.Context, dimension redirectstore.Dimension, onlyActive bool) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
+	var results []redirectstore.RedirectDefinition
+	filter := bson.M{"dimension": dimension}
+
+	// If onlyActive is true, fetch only non-stale (active) redirects
+	if onlyActive {
+		filter["stale"] = false
+	}
+
+	err := rs.collection.Find(ctx, filter, &results)
+	if err != nil {
+		return nil, err
+	}
+
+	defs := make(map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition)
+	for _, def := range results {
+		defCopy := def
+		defs[def.Source] = &defCopy
+	}
+
+	return defs, nil
 }
 
 func (rs BaseRedirectsDefinitionRepository) Insert(ctx context.Context, def *redirectstore.RedirectDefinition) error {
@@ -137,8 +287,44 @@ func (rs BaseRedirectsDefinitionRepository) Update(ctx context.Context, def *red
 	return err
 }
 
-// maybe will be needed for migrating manual redirections?
 func (rs BaseRedirectsDefinitionRepository) UpsertMany(ctx context.Context, defs []*redirectstore.RedirectDefinition) error {
+	chunkSize := 1000
+	retries := 3
+
+	for i := 0; i < len(defs); i += chunkSize {
+		end := i + chunkSize
+		if end > len(defs) {
+			end = len(defs)
+		}
+
+		err := rs.upsertChunkWithRetry(ctx, defs[i:end], retries)
+		if err != nil {
+			rs.l.Error("failed to upsert chunk",
+				zap.Int("start", i),
+				zap.Int("end", end),
+				zap.Error(err))
+			return err
+		}
+	}
+	return nil
+}
+
+func (rs BaseRedirectsDefinitionRepository) upsertChunkWithRetry(ctx context.Context, defs []*redirectstore.RedirectDefinition, retries int) error {
+	for i := 0; i < retries; i++ {
+		err := rs.upsertChunk(ctx, defs)
+		if err == nil {
+			return nil // Success
+		}
+
+		// Log the retry and wait briefly before retrying
+		rs.l.Info("Retrying chunk upsert...", zap.Int("retry no", i+1), zap.Error(err))
+		time.Sleep(2 * time.Second)
+	}
+
+	return fmt.Errorf("failed to upsert chunk after %d retries", retries)
+}
+
+func (rs BaseRedirectsDefinitionRepository) upsertChunk(ctx context.Context, defs []*redirectstore.RedirectDefinition) error {
 	operations := make([]mongo.WriteModel, 0, len(defs))
 
 	for _, def := range defs {
@@ -157,12 +343,19 @@ func (rs BaseRedirectsDefinitionRepository) UpsertMany(ctx context.Context, defs
 	bulkOption := options.BulkWriteOptions{}
 	bulkOption.SetOrdered(false)
 
-	_, err := rs.collection.Col().BulkWrite(ctx, operations, &bulkOption)
+	result, err := rs.collection.Col().BulkWrite(ctx, operations, &bulkOption)
 	if err != nil {
+		rs.l.Error("Bulk write error", zap.Error(err))
 		return err
 	}
 
-	return err
+	// Log results
+	rs.l.Info("Bulk write result",
+		zap.Int("Inserted", int(result.InsertedCount)),
+		zap.Int("Matched", int(result.MatchedCount)),
+		zap.Int("Modified", int(result.ModifiedCount)),
+		zap.Int("Upserted", len(result.UpsertedIDs)))
+	return nil
 }
 
 func (rs BaseRedirectsDefinitionRepository) Delete(ctx context.Context, id redirectstore.EntityID) error {
@@ -175,4 +368,17 @@ func (rs BaseRedirectsDefinitionRepository) DeleteMany(ctx context.Context, ids 
 	filter := bson.M{"id": bson.M{"$in": ids}}
 	_, err := rs.collection.Col().DeleteMany(ctx, filter)
 	return err
+}
+
+func (rs *BaseRedirectsDefinitionRepository) FindByIDs(ctx context.Context, ids []*redirectstore.EntityID) ([]*redirectstore.RedirectDefinition, error) {
+	var results []*redirectstore.RedirectDefinition
+
+	// Query all redirects matching the given IDs
+	err := rs.collection.Find(ctx, bson.M{"_id": bson.M{"$in": ids}}, &results)
+	if err != nil {
+		rs.l.Error("Failed to fetch redirects by IDs", zap.Error(err))
+		return nil, err
+	}
+
+	return results, nil
 }

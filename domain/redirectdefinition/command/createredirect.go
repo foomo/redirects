@@ -9,6 +9,7 @@ import (
 	redirectrepository "github.com/foomo/redirects/domain/redirectdefinition/repository"
 	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
 	redirectnats "github.com/foomo/redirects/pkg/nats"
+	redirectprovider "github.com/foomo/redirects/pkg/provider"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
@@ -52,11 +53,14 @@ func CreateRedirectHandlerComposed(handler CreateRedirectHandlerFn, middlewares 
 }
 
 // CreateRedirectPublishMiddleware ...
-func CreateRedirectPublishMiddleware(updateSignal *redirectnats.UpdateSignal) CreateRedirectMiddlewareFn {
+func CreateRedirectPublishMiddleware(updateSignal *redirectnats.UpdateSignal, repo redirectrepository.RedirectsDefinitionRepository) CreateRedirectMiddlewareFn {
 	return func(next CreateRedirectHandlerFn) CreateRedirectHandlerFn {
 		return func(ctx context.Context, l *zap.Logger, cmd CreateRedirect) error {
 			err := next(ctx, l, cmd)
 			if err != nil {
+				return err
+			}
+			if err := applyFlattening(ctx, l, repo); err != nil {
 				return err
 			}
 			err = updateSignal.Publish()
@@ -64,6 +68,16 @@ func CreateRedirectPublishMiddleware(updateSignal *redirectnats.UpdateSignal) Cr
 				return err
 			}
 			return nil
+		}
+	}
+}
+
+func ValidateRedirectMiddleware(
+	restrictedSourcesProvider redirectprovider.RestrictedSourcesProviderFunc,
+	repo redirectrepository.RedirectsDefinitionRepository) CreateRedirectMiddlewareFn {
+	return func(next CreateRedirectHandlerFn) CreateRedirectHandlerFn {
+		return func(ctx context.Context, l *zap.Logger, cmd CreateRedirect) error {
+			return validateRedirect(ctx, l, repo, restrictedSourcesProvider, cmd.RedirectDefinition, next)
 		}
 	}
 }

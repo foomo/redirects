@@ -3,13 +3,25 @@ package redirectdefinition
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/foomo/contentserver/content"
 	redirectcommand "github.com/foomo/redirects/domain/redirectdefinition/command"
 	redirectquery "github.com/foomo/redirects/domain/redirectdefinition/query"
+	redirectrepository "github.com/foomo/redirects/domain/redirectdefinition/repository"
 	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
 	"go.uber.org/zap"
 )
+
+type SearchParams struct {
+	Locale       string                        `json:"locale"`
+	Path         string                        `json:"path"`
+	Page         int                           `json:"page"`
+	PageSize     int                           `json:"pageSize"`
+	RedirectType redirectstore.RedirectionType `json:"type,omitempty"`
+	ActiveState  redirectstore.ActiveStateType `json:"activeState,omitempty"`
+	Sort         redirectrepository.Sort       `json:"sort"`
+}
 
 type Service struct {
 	l   *zap.Logger
@@ -60,19 +72,36 @@ func (rs *Service) GetRedirects(_ http.ResponseWriter, r *http.Request) (map[red
 
 // Search for a redirect
 // used by frontend
-func (rs *Service) Search(_ http.ResponseWriter, r *http.Request, locale, path string) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, *redirectstore.RedirectDefinitionError) {
+func (rs *Service) Search(
+	_ http.ResponseWriter,
+	r *http.Request,
+	params *SearchParams,
+) (*redirectrepository.PaginatedResult, *redirectstore.RedirectDefinitionError) {
+	if params.Page < 1 {
+		params.Page = 1
+	}
+	if params.PageSize < 1 {
+		params.PageSize = 10 // Default page size
+	}
+
 	site, err := rs.api.getSiteIdentifierProvider(r)
 	if err != nil {
 		return nil, redirectstore.NewRedirectDefinitionError(err.Error())
 	}
 
 	result, err := rs.api.Search(r.Context(), redirectquery.Search{
-		Source:    redirectstore.RedirectSource(path),
-		Dimension: redirectstore.Dimension(fmt.Sprintf("%s-%s", site, locale)),
+		Source:       redirectstore.RedirectSource(params.Path),
+		Dimension:    redirectstore.Dimension(fmt.Sprintf("%s-%s", site, params.Locale)),
+		Page:         params.Page,
+		PageSize:     params.PageSize,
+		RedirectType: params.RedirectType,
+		ActiveState:  params.ActiveState,
+		Sort:         params.Sort,
 	})
 	if err != nil {
 		return nil, redirectstore.NewRedirectDefinitionError(err.Error())
 	}
+
 	return result, nil
 }
 
@@ -84,7 +113,7 @@ func (rs *Service) Create(_ http.ResponseWriter, r *http.Request, def *redirects
 		return "", redirectstore.NewRedirectDefinitionError(err.Error())
 	}
 	def.Dimension = redirectstore.Dimension(fmt.Sprintf("%s-%s", site, locale))
-
+	rs.api.setLastUpdatedBy(r.Context(), def)
 	err = rs.api.CreateRedirect(r.Context(),
 		redirectcommand.CreateRedirect{
 			RedirectDefinition: def,
@@ -111,6 +140,8 @@ func (rs *Service) Delete(_ http.ResponseWriter, r *http.Request, id string) *re
 // Update a redirect
 // used by frontend
 func (rs *Service) Update(_ http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition) *redirectstore.RedirectDefinitionError {
+	def.Updated = redirectstore.NewDateTime(time.Now())
+	rs.api.setLastUpdatedBy(r.Context(), def)
 	err := rs.api.UpdateRedirect(r.Context(),
 		redirectcommand.UpdateRedirect{
 			RedirectDefinition: def,
@@ -118,5 +149,31 @@ func (rs *Service) Update(_ http.ResponseWriter, r *http.Request, def *redirects
 	if err != nil {
 		return redirectstore.NewRedirectDefinitionError(err.Error())
 	}
+	return nil
+}
+
+// Update a redirects state
+// used by frontend
+func (rs *Service) UpdateStates(_ http.ResponseWriter, r *http.Request, ids []*redirectstore.EntityID, state bool) *redirectstore.RedirectDefinitionError {
+	// Fetch all redirects by IDs
+	redirects, err := rs.api.repo.FindByIDs(r.Context(), ids)
+	if err != nil {
+		return redirectstore.NewRedirectDefinitionError("Failed to fetch redirects: " + err.Error())
+	}
+
+	// Update each redirect in memory
+	for _, def := range redirects {
+		def.Stale = !state // flip the value because we are updating the stale field
+		def.Updated = redirectstore.NewDateTime(time.Now())
+		rs.api.setLastUpdatedBy(r.Context(), def)
+	}
+
+	err = rs.api.UpdateRedirectsState(r.Context(), redirectcommand.UpdateRedirectsState{
+		RedirectDefinitions: redirects,
+	})
+	if err != nil {
+		return redirectstore.NewRedirectDefinitionError("Failed to update redirects: " + err.Error())
+	}
+
 	return nil
 }

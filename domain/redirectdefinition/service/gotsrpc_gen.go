@@ -9,6 +9,7 @@ import (
 
 	github_com_foomo_contentserver_content "github.com/foomo/contentserver/content"
 	gotsrpc "github.com/foomo/gotsrpc/v2"
+	github_com_foomo_redirects_domain_redirectdefinition "github.com/foomo/redirects/domain/redirectdefinition"
 	github_com_foomo_redirects_domain_redirectdefinition_store "github.com/foomo/redirects/domain/redirectdefinition/store"
 )
 
@@ -55,17 +56,17 @@ func (p *InternalServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.R
 			rets []interface{}
 		)
 		var (
-			arg_old map[string]*github_com_foomo_contentserver_content.RepoNode
-			arg_new map[string]*github_com_foomo_contentserver_content.RepoNode
+			arg_oldState map[string]*github_com_foomo_contentserver_content.RepoNode
+			arg_newState map[string]*github_com_foomo_contentserver_content.RepoNode
 		)
-		args = []interface{}{&arg_old, &arg_new}
+		args = []interface{}{&arg_oldState, &arg_newState}
 		if err := gotsrpc.LoadArgs(&args, callStats, r); err != nil {
 			gotsrpc.ErrorCouldNotLoadArgs(w)
 			return
 		}
 		executionStart := time.Now()
 		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
-		createRedirectsFromContentserverexportRet := p.service.CreateRedirectsFromContentserverexport(&rw, r, arg_old, arg_new)
+		createRedirectsFromContentserverexportRet := p.service.CreateRedirectsFromContentserverexport(&rw, r, arg_oldState, arg_newState)
 		callStats.Execution = time.Since(executionStart)
 		if rw.Status() == http.StatusOK {
 			rets = []interface{}{createRedirectsFromContentserverexportRet}
@@ -101,10 +102,11 @@ func (p *InternalServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.R
 }
 
 const (
-	AdminServiceGoTSRPCProxyCreate = "Create"
-	AdminServiceGoTSRPCProxyDelete = "Delete"
-	AdminServiceGoTSRPCProxySearch = "Search"
-	AdminServiceGoTSRPCProxyUpdate = "Update"
+	AdminServiceGoTSRPCProxyCreate       = "Create"
+	AdminServiceGoTSRPCProxyDelete       = "Delete"
+	AdminServiceGoTSRPCProxySearch       = "Search"
+	AdminServiceGoTSRPCProxyUpdate       = "Update"
+	AdminServiceGoTSRPCProxyUpdateStates = "UpdateStates"
 )
 
 type AdminServiceGoTSRPCProxy struct {
@@ -198,17 +200,16 @@ func (p *AdminServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Requ
 			rets []interface{}
 		)
 		var (
-			arg_locale string
-			arg_path   string
+			arg_params *github_com_foomo_redirects_domain_redirectdefinition.SearchParams
 		)
-		args = []interface{}{&arg_locale, &arg_path}
+		args = []interface{}{&arg_params}
 		if err := gotsrpc.LoadArgs(&args, callStats, r); err != nil {
 			gotsrpc.ErrorCouldNotLoadArgs(w)
 			return
 		}
 		executionStart := time.Now()
 		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
-		searchRet, searchRet_1 := p.service.Search(&rw, r, arg_locale, arg_path)
+		searchRet, searchRet_1 := p.service.Search(&rw, r, arg_params)
 		callStats.Execution = time.Since(executionStart)
 		if rw.Status() == http.StatusOK {
 			rets = []interface{}{searchRet, searchRet_1}
@@ -238,6 +239,33 @@ func (p *AdminServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Requ
 		callStats.Execution = time.Since(executionStart)
 		if rw.Status() == http.StatusOK {
 			rets = []interface{}{updateRet}
+			if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
+				gotsrpc.ErrorCouldNotReply(w)
+				return
+			}
+		}
+		gotsrpc.Monitor(w, r, args, rets, callStats)
+		return
+	case AdminServiceGoTSRPCProxyUpdateStates:
+		var (
+			args []interface{}
+			rets []interface{}
+		)
+		var (
+			arg_ids   []*github_com_foomo_redirects_domain_redirectdefinition_store.EntityID
+			arg_state bool
+		)
+		args = []interface{}{&arg_ids, &arg_state}
+		if err := gotsrpc.LoadArgs(&args, callStats, r); err != nil {
+			gotsrpc.ErrorCouldNotLoadArgs(w)
+			return
+		}
+		executionStart := time.Now()
+		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
+		updateStatesRet := p.service.UpdateStates(&rw, r, arg_ids, arg_state)
+		callStats.Execution = time.Since(executionStart)
+		if rw.Status() == http.StatusOK {
+			rets = []interface{}{updateStatesRet}
 			if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
 				gotsrpc.ErrorCouldNotReply(w)
 				return

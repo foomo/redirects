@@ -20,6 +20,9 @@ type RedirectsProviderInterface interface {
 }
 type DimensionProviderFunc func(r *http.Request) (store.Dimension, error)
 type SiteIdentifierProviderFunc func(r *http.Request) (store.Site, error)
+type RestrictedSourcesProviderFunc func() []string
+type IsAutomaticRedirectInitiallyStaleProviderFunc func() bool
+type UserProviderFunc func(ctx context.Context) string
 type RedirectsProviderFunc func(ctx context.Context) (map[store.Dimension]map[store.RedirectSource]*store.RedirectDefinition, error, error)
 type MatcherFunc func(r *http.Request) (*store.RedirectDefinition, error)
 
@@ -92,7 +95,6 @@ func (p *RedirectsProvider) Close(_ context.Context) error {
 
 func (p *RedirectsProvider) Process(r *http.Request) (redirect *store.Redirect, err error) {
 	l := keellog.With(p.l, keellog.FCodeMethod("Process"))
-	l.Debug("process redirect request")
 
 	dimension, err := p.dimensionProviderFunc(r)
 	if err != nil {
@@ -103,7 +105,7 @@ func (p *RedirectsProvider) Process(r *http.Request) (redirect *store.Redirect, 
 	// a-z order of get-parameters
 	request, err := normalizeRedirectRequest(r)
 	if err != nil {
-		keellog.WithError(l, err).Error("could normalized redirect request")
+		keellog.WithError(l, err).Error("could not normalize redirect request")
 		return nil, err
 	}
 
