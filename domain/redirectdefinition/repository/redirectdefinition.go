@@ -111,9 +111,9 @@ func NewBaseRedirectsDefinitionRepository(l *zap.Logger, persistor *keelmongo.Pe
 				},
 			},
 		),
+		// define max time for index creation
+		keelmongo.CollectionWithIndexesMaxTime(time.Second*10),
 	)
-
-	_, _ = collection.Col().Indexes().DropOne(context.TODO(), "source_1")
 
 	if cErr != nil {
 		return nil, cErr
