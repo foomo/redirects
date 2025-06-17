@@ -26,14 +26,19 @@ type UserProviderFunc func(ctx context.Context) string
 type RedirectsProviderFunc func(ctx context.Context) (map[store.Dimension]map[store.RedirectSource]*store.RedirectDefinition, error, error)
 type MatcherFunc func(r *http.Request) (*store.RedirectDefinition, error)
 
+type RedirectsProviderOption func(provider *RedirectsProvider) error
+
 type RedirectsProvider struct {
 	sync.RWMutex
 	l                     *zap.Logger
-	matcherFuncs          []MatcherFunc
 	redirects             map[store.Dimension]map[store.RedirectSource]*store.RedirectDefinition
 	redirectsProviderFunc RedirectsProviderFunc
 	dimensionProviderFunc DimensionProviderFunc
 	updateChannel         chan *nats.Msg
+
+	// optional features
+	matcherFuncs         []MatcherFunc
+	useStandardRedirects bool
 }
 
 func NewProvider(
@@ -41,16 +46,40 @@ func NewProvider(
 	providerFunc RedirectsProviderFunc,
 	dimensionProviderFunc DimensionProviderFunc,
 	updateChannel chan *nats.Msg,
-	matcherFuncs ...MatcherFunc,
+	options ...RedirectsProviderOption,
 ) *RedirectsProvider {
 	provider := &RedirectsProvider{
 		l:                     l,
-		matcherFuncs:          matcherFuncs,
 		redirectsProviderFunc: providerFunc,
 		dimensionProviderFunc: dimensionProviderFunc,
 		updateChannel:         updateChannel,
 	}
+
+	for _, opt := range options {
+		if err := opt(provider); err != nil {
+			keellog.WithError(l, err).Error("error applying provider option")
+			continue
+		}
+	}
+
 	return provider
+}
+
+func WithMatcherFuncs(matcherFuncs ...MatcherFunc) RedirectsProviderOption {
+	return func(provider *RedirectsProvider) error {
+		if len(matcherFuncs) == 0 {
+			return errors.New("no matcher functions provided")
+		}
+		provider.matcherFuncs = matcherFuncs
+		return nil
+	}
+}
+
+func WithUseStandardRedirects() RedirectsProviderOption {
+	return func(provider *RedirectsProvider) error {
+		provider.useStandardRedirects = true
+		return nil
+	}
 }
 
 func (p *RedirectsProvider) loadRedirects(ctx context.Context) error {
@@ -133,10 +162,13 @@ func (p *RedirectsProvider) Process(r *http.Request) (redirect *store.Redirect, 
 
 	// if we do not find a specific redirect we check if we need to redirect
 	// base on generic rules - no trailing slash/lowercased
-	definition, err = p.checkForStandardRedirect(request)
-	if err != nil {
-		keellog.WithError(l, err).Error("could not check for standard redirect")
-		return nil, err
+	// only if enabled
+	if p.useStandardRedirects {
+		definition, err = p.checkForStandardRedirect(request)
+		if err != nil {
+			keellog.WithError(l, err).Error("could not check for standard redirect")
+			return nil, err
+		}
 	}
 
 	if definition == nil {
