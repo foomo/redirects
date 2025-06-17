@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/foomo/contentserver/content"
-	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
-	rdutils "github.com/foomo/redirects/domain/redirectdefinition/utils"
+	redirectstore "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
+	rdutils "github.com/foomo/redirects/v2/domain/redirectdefinition/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"

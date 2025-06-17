@@ -7,7 +7,7 @@ targets:
     services:
       /services/redirectdefinition/admin: AdminService
       /services/redirectdefinition/internal: InternalService
-    package: github.com/foomo/redirects/domain/redirectdefinition/service
+    package: github.com/foomo/redirects/v2/domain/redirectdefinition/service
     tsrpc:
       - AdminService
       - InternalService

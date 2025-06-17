@@ -8,9 +8,9 @@ package redirectrepository_test
 
 // "github.com/foomo/contentserver/content"
 // keelmongo "github.com/foomo/keel/persistence/mongo"
-// redirectapi "github.com/foomo/redirects/domain/redirectdefinition"
-// redirectcommand "github.com/foomo/redirects/domain/redirectdefinition/command"
-// redirectrepository "github.com/foomo/redirects/domain/redirectdefinition/repository"
+// redirectapi "github.com/foomo/redirects/v2/domain/redirectdefinition"
+// redirectcommand "github.com/foomo/redirects/v2/domain/redirectdefinition/command"
+// redirectrepository "github.com/foomo/redirects/v2/domain/redirectdefinition/repository"
 // "github.com/stretchr/testify/assert"
 // "go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo"
 // "go.uber.org/zap"

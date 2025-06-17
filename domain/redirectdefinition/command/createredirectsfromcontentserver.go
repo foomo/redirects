@@ -8,10 +8,10 @@ import (
 
 	"github.com/foomo/contentserver/content"
 	keellog "github.com/foomo/keel/log"
-	redirectrepository "github.com/foomo/redirects/domain/redirectdefinition/repository"
-	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
-	redirectdefinitionutils "github.com/foomo/redirects/domain/redirectdefinition/utils"
-	redirectnats "github.com/foomo/redirects/pkg/nats"
+	redirectrepository "github.com/foomo/redirects/v2/domain/redirectdefinition/repository"
+	redirectstore "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
+	redirectdefinitionutils "github.com/foomo/redirects/v2/domain/redirectdefinition/utils"
+	redirectnats "github.com/foomo/redirects/v2/pkg/nats"
 
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"

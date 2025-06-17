@@ -6,10 +6,10 @@ import (
 	"path"
 	"strings"
 
-	redirectrepository "github.com/foomo/redirects/domain/redirectdefinition/repository"
-	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
-	redirectdefinitionutils "github.com/foomo/redirects/domain/redirectdefinition/utils"
-	redirectprovider "github.com/foomo/redirects/pkg/provider"
+	redirectrepository "github.com/foomo/redirects/v2/domain/redirectdefinition/repository"
+	redirectstore "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
+	redirectdefinitionutils "github.com/foomo/redirects/v2/domain/redirectdefinition/utils"
+	redirectprovider "github.com/foomo/redirects/v2/pkg/provider"
 	"go.uber.org/zap"
 )
 

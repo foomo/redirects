@@ -8,9 +8,9 @@ import (
 
 	github_com_foomo_contentserver_content "github.com/foomo/contentserver/content"
 	gotsrpc "github.com/foomo/gotsrpc/v2"
-	github_com_foomo_redirects_domain_redirectdefinition "github.com/foomo/redirects/domain/redirectdefinition"
-	github_com_foomo_redirects_domain_redirectdefinition_repository "github.com/foomo/redirects/domain/redirectdefinition/repository"
-	github_com_foomo_redirects_domain_redirectdefinition_store "github.com/foomo/redirects/domain/redirectdefinition/store"
+	github_com_foomo_redirects_domain_redirectdefinition "github.com/foomo/redirects/v2/domain/redirectdefinition"
+	github_com_foomo_redirects_domain_redirectdefinition_repository "github.com/foomo/redirects/v2/domain/redirectdefinition/repository"
+	github_com_foomo_redirects_domain_redirectdefinition_store "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
 	pkg_errors "github.com/pkg/errors"
 )
 

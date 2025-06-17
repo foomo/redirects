@@ -3,7 +3,7 @@ package redirectdefinition
 import (
 	"context"
 
-	redirectprovider "github.com/foomo/redirects/pkg/provider"
+	redirectprovider "github.com/foomo/redirects/v2/pkg/provider"
 )
 
 // returns an empty list of restricted sources.

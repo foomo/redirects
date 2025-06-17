@@ -6,7 +6,7 @@ import (
 	"time"
 
 	keelmongo "github.com/foomo/keel/persistence/mongo"
-	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
+	redirectstore "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
