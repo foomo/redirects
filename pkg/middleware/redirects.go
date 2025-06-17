@@ -5,7 +5,7 @@ import (
 
 	keellog "github.com/foomo/keel/log"
 	"github.com/foomo/keel/net/http/middleware"
-	redirectprovider "github.com/foomo/redirects/pkg/provider"
+	redirectprovider "github.com/foomo/redirects/v2/pkg/provider"
 	"go.uber.org/zap"
 )
 

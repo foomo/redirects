@@ -1,7 +1,7 @@
 package redirectdefinition
 
 import (
-	redirectcommand "github.com/foomo/redirects/domain/redirectdefinition/command"
+	redirectcommand "github.com/foomo/redirects/v2/domain/redirectdefinition/command"
 )
 
 type Commands struct {

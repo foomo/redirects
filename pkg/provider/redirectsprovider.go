@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	keellog "github.com/foomo/keel/log"
-	store "github.com/foomo/redirects/domain/redirectdefinition/store"
+	store "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
 	"github.com/nats-io/nats.go"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"

@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/foomo/contentserver/content"
-	rdutils "github.com/foomo/redirects/domain/redirectdefinition/utils"
+	rdutils "github.com/foomo/redirects/v2/domain/redirectdefinition/utils"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )

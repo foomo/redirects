@@ -1,4 +1,4 @@
-module github.com/foomo/redirects
+module github.com/foomo/redirects/v2
 
 go 1.22
 

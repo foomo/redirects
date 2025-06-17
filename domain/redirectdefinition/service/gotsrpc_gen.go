@@ -9,8 +9,8 @@ import (
 
 	github_com_foomo_contentserver_content "github.com/foomo/contentserver/content"
 	gotsrpc "github.com/foomo/gotsrpc/v2"
-	github_com_foomo_redirects_domain_redirectdefinition "github.com/foomo/redirects/domain/redirectdefinition"
-	github_com_foomo_redirects_domain_redirectdefinition_store "github.com/foomo/redirects/domain/redirectdefinition/store"
+	github_com_foomo_redirects_domain_redirectdefinition "github.com/foomo/redirects/v2/domain/redirectdefinition"
+	github_com_foomo_redirects_domain_redirectdefinition_store "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
 )
 
 const (
@@ -47,7 +47,7 @@ func (p *InternalServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.R
 	funcName := gotsrpc.GetCalledFunc(r, p.EndPoint)
 	callStats, _ := gotsrpc.GetStatsForRequest(r)
 	callStats.Func = funcName
-	callStats.Package = "github.com/foomo/redirects/domain/redirectdefinition/service"
+	callStats.Package = "github.com/foomo/redirects/v2/domain/redirectdefinition/service"
 	callStats.Service = "InternalService"
 	switch funcName {
 	case InternalServiceGoTSRPCProxyCreateRedirectsFromContentserverexport:
@@ -138,7 +138,7 @@ func (p *AdminServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Requ
 	funcName := gotsrpc.GetCalledFunc(r, p.EndPoint)
 	callStats, _ := gotsrpc.GetStatsForRequest(r)
 	callStats.Func = funcName
-	callStats.Package = "github.com/foomo/redirects/domain/redirectdefinition/service"
+	callStats.Package = "github.com/foomo/redirects/v2/domain/redirectdefinition/service"
 	callStats.Service = "AdminService"
 	switch funcName {
 	case AdminServiceGoTSRPCProxyCreate:

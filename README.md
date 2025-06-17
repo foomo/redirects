@@ -158,10 +158,10 @@ import (
 	"github.com/foomo/keel/log"
 	"github.com/foomo/keel/net/http/middleware"
 	keelservice "github.com/foomo/keel/service"
-	"github.com/foomo/redirects/domain/redirectdefinition"
-	redirectrepository "github.com/foomo/redirects/domain/redirectdefinition/repository"
-	redirectservice "github.com/foomo/redirects/domain/redirectdefinition/service"
-	redirectnats "github.com/foomo/redirects/pkg/nats"
+	"github.com/foomo/redirects/v2/domain/redirectdefinition"
+	redirectrepository "github.com/foomo/redirects/v2/domain/redirectdefinition/repository"
+	redirectservice "github.com/foomo/redirects/v2/domain/redirectdefinition/service"
+	redirectnats "github.com/foomo/redirects/v2/pkg/nats"
 )
 
 func main() {

@@ -6,9 +6,9 @@ import (
 	"runtime"
 	"strings"
 
-	redirectrepository "github.com/foomo/redirects/domain/redirectdefinition/repository"
-	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
-	redirectnats "github.com/foomo/redirects/pkg/nats"
+	redirectrepository "github.com/foomo/redirects/v2/domain/redirectdefinition/repository"
+	redirectstore "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
+	redirectnats "github.com/foomo/redirects/v2/pkg/nats"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )

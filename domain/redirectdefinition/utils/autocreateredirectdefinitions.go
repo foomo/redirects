@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/foomo/contentserver/content"
-	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
+	redirectstore "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
 	"go.uber.org/zap"
 )
 

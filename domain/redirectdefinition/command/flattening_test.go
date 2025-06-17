@@ -3,8 +3,8 @@ package redirectcommand_test
 import (
 	"testing"
 
-	redirectcommand "github.com/foomo/redirects/domain/redirectdefinition/command"
-	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
+	redirectcommand "github.com/foomo/redirects/v2/domain/redirectdefinition/command"
+	redirectstore "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
 	"github.com/stretchr/testify/assert"
 )
 

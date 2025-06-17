@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/foomo/contentserver/content"
-	"github.com/foomo/redirects/domain/redirectdefinition"
-	redirectrepository "github.com/foomo/redirects/domain/redirectdefinition/repository"
-	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
+	"github.com/foomo/redirects/v2/domain/redirectdefinition"
+	redirectrepository "github.com/foomo/redirects/v2/domain/redirectdefinition/repository"
+	redirectstore "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
 )
 
 // AdminService is the interface for the admin service

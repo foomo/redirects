@@ -5,12 +5,12 @@ import (
 	"errors"
 	"time"
 
-	redirectcommand "github.com/foomo/redirects/domain/redirectdefinition/command"
-	redirectquery "github.com/foomo/redirects/domain/redirectdefinition/query"
-	redirectrepository "github.com/foomo/redirects/domain/redirectdefinition/repository"
-	redirectstore "github.com/foomo/redirects/domain/redirectdefinition/store"
-	redirectnats "github.com/foomo/redirects/pkg/nats"
-	redirectprovider "github.com/foomo/redirects/pkg/provider"
+	redirectcommand "github.com/foomo/redirects/v2/domain/redirectdefinition/command"
+	redirectquery "github.com/foomo/redirects/v2/domain/redirectdefinition/query"
+	redirectrepository "github.com/foomo/redirects/v2/domain/redirectdefinition/repository"
+	redirectstore "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
+	redirectnats "github.com/foomo/redirects/v2/pkg/nats"
+	redirectprovider "github.com/foomo/redirects/v2/pkg/provider"
 	"go.uber.org/zap"
 )
 

@@ -1,7 +1,7 @@
 package redirectdefinition
 
 import (
-	redirectquery "github.com/foomo/redirects/domain/redirectdefinition/query"
+	redirectquery "github.com/foomo/redirects/v2/domain/redirectdefinition/query"
 )
 
 type Queries struct {
