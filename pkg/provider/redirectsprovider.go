@@ -233,21 +233,27 @@ func (p *RedirectsProvider) definitionForDimensionAndSource(dimension store.Dime
 	p.RLock()
 	defer p.RUnlock()
 	definitions, ok := p.redirects[dimension]
-	if ok {
-		definition, ok := definitions[source]
-		if ok {
-			return definition
-		} else {
-			unescapedSource, err := url.PathUnescape(string(source))
-			if err != nil {
-				return nil
-			}
-			definition, ok := definitions[store.RedirectSource(unescapedSource)]
-			if ok {
-				return definition
-			}
-		}
+	if !ok {
+		p.l.Info("no redirects found for dimension", zap.String("dimension", string(dimension)))
+		return nil
 	}
+
+	// first try to find the definition with the exact source
+	definition, ok := definitions[source]
+	if ok {
+		return definition
+	}
+
+	// if not found, try to unescape the source and find it again
+	unescapedSource, err := url.PathUnescape(string(source))
+	if err != nil {
+		return nil
+	}
+	definition, ok = definitions[store.RedirectSource(unescapedSource)]
+	if ok {
+		return definition
+	}
+
 	return nil
 }
 
