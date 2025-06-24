@@ -3,6 +3,7 @@ package redirectprovider
 import (
 	"context"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 
@@ -188,17 +189,29 @@ func (p *RedirectsProvider) Process(r *http.Request) (redirect *store.Redirect, 
 
 // matchRedirectDefinition checks if there is a redirect definition matching the request
 func (p *RedirectsProvider) matchRedirectDefinition(r *http.Request, dimension store.Dimension) (*store.RedirectDefinition, error) {
+	l := keellog.With(
+		p.l,
+		keellog.FCodeMethod("matchRedirectDefinition"),
+		zap.String("dimension", string(dimension)),
+		zap.String("source", r.URL.RequestURI()),
+		zap.String("path", r.URL.Path),
+	)
+
 	// 1. full url from cache
 	definition := p.definitionForDimensionAndSource(dimension, store.RedirectSource(r.URL.RequestURI()))
 	if definition != nil {
 		return definition, nil
 	}
+	l.Debug("no cached definition found for full URL, checking without query parameters")
 
 	if strings.Contains(r.URL.RequestURI(), "?") {
 		definition := p.definitionForDimensionAndSource(dimension, store.RedirectSource(r.URL.Path))
 		if definition != nil && definition.RespectParams {
 			return definition, nil
 		}
+		l.Debug("no cached definition found for path with respect to parameters, on check without query parameters")
+	} else {
+		l.Debug("no query parameters in request, using path only for matching")
 	}
 
 	// 2. full url against regex
@@ -211,16 +224,34 @@ func (p *RedirectsProvider) matchRedirectDefinition(r *http.Request, dimension s
 	return definition, nil
 }
 
+// definitionForDimensionAndSource retrieves the redirect definition for a given dimension and source
+// it also tries to unescape the source if it is not found directly
+// this is useful for cases where the source might have been URL-encoded - see r.RequestURI() (escaped) vs r.URL.Path (unescaped)
 func (p *RedirectsProvider) definitionForDimensionAndSource(dimension store.Dimension, source store.RedirectSource) *store.RedirectDefinition {
 	p.RLock()
 	defer p.RUnlock()
 	definitions, ok := p.redirects[dimension]
-	if ok {
-		definition, ok := definitions[source]
-		if ok {
-			return definition
-		}
+	if !ok {
+		p.l.Info("no redirects found for dimension", zap.String("dimension", string(dimension)))
+		return nil
 	}
+
+	// first try to find the definition with the exact source
+	definition, ok := definitions[source]
+	if ok {
+		return definition
+	}
+
+	// if not found, try to unescape the source and find it again
+	unescapedSource, err := url.PathUnescape(string(source))
+	if err != nil {
+		return nil
+	}
+	definition, ok = definitions[store.RedirectSource(unescapedSource)]
+	if ok {
+		return definition
+	}
+
 	return nil
 }
 
