@@ -201,17 +201,15 @@ func (p *RedirectsProvider) matchRedirectDefinition(r *http.Request, dimension s
 	definition := p.definitionForDimensionAndSource(dimension, store.RedirectSource(r.URL.RequestURI()))
 	if definition != nil {
 		return definition, nil
-	} else {
-		l.Debug("no cached definition found for full URL, checking without query parameters")
 	}
+	l.Debug("no cached definition found for full URL, checking without query parameters")
 
 	if strings.Contains(r.URL.RequestURI(), "?") {
 		definition := p.definitionForDimensionAndSource(dimension, store.RedirectSource(r.URL.Path))
 		if definition != nil && definition.RespectParams {
 			return definition, nil
-		} else {
-			l.Debug("no cached definition found for path with respect to parameters, on check without query parameters")
 		}
+		l.Debug("no cached definition found for path with respect to parameters, on check without query parameters")
 	} else {
 		l.Debug("no query parameters in request, using path only for matching")
 	}
