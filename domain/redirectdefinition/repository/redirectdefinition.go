@@ -50,13 +50,6 @@ func (d Direction) GetSortValue() int {
 	}
 }
 
-type PaginatedResult struct {
-	Results  []*redirectstore.RedirectDefinition `json:"results"`
-	Total    int                                 `json:"total"`
-	Page     int                                 `json:"page"`
-	PageSize int                                 `json:"pageSize"`
-}
-
 type (
 	RedirectsDefinitionRepository interface {
 		FindOne(ctx context.Context, id, source string) (*redirectstore.RedirectDefinition, error)
