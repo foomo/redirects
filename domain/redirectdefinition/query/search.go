@@ -22,7 +22,7 @@ type (
 		Page         int                           `json:"page"`
 		PageSize     int                           `json:"pageSize"`
 		RedirectType redirectstore.RedirectionType `json:"type,omitempty"`
-		Sort         redirectrepository.Sort       `json:"sort"`
+		Sort         redirectstore.Sort            `json:"sort"`
 	}
 	// SearchHandlerFn handler
 	SearchHandlerFn func(ctx context.Context, l *zap.Logger, qry Search) (*redirectstore.PaginatedResult, error)
@@ -54,7 +54,7 @@ func SearchHandler(repo redirectrepository.RedirectsDefinitionRepository) Search
 		}
 
 		// Create pagination struct
-		pagination := redirectrepository.Pagination{Page: page, PageSize: pageSize}
+		pagination := redirectstore.Pagination{Page: page, PageSize: pageSize}
 
 		return repo.FindMany(ctx, string(qry.Source), string(qry.Dimension), qry.RedirectType, qry.ActiveState, pagination, qry.Sort)
 	}

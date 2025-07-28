@@ -14,46 +14,10 @@ import (
 	"go.uber.org/zap"
 )
 
-type Pagination struct {
-	Page     int `json:"page"`
-	PageSize int `json:"pageSize"`
-}
-
-type SortField string
-
-const (
-	SortFieldSource        SortField = "source"
-	SortFieldUpdated       SortField = "updated"
-	SortFieldLastUpdatedBy SortField = "lastUpdatedBy"
-)
-
-type Direction string
-
-const (
-	DirectionAscending  Direction = "ascending"
-	DirectionDescending Direction = "descending"
-)
-
-type Sort struct {
-	Field     SortField `json:"field"`
-	Direction Direction `json:"direction"`
-}
-
-func (d Direction) GetSortValue() int {
-	switch d {
-	case DirectionAscending:
-		return 1
-	case DirectionDescending:
-		return -1
-	default:
-		return 1
-	}
-}
-
 type (
 	RedirectsDefinitionRepository interface {
 		FindOne(ctx context.Context, id, source string) (*redirectstore.RedirectDefinition, error)
-		FindMany(ctx context.Context, source, dimension string, redirectType redirectstore.RedirectionType, activeState redirectstore.ActiveStateType, pagination Pagination, sort Sort) (*redirectstore.PaginatedResult, error)
+		FindMany(ctx context.Context, source, dimension string, redirectType redirectstore.RedirectionType, activeState redirectstore.ActiveStateType, pagination redirectstore.Pagination, sort redirectstore.Sort) (*redirectstore.PaginatedResult, error)
 		FindAll(ctx context.Context, onlyActive bool) (defs map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, err error)
 		FindAllByDimension(ctx context.Context, dimension redirectstore.Dimension, onlyActive bool) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error)
 		Insert(ctx context.Context, def *redirectstore.RedirectDefinition) error
@@ -89,18 +53,18 @@ func NewBaseRedirectsDefinitionRepository(l *zap.Logger, persistor *keelmongo.Pe
 			},
 			mongo.IndexModel{
 				Keys: bson.D{
-					{Key: string(SortFieldUpdated), Value: 1},
+					{Key: string(redirectstore.SortFieldUpdated), Value: 1},
 				},
 			},
 			mongo.IndexModel{
 				Keys: bson.D{
-					{Key: string(SortFieldLastUpdatedBy), Value: 1},
+					{Key: string(redirectstore.SortFieldLastUpdatedBy), Value: 1},
 				},
 			},
 			// Index for 'source' field (optional for search optimization)
 			mongo.IndexModel{
 				Keys: bson.D{
-					{Key: string(SortFieldSource), Value: 1},
+					{Key: string(redirectstore.SortFieldSource), Value: 1},
 				},
 			},
 		),
@@ -128,8 +92,8 @@ func (rs BaseRedirectsDefinitionRepository) FindMany(
 	source, dimension string,
 	redirectType redirectstore.RedirectionType,
 	activeState redirectstore.ActiveStateType,
-	pagination Pagination,
-	sort Sort,
+	pagination redirectstore.Pagination,
+	sort redirectstore.Sort,
 ) (*redirectstore.PaginatedResult, error) {
 	// Validate pagination
 	if pagination.Page < 1 {
@@ -170,7 +134,7 @@ func (rs BaseRedirectsDefinitionRepository) FindMany(
 	// Sorting settings
 	sortField := sort.Field
 	if sortField == "" {
-		sortField = SortFieldSource // Default sort field
+		sortField = redirectstore.SortFieldSource // Default sort field
 	}
 	opts.SetSort(bson.D{
 		{Key: string(sortField), Value: sort.Direction.GetSortValue()},

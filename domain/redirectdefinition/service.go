@@ -8,7 +8,6 @@ import (
 	"github.com/foomo/contentserver/content"
 	redirectcommand "github.com/foomo/redirects/v2/domain/redirectdefinition/command"
 	redirectquery "github.com/foomo/redirects/v2/domain/redirectdefinition/query"
-	redirectrepository "github.com/foomo/redirects/v2/domain/redirectdefinition/repository"
 	redirectstore "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
 	"go.uber.org/zap"
 )
@@ -20,7 +19,7 @@ type SearchParams struct {
 	PageSize     int                           `json:"pageSize"`
 	RedirectType redirectstore.RedirectionType `json:"type,omitempty"`
 	ActiveState  redirectstore.ActiveStateType `json:"activeState,omitempty"`
-	Sort         redirectrepository.Sort       `json:"sort"`
+	Sort         redirectstore.Sort            `json:"sort"`
 }
 
 type Service struct {
