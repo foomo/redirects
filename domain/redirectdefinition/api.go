@@ -116,7 +116,7 @@ func (a *API) GetRedirects(ctx context.Context) (map[redirectstore.Dimension]map
 	return a.qry.GetRedirects(ctx, a.l)
 }
 
-func (a *API) Search(ctx context.Context, qry redirectquery.Search) (*redirectrepository.PaginatedResult, error) {
+func (a *API) Search(ctx context.Context, qry redirectquery.Search) (*redirectstore.PaginatedResult, error) {
 	return a.qry.Search(ctx, a.l, qry)
 }
 

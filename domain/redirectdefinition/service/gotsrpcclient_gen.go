@@ -8,15 +8,15 @@ import (
 
 	github_com_foomo_contentserver_content "github.com/foomo/contentserver/content"
 	gotsrpc "github.com/foomo/gotsrpc/v2"
-	github_com_foomo_redirects_domain_redirectdefinition "github.com/foomo/redirects/v2/domain/redirectdefinition"
-	github_com_foomo_redirects_domain_redirectdefinition_repository "github.com/foomo/redirects/v2/domain/redirectdefinition/repository"
-	github_com_foomo_redirects_domain_redirectdefinition_store "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
+	github_com_foomo_redirects_v2_domain_redirectdefinition "github.com/foomo/redirects/v2/domain/redirectdefinition"
+	github_com_foomo_redirects_v2_domain_redirectdefinition_repository "github.com/foomo/redirects/v2/domain/redirectdefinition/repository"
+	github_com_foomo_redirects_v2_domain_redirectdefinition_store "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
 	pkg_errors "github.com/pkg/errors"
 )
 
 type InternalServiceGoTSRPCClient interface {
 	CreateRedirectsFromContentserverexport(ctx go_context.Context, oldState map[string]*github_com_foomo_contentserver_content.RepoNode, newState map[string]*github_com_foomo_contentserver_content.RepoNode) (retCreateRedirectsFromContentserverexport_0 error, clientErr error)
-	GetRedirects(ctx go_context.Context) (retGetRedirects_0 map[github_com_foomo_redirects_domain_redirectdefinition_store.Dimension]map[github_com_foomo_redirects_domain_redirectdefinition_store.RedirectSource]*github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition, retGetRedirects_1 error, clientErr error)
+	GetRedirects(ctx go_context.Context) (retGetRedirects_0 map[github_com_foomo_redirects_v2_domain_redirectdefinition_store.Dimension]map[github_com_foomo_redirects_v2_domain_redirectdefinition_store.RedirectSource]*github_com_foomo_redirects_v2_domain_redirectdefinition_store.RedirectDefinition, retGetRedirects_1 error, clientErr error)
 }
 
 type HTTPInternalServiceGoTSRPCClient struct {
@@ -50,7 +50,7 @@ func (tsc *HTTPInternalServiceGoTSRPCClient) CreateRedirectsFromContentserverexp
 	return
 }
 
-func (tsc *HTTPInternalServiceGoTSRPCClient) GetRedirects(ctx go_context.Context) (retGetRedirects_0 map[github_com_foomo_redirects_domain_redirectdefinition_store.Dimension]map[github_com_foomo_redirects_domain_redirectdefinition_store.RedirectSource]*github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition, retGetRedirects_1 error, clientErr error) {
+func (tsc *HTTPInternalServiceGoTSRPCClient) GetRedirects(ctx go_context.Context) (retGetRedirects_0 map[github_com_foomo_redirects_v2_domain_redirectdefinition_store.Dimension]map[github_com_foomo_redirects_v2_domain_redirectdefinition_store.RedirectSource]*github_com_foomo_redirects_v2_domain_redirectdefinition_store.RedirectDefinition, retGetRedirects_1 error, clientErr error) {
 	args := []interface{}{}
 	reply := []interface{}{&retGetRedirects_0, &retGetRedirects_1}
 	clientErr = tsc.Client.Call(ctx, tsc.URL, tsc.EndPoint, "GetRedirects", args, reply)
@@ -61,11 +61,11 @@ func (tsc *HTTPInternalServiceGoTSRPCClient) GetRedirects(ctx go_context.Context
 }
 
 type AdminServiceGoTSRPCClient interface {
-	Create(ctx go_context.Context, def *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition, locale string) (retCreate_0 github_com_foomo_redirects_domain_redirectdefinition_store.EntityID, retCreate_1 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error)
-	Delete(ctx go_context.Context, id string) (retDelete_0 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error)
-	Search(ctx go_context.Context, params *github_com_foomo_redirects_domain_redirectdefinition.SearchParams) (retSearch_0 *github_com_foomo_redirects_domain_redirectdefinition_repository.PaginatedResult, retSearch_1 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error)
-	Update(ctx go_context.Context, def *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition) (retUpdate_0 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error)
-	UpdateStates(ctx go_context.Context, ids []*github_com_foomo_redirects_domain_redirectdefinition_store.EntityID, state bool) (retUpdateStates_0 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error)
+	Create(ctx go_context.Context, def *github_com_foomo_redirects_v2_domain_redirectdefinition_store.RedirectDefinition, locale string) (retCreate_0 github_com_foomo_redirects_v2_domain_redirectdefinition_store.EntityID, retCreate_1 *github_com_foomo_redirects_v2_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error)
+	Delete(ctx go_context.Context, id string) (retDelete_0 *github_com_foomo_redirects_v2_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error)
+	Search(ctx go_context.Context, params *github_com_foomo_redirects_v2_domain_redirectdefinition.SearchParams) (retSearch_0 *github_com_foomo_redirects_v2_domain_redirectdefinition_repository.PaginatedResult, retSearch_1 *github_com_foomo_redirects_v2_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error)
+	Update(ctx go_context.Context, def *github_com_foomo_redirects_v2_domain_redirectdefinition_store.RedirectDefinition) (retUpdate_0 *github_com_foomo_redirects_v2_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error)
+	UpdateStates(ctx go_context.Context, ids []*github_com_foomo_redirects_v2_domain_redirectdefinition_store.EntityID, state bool) (retUpdateStates_0 *github_com_foomo_redirects_v2_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error)
 }
 
 type HTTPAdminServiceGoTSRPCClient struct {
@@ -89,7 +89,7 @@ func NewAdminServiceGoTSRPCClientWithClient(url string, endpoint string, client 
 		Client:   gotsrpc.NewClientWithHttpClient(client),
 	}
 }
-func (tsc *HTTPAdminServiceGoTSRPCClient) Create(ctx go_context.Context, def *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition, locale string) (retCreate_0 github_com_foomo_redirects_domain_redirectdefinition_store.EntityID, retCreate_1 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error) {
+func (tsc *HTTPAdminServiceGoTSRPCClient) Create(ctx go_context.Context, def *github_com_foomo_redirects_v2_domain_redirectdefinition_store.RedirectDefinition, locale string) (retCreate_0 github_com_foomo_redirects_v2_domain_redirectdefinition_store.EntityID, retCreate_1 *github_com_foomo_redirects_v2_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error) {
 	args := []interface{}{def, locale}
 	reply := []interface{}{&retCreate_0, &retCreate_1}
 	clientErr = tsc.Client.Call(ctx, tsc.URL, tsc.EndPoint, "Create", args, reply)
@@ -99,7 +99,7 @@ func (tsc *HTTPAdminServiceGoTSRPCClient) Create(ctx go_context.Context, def *gi
 	return
 }
 
-func (tsc *HTTPAdminServiceGoTSRPCClient) Delete(ctx go_context.Context, id string) (retDelete_0 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error) {
+func (tsc *HTTPAdminServiceGoTSRPCClient) Delete(ctx go_context.Context, id string) (retDelete_0 *github_com_foomo_redirects_v2_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error) {
 	args := []interface{}{id}
 	reply := []interface{}{&retDelete_0}
 	clientErr = tsc.Client.Call(ctx, tsc.URL, tsc.EndPoint, "Delete", args, reply)
@@ -109,7 +109,7 @@ func (tsc *HTTPAdminServiceGoTSRPCClient) Delete(ctx go_context.Context, id stri
 	return
 }
 
-func (tsc *HTTPAdminServiceGoTSRPCClient) Search(ctx go_context.Context, params *github_com_foomo_redirects_domain_redirectdefinition.SearchParams) (retSearch_0 *github_com_foomo_redirects_domain_redirectdefinition_repository.PaginatedResult, retSearch_1 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error) {
+func (tsc *HTTPAdminServiceGoTSRPCClient) Search(ctx go_context.Context, params *github_com_foomo_redirects_v2_domain_redirectdefinition.SearchParams) (retSearch_0 *github_com_foomo_redirects_v2_domain_redirectdefinition_repository.PaginatedResult, retSearch_1 *github_com_foomo_redirects_v2_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error) {
 	args := []interface{}{params}
 	reply := []interface{}{&retSearch_0, &retSearch_1}
 	clientErr = tsc.Client.Call(ctx, tsc.URL, tsc.EndPoint, "Search", args, reply)
@@ -119,7 +119,7 @@ func (tsc *HTTPAdminServiceGoTSRPCClient) Search(ctx go_context.Context, params 
 	return
 }
 
-func (tsc *HTTPAdminServiceGoTSRPCClient) Update(ctx go_context.Context, def *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition) (retUpdate_0 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error) {
+func (tsc *HTTPAdminServiceGoTSRPCClient) Update(ctx go_context.Context, def *github_com_foomo_redirects_v2_domain_redirectdefinition_store.RedirectDefinition) (retUpdate_0 *github_com_foomo_redirects_v2_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error) {
 	args := []interface{}{def}
 	reply := []interface{}{&retUpdate_0}
 	clientErr = tsc.Client.Call(ctx, tsc.URL, tsc.EndPoint, "Update", args, reply)
@@ -129,7 +129,7 @@ func (tsc *HTTPAdminServiceGoTSRPCClient) Update(ctx go_context.Context, def *gi
 	return
 }
 
-func (tsc *HTTPAdminServiceGoTSRPCClient) UpdateStates(ctx go_context.Context, ids []*github_com_foomo_redirects_domain_redirectdefinition_store.EntityID, state bool) (retUpdateStates_0 *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error) {
+func (tsc *HTTPAdminServiceGoTSRPCClient) UpdateStates(ctx go_context.Context, ids []*github_com_foomo_redirects_v2_domain_redirectdefinition_store.EntityID, state bool) (retUpdateStates_0 *github_com_foomo_redirects_v2_domain_redirectdefinition_store.RedirectDefinitionError, clientErr error) {
 	args := []interface{}{ids, state}
 	reply := []interface{}{&retUpdateStates_0}
 	clientErr = tsc.Client.Call(ctx, tsc.URL, tsc.EndPoint, "UpdateStates", args, reply)

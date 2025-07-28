@@ -9,8 +9,8 @@ import (
 
 	github_com_foomo_contentserver_content "github.com/foomo/contentserver/content"
 	gotsrpc "github.com/foomo/gotsrpc/v2"
-	github_com_foomo_redirects_domain_redirectdefinition "github.com/foomo/redirects/v2/domain/redirectdefinition"
-	github_com_foomo_redirects_domain_redirectdefinition_store "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
+	github_com_foomo_redirects_v2_domain_redirectdefinition "github.com/foomo/redirects/v2/domain/redirectdefinition"
+	github_com_foomo_redirects_v2_domain_redirectdefinition_store "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
 )
 
 const (
@@ -147,7 +147,7 @@ func (p *AdminServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Requ
 			rets []interface{}
 		)
 		var (
-			arg_def    *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition
+			arg_def    *github_com_foomo_redirects_v2_domain_redirectdefinition_store.RedirectDefinition
 			arg_locale string
 		)
 		args = []interface{}{&arg_def, &arg_locale}
@@ -200,7 +200,7 @@ func (p *AdminServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Requ
 			rets []interface{}
 		)
 		var (
-			arg_params *github_com_foomo_redirects_domain_redirectdefinition.SearchParams
+			arg_params *github_com_foomo_redirects_v2_domain_redirectdefinition.SearchParams
 		)
 		args = []interface{}{&arg_params}
 		if err := gotsrpc.LoadArgs(&args, callStats, r); err != nil {
@@ -226,7 +226,7 @@ func (p *AdminServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Requ
 			rets []interface{}
 		)
 		var (
-			arg_def *github_com_foomo_redirects_domain_redirectdefinition_store.RedirectDefinition
+			arg_def *github_com_foomo_redirects_v2_domain_redirectdefinition_store.RedirectDefinition
 		)
 		args = []interface{}{&arg_def}
 		if err := gotsrpc.LoadArgs(&args, callStats, r); err != nil {
@@ -252,7 +252,7 @@ func (p *AdminServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Requ
 			rets []interface{}
 		)
 		var (
-			arg_ids   []*github_com_foomo_redirects_domain_redirectdefinition_store.EntityID
+			arg_ids   []*github_com_foomo_redirects_v2_domain_redirectdefinition_store.EntityID
 			arg_state bool
 		)
 		args = []interface{}{&arg_ids, &arg_state}

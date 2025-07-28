@@ -60,7 +60,7 @@ type PaginatedResult struct {
 type (
 	RedirectsDefinitionRepository interface {
 		FindOne(ctx context.Context, id, source string) (*redirectstore.RedirectDefinition, error)
-		FindMany(ctx context.Context, source, dimension string, redirectType redirectstore.RedirectionType, activeState redirectstore.ActiveStateType, pagination Pagination, sort Sort) (*PaginatedResult, error)
+		FindMany(ctx context.Context, source, dimension string, redirectType redirectstore.RedirectionType, activeState redirectstore.ActiveStateType, pagination Pagination, sort Sort) (*redirectstore.PaginatedResult, error)
 		FindAll(ctx context.Context, onlyActive bool) (defs map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, err error)
 		FindAllByDimension(ctx context.Context, dimension redirectstore.Dimension, onlyActive bool) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error)
 		Insert(ctx context.Context, def *redirectstore.RedirectDefinition) error
@@ -137,7 +137,7 @@ func (rs BaseRedirectsDefinitionRepository) FindMany(
 	activeState redirectstore.ActiveStateType,
 	pagination Pagination,
 	sort Sort,
-) (*PaginatedResult, error) {
+) (*redirectstore.PaginatedResult, error) {
 	// Validate pagination
 	if pagination.Page < 1 {
 		pagination.Page = 1
@@ -187,7 +187,7 @@ func (rs BaseRedirectsDefinitionRepository) FindMany(
 	// Query MongoDB
 	cursor, err := rs.collection.Col().Find(ctx, filter, opts)
 	if err != nil {
-		return &PaginatedResult{}, err
+		return nil, err
 	}
 	defer cursor.Close(ctx)
 
@@ -195,17 +195,17 @@ func (rs BaseRedirectsDefinitionRepository) FindMany(
 	for cursor.Next(ctx) {
 		var red redirectstore.RedirectDefinition
 		if err := cursor.Decode(&red); err != nil {
-			return &PaginatedResult{}, err
+			return nil, err
 		}
 		result = append(result, &red)
 	}
 
 	total, err := rs.collection.Col().CountDocuments(ctx, filter)
 	if err != nil {
-		return &PaginatedResult{}, err
+		return nil, err
 	}
 
-	return &PaginatedResult{
+	return &redirectstore.PaginatedResult{
 		Results:  result,
 		Total:    int(total),
 		Page:     pagination.Page,

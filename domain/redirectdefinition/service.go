@@ -76,7 +76,7 @@ func (rs *Service) Search(
 	_ http.ResponseWriter,
 	r *http.Request,
 	params *SearchParams,
-) (*redirectrepository.PaginatedResult, *redirectstore.RedirectDefinitionError) {
+) (*redirectstore.PaginatedResult, *redirectstore.RedirectDefinitionError) {
 	if params.Page < 1 {
 		params.Page = 1
 	}

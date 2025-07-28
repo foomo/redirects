@@ -22,3 +22,10 @@ type RedirectDefinition struct {
 }
 
 type RedirectDefinitions map[RedirectSource]*RedirectDefinition
+
+type PaginatedResult struct {
+	Results  []*RedirectDefinition `json:"results"`
+	Total    int                   `json:"total"`
+	Page     int                   `json:"page"`
+	PageSize int                   `json:"pageSize"`
+}
