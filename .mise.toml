@@ -1,0 +1,5 @@
+[tools]
+# https://mise-tools.jdx.dev/tools/lefthook
+lefthook = "latest"
+# https://mise-tools.jdx.dev/tools/golangci-lint
+golangci-lint = "latest"

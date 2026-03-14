@@ -33,25 +33,30 @@ func NewUpdateSignalSubscribeChannel(
 	if err != nil {
 		return nil, err
 	}
+
 	return channel, nil
 }
 
 func NewUpdateSignal(ctx context.Context, l *zap.Logger, natsURI, clientID, topic string) (*UpdateSignal, error) {
 	var err error
+
 	c := &UpdateSignal{
 		topic:    topic,
 		l:        l,
 		messages: make(chan *nats.Msg),
 	}
+
 	c.connection, err = nats.Connect(natsURI, DefaultConnectOptions(clientID)...)
 	if err != nil {
 		keellog.WithError(c.l, err).Error("error when connecting to nats")
 		return nil, err
 	}
+
 	go func() {
 		<-ctx.Done()
 		_ = c.Close(ctx)
 	}()
+
 	return c, nil
 }
 
@@ -62,9 +67,11 @@ func (c *UpdateSignal) Close(_ context.Context) error {
 			keellog.WithError(c.l, err).Error("error when unsubscribing")
 			return err
 		}
+
 		close(c.messages)
 		c.connection.Close()
 	}
+
 	return nil
 }
 
@@ -74,11 +81,17 @@ func (c *UpdateSignal) Subscribe() (chan *nats.Msg, error) {
 		keellog.WithError(c.l, err).Error("error when subscribing")
 		return nil, err
 	}
+
 	c.subscription = subscription
+
 	return c.messages, nil
 }
 
 func (c *UpdateSignal) Publish() error {
-	payload, _ := json.Marshal(struct{}{})
+	payload, err := json.Marshal(struct{}{})
+	if err != nil {
+		return err
+	}
+
 	return c.connection.Publish(c.topic, payload)
 }

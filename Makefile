@@ -1,91 +1,118 @@
 .DEFAULT_GOAL:=help
 -include .makerc
 
+# --- Config -----------------------------------------------------------------
+
+# Newline hack for error output
+define br
+
+
+endef
+
 # --- Targets -----------------------------------------------------------------
 
 # This allows us to accept extra arguments
-%: .husky
+%: .mise .lefthook
 	@:
 
-.PHONY: .husky
-# Configure git hooks for husky
-.husky:
-	@if ! command -v husky &> /dev/null; then \
-		echo "ERROR: missing executeable 'husky', please run:"; \
-		echo "\n$ go install github.com/go-courier/husky/cmd/husky@latest\n"; \
-	fi
-	@git config core.hooksPath .husky
+.PHONY: .lefthook
+# Configure git hooks for lefthook
+.lefthook:
+	@lefthook install --reset-hooks-path
 
-## === Tasks ===
+.PHONY: .mise
+# Install dependencies
+.mise:
+ifeq (, $(shell command -v mise))
+	$(error $(br)$(br)Please ensure you have 'mise' installed and activated!$(br)$(br)  $$ brew update$(br)  $$ brew install mise$(br)$(br)See the documentation: https://mise.jdx.dev/getting-started.html)
+endif
+	@mise install
 
-.PHONY: doc
-## Run tests
-doc:
-	@open "http://localhost:6060/pkg/github.com/foomo/redirects/v2/"
-	@godoc -http=localhost:6060 -play
-
-.PHONY: test
-## Run tests
-test:
-	@set -euo pipefail && go test -json -v ./...  | gotestfmt
-
-.PHONY: test.cover
-## Run tests with coverage
-test.cover:
-	@go test -v -coverprofile=coverage.out ./...
-	@go tool cover -func=coverage.out
-	@go tool cover -html=coverage.out
-
-.PHONY: lint
-## Run linter
-lint:
-	@golangci-lint run
-
-.PHONY: lint.fix
-## Run linter and fix violations
-lint.fix:
-	@golangci-lint run --fix
+### Tasks
 
 .PHONY: tidy
 ## Run go mod tidy
 tidy:
+	@echo "〉running go mod tidy"
 	@go mod tidy
+
+.PHONY: generate
+## Run go generate
+generate:
+	@echo "〉running go generate"
+	@go generate ./...
+
+.PHONY: test
+## Run tests
+test:
+	@echo "〉running tests"
+	@go test -coverprofile=coverage.out ./...
+
+.PHONY: test.race
+## Run tests with `-race` flag
+test.race:
+	@echo "〉running tests with -race flag"
+	@go test -race -coverprofile=coverage.out ./...
+
+.PHONY: test.cover
+## Run tests with coverage
+test.cover:
+	@echo "〉running tests with coverage"
+	@go test -v -coverprofile=coverage.out ./...
+	@go tool cover -func=coverage.out
+	@go tool cover -html=coverage.out
+
+.PHONY: fmt
+## Run format
+fmt:
+	@echo "〉formatting files"
+	@golangci-lint fmt ./...
+
+.PHONY: lint
+## Run linter
+lint:
+	@echo "〉linting files"
+	@golangci-lint run
+
+.PHONY: lint.fix
+## Fix lint violations
+lint.fix:
+	@echo "〉fixing lint errors"
+	@golangci-lint run --fix
 
 .PHONY: outdated
 ## Show outdated direct dependencies
 outdated:
+	@echo "〉listing outdated dependencies"
 	@go list -u -m -json all | go-mod-outdated -update -direct
 
-## === Utils ===
+### Documentation
 
+.PHONY: doc
+## Open go docs
+doc:
+	@echo "〉starting go docs"
+	@open "http://localhost:6060/pkg/github.com/foomo/redirects/v2/"
+	@godoc -http=localhost:6060 -play
+
+### Utils
+
+.PHONY: help
 ## Show help text
 help:
+	@echo ""
+	@echo "Welcome to redirects!"
+	@echo "\nUsage:\n  make [task]"
 	@awk '{ \
-			if ($$0 ~ /^.PHONY: [a-zA-Z\-\_0-9]+$$/) { \
-				helpCommand = substr($$0, index($$0, ":") + 2); \
-				if (helpMessage) { \
-					printf "\033[36m%-23s\033[0m %s\n", \
-						helpCommand, helpMessage; \
-					helpMessage = ""; \
-				} \
-			} else if ($$0 ~ /^[a-zA-Z\-\_0-9.]+:/) { \
-				helpCommand = substr($$0, 0, index($$0, ":")); \
-				if (helpMessage) { \
-					printf "\033[36m%-23s\033[0m %s\n", \
-						helpCommand, helpMessage"\n"; \
-					helpMessage = ""; \
-				} \
-			} else if ($$0 ~ /^##/) { \
-				if (helpMessage) { \
-					helpMessage = helpMessage"\n                        "substr($$0, 3); \
-				} else { \
-					helpMessage = substr($$0, 3); \
-				} \
-			} else { \
-				if (helpMessage) { \
-					print "\n                        "helpMessage"\n" \
-				} \
-				helpMessage = ""; \
-			} \
-		}' \
-		$(MAKEFILE_LIST)
+		if($$0 ~ /^### /){ \
+			if(help) printf "%-23s %s\n\n", cmd, help; help=""; \
+			printf "\n%s:\n", substr($$0,5); \
+		} else if($$0 ~ /^[a-zA-Z0-9._-]+:/){ \
+			cmd = substr($$0, 1, index($$0, ":")-1); \
+			if(help) printf "  %-23s %s\n", cmd, help; help=""; \
+		} else if($$0 ~ /^##/){ \
+			help = help ? help "\n                          " substr($$0,3) : substr($$0,3); \
+		} else if(help){ \
+			print "\n                        " help "\n"; help=""; \
+		} \
+	}' $(MAKEFILE_LIST)

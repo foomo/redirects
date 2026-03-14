@@ -6,20 +6,20 @@ import (
 	"path"
 	"strings"
 
-	redirectrepository "github.com/foomo/redirects/v2/domain/redirectdefinition/repository"
-	redirectstore "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
-	redirectdefinitionutils "github.com/foomo/redirects/v2/domain/redirectdefinition/utils"
-	redirectprovider "github.com/foomo/redirects/v2/pkg/provider"
+	repositoryx "github.com/foomo/redirects/v2/domain/redirectdefinition/repository"
+	storex "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
+	utilsx "github.com/foomo/redirects/v2/domain/redirectdefinition/utils"
+	providerx "github.com/foomo/redirects/v2/pkg/provider"
 	"go.uber.org/zap"
 )
 
 func validateRedirect(
 	ctx context.Context,
 	l *zap.Logger,
-	repo redirectrepository.RedirectsDefinitionRepository,
-	restrictedSourcesProvider redirectprovider.RestrictedSourcesProviderFunc,
-	redirect *redirectstore.RedirectDefinition,
-	next interface{},
+	repo repositoryx.RedirectsDefinitionRepository,
+	restrictedSourcesProvider providerx.RestrictedSourcesProviderFunc,
+	redirect *storex.RedirectDefinition,
+	next any,
 ) error {
 	// Get restricted sources
 	restrictedSources := []string{}
@@ -41,6 +41,7 @@ func validateRedirect(
 
 	for _, restricted := range restrictedSources {
 		restricted = strings.ToLower(restricted)
+
 		matched, _ := path.Match(restricted, source)
 		if matched {
 			return fmt.Errorf("source '%s' is restricted due to pattern '%s'", redirect.Source, restricted)
@@ -54,7 +55,7 @@ func validateRedirect(
 	}
 
 	// Check for cyclic redirect
-	if redirectdefinitionutils.HasCycle(redirect.Source, redirect.Target, existingRedirects) {
+	if utilsx.HasCycle(redirect.Source, redirect.Target, existingRedirects) {
 		return fmt.Errorf("cyclic redirect detected: %s → %s creates a loop", redirect.Source, redirect.Target)
 	}
 

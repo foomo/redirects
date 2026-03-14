@@ -33,25 +33,27 @@ func (r RedirectCode) Valid() bool {
 	}
 }
 
-// genericTransform checks whether the url need to be transformed to confirm to
+// GenericTransform checks whether the url need to be transformed to confirm to
 // the url requirement - lowercased, no trailing slash
-func (r RedirectRequest) GenericTransform() (newRequest RedirectRequest, hasChanged bool, err error) {
-	newRequest = r
+func (r RedirectRequest) GenericTransform() (RedirectRequest, bool, error) {
 	base, err := url.Parse(string(r))
 	if err != nil {
-		return
+		return r, false, err
 	}
+
 	base.Path = strings.TrimSuffix(strings.ToLower(base.Path), "/")
-	newRequest = RedirectRequest(base.String())
+	newRequest := RedirectRequest(base.String())
+
 	return newRequest, newRequest != r, nil
 }
 
-// isHomepage bool if we are on homepage
-func (r RedirectRequest) IsHomepage() (isHome bool, err error) {
+// IsHomepage returns true if we are on homepage
+func (r RedirectRequest) IsHomepage() (bool, error) {
 	base, err := url.Parse(string(r))
 	if err != nil {
-		return
+		return false, err
 	}
+
 	return base.Path == "/", nil
 }
 
@@ -61,6 +63,7 @@ func (r RedirectRequest) HasPrefix(patterns []string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -70,6 +73,7 @@ func (r RedirectRequest) Contains(patterns []string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 

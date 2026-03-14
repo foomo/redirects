@@ -8,10 +8,10 @@ import (
 
 	"github.com/foomo/contentserver/content"
 	keellog "github.com/foomo/keel/log"
-	redirectrepository "github.com/foomo/redirects/v2/domain/redirectdefinition/repository"
-	redirectstore "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
-	redirectdefinitionutils "github.com/foomo/redirects/v2/domain/redirectdefinition/utils"
-	redirectnats "github.com/foomo/redirects/v2/pkg/nats"
+	repositoryx "github.com/foomo/redirects/v2/domain/redirectdefinition/repository"
+	storex "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
+	utilsx "github.com/foomo/redirects/v2/domain/redirectdefinition/utils"
+	natsx "github.com/foomo/redirects/v2/pkg/nats"
 
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
@@ -20,10 +20,10 @@ import (
 type (
 	// CreateRedirects command
 	CreateRedirects struct {
-		OldState          map[string]*content.RepoNode        `json:"oldState"`
-		NewState          map[string]*content.RepoNode        `json:"newState"`
-		RedirectsToUpsert []*redirectstore.RedirectDefinition `json:"redirectsToUpsert,omitempty"`
-		RedirectsToDelete []redirectstore.EntityID            `json:"redirectsToDeletee,omitempty"`
+		OldState          map[string]*content.RepoNode `json:"oldState"`
+		NewState          map[string]*content.RepoNode `json:"newState"`
+		RedirectsToUpsert []*storex.RedirectDefinition `json:"redirectsToUpsert,omitempty"`
+		RedirectsToDelete []storex.EntityID            `json:"redirectsToDeletee,omitempty"`
 	}
 	// CreateRedirectsHandlerFn handler
 	CreateRedirectsHandlerFn func(ctx context.Context, l *zap.Logger, cmd CreateRedirects) error
@@ -32,7 +32,7 @@ type (
 )
 
 // CreateRedirectsHandler ...
-func CreateRedirectsHandler(repo redirectrepository.RedirectsDefinitionRepository) CreateRedirectsHandlerFn {
+func CreateRedirectsHandler(repo repositoryx.RedirectsDefinitionRepository) CreateRedirectsHandlerFn {
 	return func(ctx context.Context, l *zap.Logger, cmd CreateRedirects) error {
 		if len(cmd.RedirectsToUpsert) > 0 {
 			updateErr := repo.UpsertMany(ctx, cmd.RedirectsToUpsert)
@@ -41,6 +41,7 @@ func CreateRedirectsHandler(repo redirectrepository.RedirectsDefinitionRepositor
 				return updateErr
 			}
 		}
+
 		if len(cmd.RedirectsToDelete) > 0 {
 			deleteErr := repo.DeleteMany(ctx, cmd.RedirectsToDelete)
 			if deleteErr != nil {
@@ -48,7 +49,9 @@ func CreateRedirectsHandler(repo redirectrepository.RedirectsDefinitionRepositor
 				return deleteErr
 			}
 		}
+
 		l.Info("successfully finished create automatic redirects")
+
 		return nil
 	}
 }
@@ -64,9 +67,11 @@ func CreateRedirectsHandlerComposed(handler CreateRedirectsHandlerFn, middleware
 				return localNext(ctx, l, cmd)
 			})
 		}
+
 		return next
 	}
 	handlerName := strings.Split(runtime.FuncForPC(reflect.ValueOf(handler).Pointer()).Name(), ".")[2]
+
 	return composed(func(ctx context.Context, l *zap.Logger, cmd CreateRedirects) error {
 		trace.SpanFromContext(ctx).AddEvent(handlerName)
 		return handler(ctx, l, cmd)
@@ -74,21 +79,25 @@ func CreateRedirectsHandlerComposed(handler CreateRedirectsHandlerFn, middleware
 }
 
 // CreateRedirectsPublishMiddleware ...
-func CreateRedirectsPublishMiddleware(updateSignal *redirectnats.UpdateSignal, repo redirectrepository.RedirectsDefinitionRepository) CreateRedirectsMiddlewareFn {
+func CreateRedirectsPublishMiddleware(updateSignal *natsx.UpdateSignal, repo repositoryx.RedirectsDefinitionRepository) CreateRedirectsMiddlewareFn {
 	return func(next CreateRedirectsHandlerFn) CreateRedirectsHandlerFn {
 		return func(ctx context.Context, l *zap.Logger, cmd CreateRedirects) error {
 			err := next(ctx, l, cmd)
 			if err != nil {
 				return err
 			}
+
 			if err := applyFlattening(ctx, l, repo); err != nil {
 				return err
 			}
+
 			l.Info("publishing update signal")
+
 			err = updateSignal.Publish()
 			if err != nil {
 				return err
 			}
+
 			return nil
 		}
 	}
@@ -99,6 +108,7 @@ func CreateRedirectsAutoCreateMiddleware(initialStaleState bool) CreateRedirects
 	return func(next CreateRedirectsHandlerFn) CreateRedirectsHandlerFn {
 		return func(ctx context.Context, l *zap.Logger, cmd CreateRedirects) error {
 			l.Info("auto creating redirects")
+
 			dimensions := map[string]struct{}{}
 			for dim := range cmd.OldState {
 				dimensions[dim] = struct{}{}
@@ -109,34 +119,37 @@ func CreateRedirectsAutoCreateMiddleware(initialStaleState bool) CreateRedirects
 			}
 
 			for dimension := range dimensions {
-				oldNodeMap := redirectdefinitionutils.CreateFlatRepoNodeMap(cmd.OldState[dimension], make(map[string]*content.RepoNode))
-				newNodeMap := redirectdefinitionutils.CreateFlatRepoNodeMap(cmd.NewState[dimension], make(map[string]*content.RepoNode))
+				oldNodeMap := utilsx.CreateFlatRepoNodeMap(cmd.OldState[dimension], make(map[string]*content.RepoNode))
+				newNodeMap := utilsx.CreateFlatRepoNodeMap(cmd.NewState[dimension], make(map[string]*content.RepoNode))
 
-				newDefinitions, err := redirectdefinitionutils.AutoCreateRedirectDefinitions(
+				newDefinitions, err := utilsx.AutoCreateRedirectDefinitions(
 					l,
 					oldNodeMap,
 					newNodeMap,
-					redirectstore.Dimension(dimension),
+					storex.Dimension(dimension),
 					initialStaleState,
 				)
 				if err != nil {
 					keellog.WithError(l, err).Error("failed to execute auto create redirects")
 					return err
 				}
+
 				cmd.RedirectsToUpsert = append(cmd.RedirectsToUpsert, newDefinitions...)
 			}
+
 			return next(ctx, l, cmd)
 		}
 	}
 }
 
 // CreateRedirectsConsolidateMiddleware ...
-func CreateRedirectsConsolidateMiddleware(repo redirectrepository.RedirectsDefinitionRepository, autoDelete bool) CreateRedirectsMiddlewareFn {
+func CreateRedirectsConsolidateMiddleware(repo repositoryx.RedirectsDefinitionRepository, autoDelete bool) CreateRedirectsMiddlewareFn {
 	return func(next CreateRedirectsHandlerFn) CreateRedirectsHandlerFn {
 		return func(ctx context.Context, l *zap.Logger, cmd CreateRedirects) error {
 			l.Info("consolidating redirect definitions")
-			redirectsToUpsert := []*redirectstore.RedirectDefinition{}
-			redirectsToDelete := []redirectstore.EntityID{}
+
+			redirectsToUpsert := []*storex.RedirectDefinition{}
+			redirectsToDelete := []storex.EntityID{}
 
 			// get all current definitions for the dimension from the database
 			allCurrentDefinitions, err := repo.FindAll(ctx, true)
@@ -144,12 +157,13 @@ func CreateRedirectsConsolidateMiddleware(repo redirectrepository.RedirectsDefin
 				l.Error("failed to fetch existing definitions", zap.Error(err))
 				return err
 			}
+
 			for dimension, currentDefinitions := range allCurrentDefinitions {
-				defs, ids := redirectdefinitionutils.ConsolidateRedirectDefinitions(
+				defs, ids := utilsx.ConsolidateRedirectDefinitions(
 					l,
 					cmd.RedirectsToUpsert,
 					currentDefinitions,
-					redirectdefinitionutils.CreateFlatRepoNodeMap(cmd.NewState[string(dimension)], make(map[string]*content.RepoNode)),
+					utilsx.CreateFlatRepoNodeMap(cmd.NewState[string(dimension)], make(map[string]*content.RepoNode)),
 				)
 				redirectsToUpsert = append(redirectsToUpsert, defs...)
 
@@ -161,6 +175,7 @@ func CreateRedirectsConsolidateMiddleware(repo redirectrepository.RedirectsDefin
 					softDeleteStrategy(ids, defs, currentDefinitions)
 				}
 			}
+
 			cmd.RedirectsToUpsert = redirectsToUpsert
 			cmd.RedirectsToDelete = redirectsToDelete
 
@@ -171,11 +186,12 @@ func CreateRedirectsConsolidateMiddleware(repo redirectrepository.RedirectsDefin
 
 // softDeleteStrategy ...
 func softDeleteStrategy(
-	idsToDelete []redirectstore.EntityID,
-	newRedirects []*redirectstore.RedirectDefinition,
-	currentDefinitions map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition,
-) []*redirectstore.RedirectDefinition {
-	additionalRedirects := []*redirectstore.RedirectDefinition{}
+	idsToDelete []storex.EntityID,
+	newRedirects []*storex.RedirectDefinition,
+	currentDefinitions map[storex.RedirectSource]*storex.RedirectDefinition,
+) []*storex.RedirectDefinition {
+	additionalRedirects := []*storex.RedirectDefinition{}
+
 	for _, id := range idsToDelete {
 		for _, def := range newRedirects {
 			if def.ID == id {
@@ -183,6 +199,7 @@ func softDeleteStrategy(
 				continue
 			}
 		}
+
 		for _, def := range currentDefinitions {
 			if def.ID == id {
 				def.Stale = true
@@ -190,5 +207,6 @@ func softDeleteStrategy(
 			}
 		}
 	}
+
 	return append(newRedirects, additionalRedirects...)
 }

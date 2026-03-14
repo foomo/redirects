@@ -1,12 +1,39 @@
 .*
+*.zip
+*.tar
+*.out
 *.log
-!.github/
-!.husky/
-!.editorconfig
+/bin/
+/tmp/
+
+## Git
+!.gitkeep
 !.gitignore
+
+## Claude
+!.claude/
+.claude/*
+!.claude/settings.json
+
+## GitHub
+!.github/
+
+## Editorconfig
+!.editorconfig
+
+## Lefthook
+!.lefthook.yaml
+
+## VSCode
+!.vscode/
+.vscode/*
+!.vscode/extensions.json
+
+## Golang
+go.work
+go.work.sum
 !.golangci.yml
 !.goreleaser.yml
-!.husky.yaml
-/coverage.out
-/coverage.html
-/tmp/
+
+## Mise
+!.mise.toml

@@ -3,20 +3,22 @@ package redirectcommand_test
 import (
 	"testing"
 
-	redirectcommand "github.com/foomo/redirects/v2/domain/redirectdefinition/command"
-	redirectstore "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
+	commandx "github.com/foomo/redirects/v2/domain/redirectdefinition/command"
+	storex "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_FlattenRedirects_SimpleChain(t *testing.T) {
-	redirects := map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition{
+	t.Parallel()
+
+	redirects := map[storex.Dimension]map[storex.RedirectSource]*storex.RedirectDefinition{
 		"global": {
-			"/a": {Source: "/a", Target: "/b", RedirectionType: redirectstore.RedirectionTypeAutomatic, Stale: false},
-			"/b": {Source: "/b", Target: "/c", RedirectionType: redirectstore.RedirectionTypeManual, Stale: false},
-			"/c": {Source: "/c", Target: "/final", RedirectionType: redirectstore.RedirectionTypeAutomatic, Stale: false},
+			"/a": {Source: "/a", Target: "/b", RedirectionType: storex.RedirectionTypeAutomatic, Stale: false},
+			"/b": {Source: "/b", Target: "/c", RedirectionType: storex.RedirectionTypeManual, Stale: false},
+			"/c": {Source: "/c", Target: "/final", RedirectionType: storex.RedirectionTypeAutomatic, Stale: false},
 		},
 	}
-	flattened := redirectcommand.FlattenRedirects(redirects)
+	flattened := commandx.FlattenRedirects(redirects)
 
 	// Assertions
 	assert.Len(t, flattened, 2)
@@ -25,15 +27,17 @@ func Test_FlattenRedirects_SimpleChain(t *testing.T) {
 }
 
 func Test_FlattenRedirects_TwoFlatten(t *testing.T) {
-	redirects := map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition{
+	t.Parallel()
+
+	redirects := map[storex.Dimension]map[storex.RedirectSource]*storex.RedirectDefinition{
 		"global": {
-			"/a": {Source: "/a", Target: "/b", RedirectionType: redirectstore.RedirectionTypeAutomatic, Stale: false},
-			"/b": {Source: "/b", Target: "/f", RedirectionType: redirectstore.RedirectionTypeManual, Stale: false},
-			"/c": {Source: "/c", Target: "/e", RedirectionType: redirectstore.RedirectionTypeAutomatic, Stale: false},
+			"/a": {Source: "/a", Target: "/b", RedirectionType: storex.RedirectionTypeAutomatic, Stale: false},
+			"/b": {Source: "/b", Target: "/f", RedirectionType: storex.RedirectionTypeManual, Stale: false},
+			"/c": {Source: "/c", Target: "/e", RedirectionType: storex.RedirectionTypeAutomatic, Stale: false},
 		},
 	}
 
-	flattened := redirectcommand.FlattenRedirects(redirects)
+	flattened := commandx.FlattenRedirects(redirects)
 
 	// Assertions
 	assert.Len(t, flattened, 1)
@@ -41,15 +45,17 @@ func Test_FlattenRedirects_TwoFlatten(t *testing.T) {
 }
 
 func Test_FlattenRedirects_MultipleSourcesToSameTarget(t *testing.T) {
-	redirects := map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition{
+	t.Parallel()
+
+	redirects := map[storex.Dimension]map[storex.RedirectSource]*storex.RedirectDefinition{
 		"global": {
-			"/a": {Source: "/a", Target: "/c", RedirectionType: redirectstore.RedirectionTypeAutomatic, Stale: false},
-			"/b": {Source: "/b", Target: "/c", RedirectionType: redirectstore.RedirectionTypeManual, Stale: false},
-			"/c": {Source: "/c", Target: "/final", RedirectionType: redirectstore.RedirectionTypeAutomatic, Stale: false},
+			"/a": {Source: "/a", Target: "/c", RedirectionType: storex.RedirectionTypeAutomatic, Stale: false},
+			"/b": {Source: "/b", Target: "/c", RedirectionType: storex.RedirectionTypeManual, Stale: false},
+			"/c": {Source: "/c", Target: "/final", RedirectionType: storex.RedirectionTypeAutomatic, Stale: false},
 		},
 	}
 
-	flattened := redirectcommand.FlattenRedirects(redirects)
+	flattened := commandx.FlattenRedirects(redirects)
 
 	// Assertions: Both /a and /b should point to /final
 	assert.Len(t, flattened, 2)

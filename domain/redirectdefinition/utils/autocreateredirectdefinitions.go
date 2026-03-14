@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/foomo/contentserver/content"
-	redirectstore "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
+	storex "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
 	"go.uber.org/zap"
 )
 
@@ -14,29 +14,30 @@ import (
 func AutoCreateRedirectDefinitions(
 	_ *zap.Logger,
 	oldMap, newMap map[string]*content.RepoNode,
-	dimension redirectstore.Dimension,
+	dimension storex.Dimension,
 	initialStaleValue bool,
-) ([]*redirectstore.RedirectDefinition, error) {
+) ([]*storex.RedirectDefinition, error) {
 	if len(oldMap) == 0 || len(newMap) == 0 {
 		return nil, errors.New("calling auto create difference with nil arguments")
 	}
-	redirects := []*redirectstore.RedirectDefinition{}
+
+	redirects := []*storex.RedirectDefinition{}
 
 	for newNodeID, newNode := range newMap {
 		oldNode, ok := oldMap[newNodeID]
 		if ok {
 			if oldNode.URI != newNode.URI {
-				rd := &redirectstore.RedirectDefinition{
-					ID:              redirectstore.NewEntityID(),
+				rd := &storex.RedirectDefinition{
+					ID:              storex.NewEntityID(),
 					ContentID:       newNodeID,
-					Source:          redirectstore.RedirectSource(oldNode.URI),
-					Target:          redirectstore.RedirectTarget(newNode.URI),
+					Source:          storex.RedirectSource(oldNode.URI),
+					Target:          storex.RedirectTarget(newNode.URI),
 					Code:            301,
 					RespectParams:   true,
 					TransferParams:  true,
-					RedirectionType: redirectstore.RedirectionTypeAutomatic,
+					RedirectionType: storex.RedirectionTypeAutomatic,
 					Dimension:       dimension,
-					Updated:         redirectstore.NewDateTime(time.Now()),
+					Updated:         storex.NewDateTime(time.Now()),
 					LastUpdatedBy:   "System",
 					Stale:           initialStaleValue,
 				}
@@ -59,5 +60,6 @@ func CreateFlatRepoNodeMap(node *content.RepoNode, nodeMap map[string]*content.R
 	for _, child := range node.Nodes {
 		nodeMap = CreateFlatRepoNodeMap(child, nodeMap)
 	}
+
 	return nodeMap
 }

@@ -6,9 +6,9 @@ import (
 	"runtime"
 	"strings"
 
-	redirectrepository "github.com/foomo/redirects/v2/domain/redirectdefinition/repository"
-	redirectstore "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
-	redirectnats "github.com/foomo/redirects/v2/pkg/nats"
+	repositoryx "github.com/foomo/redirects/v2/domain/redirectdefinition/repository"
+	storex "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
+	natsx "github.com/foomo/redirects/v2/pkg/nats"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
@@ -16,7 +16,7 @@ import (
 type (
 	// UpdateRedirectsState command
 	UpdateRedirectsState struct {
-		RedirectDefinitions []*redirectstore.RedirectDefinition `json:"redirectDefinitions"`
+		RedirectDefinitions []*storex.RedirectDefinition `json:"redirectDefinitions"`
 	}
 	// UpdateRedirectsStateHandlerFn handler
 	UpdateRedirectsStateHandlerFn func(ctx context.Context, l *zap.Logger, cmd UpdateRedirectsState) error
@@ -25,7 +25,7 @@ type (
 )
 
 // UpdateRedirectsStateHandler ...
-func UpdateRedirectsStateHandler(repo redirectrepository.RedirectsDefinitionRepository) UpdateRedirectsStateHandlerFn {
+func UpdateRedirectsStateHandler(repo repositoryx.RedirectsDefinitionRepository) UpdateRedirectsStateHandlerFn {
 	return func(ctx context.Context, _ *zap.Logger, cmd UpdateRedirectsState) error {
 		return repo.UpsertMany(ctx, cmd.RedirectDefinitions)
 	}
@@ -42,30 +42,35 @@ func UpdateRedirectsStateHandlerComposed(handler UpdateRedirectsStateHandlerFn, 
 				return localNext(ctx, l, cmd)
 			})
 		}
+
 		return next
 	}
 	handlerName := strings.Split(runtime.FuncForPC(reflect.ValueOf(handler).Pointer()).Name(), ".")[2]
+
 	return composed(func(ctx context.Context, l *zap.Logger, cmd UpdateRedirectsState) error {
 		trace.SpanFromContext(ctx).AddEvent(handlerName)
 		return handler(ctx, l, cmd)
 	})
 }
 
-// UpdateRedirectPublishMiddleware ...
-func UpdateRedirectsStatePublishMiddleware(updateSignal *redirectnats.UpdateSignal, repo redirectrepository.RedirectsDefinitionRepository) UpdateRedirectsStateMiddlewareFn {
+// UpdateRedirectsStatePublishMiddleware ...
+func UpdateRedirectsStatePublishMiddleware(updateSignal *natsx.UpdateSignal, repo repositoryx.RedirectsDefinitionRepository) UpdateRedirectsStateMiddlewareFn {
 	return func(next UpdateRedirectsStateHandlerFn) UpdateRedirectsStateHandlerFn {
 		return func(ctx context.Context, l *zap.Logger, cmd UpdateRedirectsState) error {
 			err := next(ctx, l, cmd)
 			if err != nil {
 				return err
 			}
+
 			if err := applyFlattening(ctx, l, repo); err != nil {
 				return err
 			}
+
 			err = updateSignal.Publish()
 			if err != nil {
 				return err
 			}
+
 			return nil
 		}
 	}

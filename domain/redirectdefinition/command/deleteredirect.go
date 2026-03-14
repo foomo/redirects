@@ -6,9 +6,9 @@ import (
 	"runtime"
 	"strings"
 
-	redirectrepository "github.com/foomo/redirects/v2/domain/redirectdefinition/repository"
-	redirectstore "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
-	redirectnats "github.com/foomo/redirects/v2/pkg/nats"
+	repositoryx "github.com/foomo/redirects/v2/domain/redirectdefinition/repository"
+	storex "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
+	natsx "github.com/foomo/redirects/v2/pkg/nats"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
@@ -16,7 +16,7 @@ import (
 type (
 	// DeleteRedirect command
 	DeleteRedirect struct {
-		ID redirectstore.EntityID `json:"id"`
+		ID storex.EntityID `json:"id"`
 	}
 	// DeleteRedirectHandlerFn handler
 	DeleteRedirectHandlerFn func(ctx context.Context, l *zap.Logger, cmd DeleteRedirect) error
@@ -25,7 +25,7 @@ type (
 )
 
 // DeleteRedirectHandler ...
-func DeleteRedirectHandler(repo redirectrepository.RedirectsDefinitionRepository) DeleteRedirectHandlerFn {
+func DeleteRedirectHandler(repo repositoryx.RedirectsDefinitionRepository) DeleteRedirectHandlerFn {
 	return func(ctx context.Context, _ *zap.Logger, cmd DeleteRedirect) error {
 		return repo.Delete(ctx, cmd.ID)
 	}
@@ -42,9 +42,11 @@ func DeleteRedirectHandlerComposed(handler DeleteRedirectHandlerFn, middlewares 
 				return localNext(ctx, l, cmd)
 			})
 		}
+
 		return next
 	}
 	handlerName := strings.Split(runtime.FuncForPC(reflect.ValueOf(handler).Pointer()).Name(), ".")[2]
+
 	return composed(func(ctx context.Context, l *zap.Logger, cmd DeleteRedirect) error {
 		trace.SpanFromContext(ctx).AddEvent(handlerName)
 		return handler(ctx, l, cmd)
@@ -52,20 +54,23 @@ func DeleteRedirectHandlerComposed(handler DeleteRedirectHandlerFn, middlewares 
 }
 
 // DeleteRedirectPublishMiddleware ...
-func DeleteRedirectPublishMiddleware(updateSignal *redirectnats.UpdateSignal, repo redirectrepository.RedirectsDefinitionRepository) DeleteRedirectMiddlewareFn {
+func DeleteRedirectPublishMiddleware(updateSignal *natsx.UpdateSignal, repo repositoryx.RedirectsDefinitionRepository) DeleteRedirectMiddlewareFn {
 	return func(next DeleteRedirectHandlerFn) DeleteRedirectHandlerFn {
 		return func(ctx context.Context, l *zap.Logger, cmd DeleteRedirect) error {
 			err := next(ctx, l, cmd)
 			if err != nil {
 				return err
 			}
+
 			if err := applyFlattening(ctx, l, repo); err != nil {
 				return err
 			}
+
 			err = updateSignal.Publish()
 			if err != nil {
 				return err
 			}
+
 			return nil
 		}
 	}

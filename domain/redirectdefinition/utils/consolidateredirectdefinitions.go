@@ -2,7 +2,7 @@ package redirectdefinitionutils
 
 import (
 	"github.com/foomo/contentserver/content"
-	redirectstore "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
+	storex "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
 	"go.uber.org/zap"
 )
 
@@ -27,15 +27,15 @@ import (
 //   - A slice of redirect IDs that are considered obsolete and should be deleted.
 func ConsolidateRedirectDefinitions(
 	l *zap.Logger,
-	newDefinitions []*redirectstore.RedirectDefinition,
-	currentDefinitions redirectstore.RedirectDefinitions,
+	newDefinitions []*storex.RedirectDefinition,
+	currentDefinitions storex.RedirectDefinitions,
 	newNodeMap map[string]*content.RepoNode,
-) ([]*redirectstore.RedirectDefinition, []redirectstore.EntityID) {
-	upserts := make(map[string]*redirectstore.RedirectDefinition)
-	deletedIDs := []redirectstore.EntityID{}
+) ([]*storex.RedirectDefinition, []storex.EntityID) {
+	upserts := make(map[string]*storex.RedirectDefinition)
+	deletedIDs := []storex.EntityID{}
 
 	// Step 1: Index current redirects by source
-	currentBySource := make(map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition)
+	currentBySource := make(map[storex.RedirectSource]*storex.RedirectDefinition)
 	for _, def := range currentDefinitions {
 		currentBySource[def.Source] = def
 	}
@@ -63,13 +63,13 @@ func ConsolidateRedirectDefinitions(
 
 	// Step 4: Process old redirects for flattening and cleanup
 	for _, def := range currentDefinitions {
-		if def.RedirectionType != redirectstore.RedirectionTypeAutomatic {
+		if def.RedirectionType != storex.RedirectionTypeAutomatic {
 			continue
 		}
 
 		// Flatten if the current target is being redirected further
 		if next, ok := upserts[string(def.Target)]; ok {
-			if def.Source != redirectstore.RedirectSource(next.Target) {
+			if def.Source != storex.RedirectSource(next.Target) {
 				def.Target = next.Target
 			}
 		}
@@ -91,8 +91,8 @@ func ConsolidateRedirectDefinitions(
 
 func staleIfCyclic(
 	l *zap.Logger,
-	redirect *redirectstore.RedirectDefinition,
-	redirectsBySource map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition,
+	redirect *storex.RedirectDefinition,
+	redirectsBySource map[storex.RedirectSource]*storex.RedirectDefinition,
 ) {
 	if HasCycle(redirect.Source, redirect.Target, redirectsBySource) {
 		redirect.Stale = true
@@ -104,18 +104,18 @@ func staleIfCyclic(
 }
 
 func updateRedirectTarget(
-	existingRedirect, newRedirect *redirectstore.RedirectDefinition,
-	upsertRedirectsMap map[string]*redirectstore.RedirectDefinition,
+	existingRedirect, newRedirect *storex.RedirectDefinition,
+	upsertRedirectsMap map[string]*storex.RedirectDefinition,
 ) {
-	if existingRedirect.RedirectionType == redirectstore.RedirectionTypeAutomatic {
+	if existingRedirect.RedirectionType == storex.RedirectionTypeAutomatic {
 		existingRedirect.Target = newRedirect.Target
 		upsertRedirectsMap[string(existingRedirect.Source)] = existingRedirect
 	}
 }
 
 func isRedirectObsolete(
-	def *redirectstore.RedirectDefinition,
-	upserts map[string]*redirectstore.RedirectDefinition,
+	def *storex.RedirectDefinition,
+	upserts map[string]*storex.RedirectDefinition,
 	availableTargets map[string]struct{},
 	validTargets map[string]struct{},
 ) bool {
@@ -126,19 +126,20 @@ func isRedirectObsolete(
 	return !isStillUpserted && !isTargetValid && !isTargetAvailable
 }
 
-func mapsToSlice(upsertRedirectsMap map[string]*redirectstore.RedirectDefinition) []*redirectstore.RedirectDefinition {
-	upsertRedirectDefinitions := make([]*redirectstore.RedirectDefinition, 0, len(upsertRedirectsMap))
+func mapsToSlice(upsertRedirectsMap map[string]*storex.RedirectDefinition) []*storex.RedirectDefinition {
+	upsertRedirectDefinitions := make([]*storex.RedirectDefinition, 0, len(upsertRedirectsMap))
 	for _, redirect := range upsertRedirectsMap {
 		upsertRedirectDefinitions = append(upsertRedirectDefinitions, redirect)
 	}
+
 	return upsertRedirectDefinitions
 }
 
 // HasCycle checks if adding Source → Target creates a cyclic redirect
 func HasCycle(
-	rSource redirectstore.RedirectSource,
-	rTarget redirectstore.RedirectTarget,
-	redirects map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition,
+	rSource storex.RedirectSource,
+	rTarget storex.RedirectTarget,
+	redirects map[storex.RedirectSource]*storex.RedirectDefinition,
 ) bool {
 	visited := make(map[string]struct{})
 	source := string(rSource)
@@ -165,7 +166,7 @@ func HasCycle(
 		visited[target] = struct{}{}
 
 		// Move to the next redirect in the chain
-		if nextRedirect, exists := redirects[redirectstore.RedirectSource(target)]; exists {
+		if nextRedirect, exists := redirects[storex.RedirectSource(target)]; exists {
 			target = string(nextRedirect.Target)
 		} else {
 			return false // No further redirects, no cycle
