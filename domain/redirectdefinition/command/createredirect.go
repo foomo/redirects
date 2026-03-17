@@ -6,10 +6,10 @@ import (
 	"runtime"
 	"strings"
 
-	redirectrepository "github.com/foomo/redirects/v2/domain/redirectdefinition/repository"
-	redirectstore "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
-	redirectnats "github.com/foomo/redirects/v2/pkg/nats"
-	redirectprovider "github.com/foomo/redirects/v2/pkg/provider"
+	repositoryx "github.com/foomo/redirects/v2/domain/redirectdefinition/repository"
+	storex "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
+	natsx "github.com/foomo/redirects/v2/pkg/nats"
+	providerx "github.com/foomo/redirects/v2/pkg/provider"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
@@ -17,7 +17,7 @@ import (
 type (
 	// CreateRedirect command
 	CreateRedirect struct {
-		RedirectDefinition *redirectstore.RedirectDefinition `json:"redirectDefinition"`
+		RedirectDefinition *storex.RedirectDefinition `json:"redirectDefinition"`
 	}
 	// CreateRedirectHandlerFn handler
 	CreateRedirectHandlerFn func(ctx context.Context, l *zap.Logger, cmd CreateRedirect) error
@@ -26,7 +26,7 @@ type (
 )
 
 // CreateRedirectHandler ...
-func CreateRedirectHandler(repo redirectrepository.RedirectsDefinitionRepository) CreateRedirectHandlerFn {
+func CreateRedirectHandler(repo repositoryx.RedirectsDefinitionRepository) CreateRedirectHandlerFn {
 	return func(ctx context.Context, _ *zap.Logger, cmd CreateRedirect) error {
 		return repo.Insert(ctx, cmd.RedirectDefinition)
 	}
@@ -55,7 +55,7 @@ func CreateRedirectHandlerComposed(handler CreateRedirectHandlerFn, middlewares 
 }
 
 // CreateRedirectPublishMiddleware ...
-func CreateRedirectPublishMiddleware(updateSignal *redirectnats.UpdateSignal, repo redirectrepository.RedirectsDefinitionRepository) CreateRedirectMiddlewareFn {
+func CreateRedirectPublishMiddleware(updateSignal *natsx.UpdateSignal, repo repositoryx.RedirectsDefinitionRepository) CreateRedirectMiddlewareFn {
 	return func(next CreateRedirectHandlerFn) CreateRedirectHandlerFn {
 		return func(ctx context.Context, l *zap.Logger, cmd CreateRedirect) error {
 			err := next(ctx, l, cmd)
@@ -78,8 +78,8 @@ func CreateRedirectPublishMiddleware(updateSignal *redirectnats.UpdateSignal, re
 }
 
 func ValidateRedirectMiddleware(
-	restrictedSourcesProvider redirectprovider.RestrictedSourcesProviderFunc,
-	repo redirectrepository.RedirectsDefinitionRepository) CreateRedirectMiddlewareFn {
+	restrictedSourcesProvider providerx.RestrictedSourcesProviderFunc,
+	repo repositoryx.RedirectsDefinitionRepository) CreateRedirectMiddlewareFn {
 	return func(next CreateRedirectHandlerFn) CreateRedirectHandlerFn {
 		return func(ctx context.Context, l *zap.Logger, cmd CreateRedirect) error {
 			return validateRedirect(ctx, l, repo, restrictedSourcesProvider, cmd.RedirectDefinition, next)

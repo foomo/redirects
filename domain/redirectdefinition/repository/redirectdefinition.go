@@ -6,26 +6,25 @@ import (
 	"time"
 
 	keelmongo "github.com/foomo/keel/persistence/mongo"
-	redirectstore "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	storex "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 	"go.uber.org/zap"
 )
 
 type (
 	RedirectsDefinitionRepository interface {
-		FindOne(ctx context.Context, id, source string) (*redirectstore.RedirectDefinition, error)
-		FindMany(ctx context.Context, source, dimension string, redirectType redirectstore.RedirectionType, activeState redirectstore.ActiveStateType, pagination redirectstore.Pagination, sort redirectstore.Sort) (*redirectstore.PaginatedResult, error)
-		FindAll(ctx context.Context, onlyActive bool) (defs map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, err error)
-		FindAllByDimension(ctx context.Context, dimension redirectstore.Dimension, onlyActive bool) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error)
-		Insert(ctx context.Context, def *redirectstore.RedirectDefinition) error
-		Update(ctx context.Context, def *redirectstore.RedirectDefinition) error
-		UpsertMany(ctx context.Context, defs []*redirectstore.RedirectDefinition) error
-		FindByIDs(ctx context.Context, ids []*redirectstore.EntityID) ([]*redirectstore.RedirectDefinition, error)
-		Delete(ctx context.Context, id redirectstore.EntityID) error
-		DeleteMany(ctx context.Context, ids []redirectstore.EntityID) error
+		FindOne(ctx context.Context, id, source string) (*storex.RedirectDefinition, error)
+		FindMany(ctx context.Context, source, dimension string, redirectType storex.RedirectionType, activeState storex.ActiveStateType, pagination storex.Pagination, sort storex.Sort) (*storex.PaginatedResult, error)
+		FindAll(ctx context.Context, onlyActive bool) (map[storex.Dimension]map[storex.RedirectSource]*storex.RedirectDefinition, error)
+		FindAllByDimension(ctx context.Context, dimension storex.Dimension, onlyActive bool) (map[storex.RedirectSource]*storex.RedirectDefinition, error)
+		Insert(ctx context.Context, def *storex.RedirectDefinition) error
+		Update(ctx context.Context, def *storex.RedirectDefinition) error
+		UpsertMany(ctx context.Context, defs []*storex.RedirectDefinition) error
+		FindByIDs(ctx context.Context, ids []*storex.EntityID) ([]*storex.RedirectDefinition, error)
+		Delete(ctx context.Context, id storex.EntityID) error
+		DeleteMany(ctx context.Context, ids []storex.EntityID) error
 	}
 	BaseRedirectsDefinitionRepository struct {
 		l          *zap.Logger
@@ -53,23 +52,21 @@ func NewBaseRedirectsDefinitionRepository(l *zap.Logger, persistor *keelmongo.Pe
 			},
 			mongo.IndexModel{
 				Keys: bson.D{
-					{Key: string(redirectstore.SortFieldUpdated), Value: 1},
+					{Key: string(storex.SortFieldUpdated), Value: 1},
 				},
 			},
 			mongo.IndexModel{
 				Keys: bson.D{
-					{Key: string(redirectstore.SortFieldLastUpdatedBy), Value: 1},
+					{Key: string(storex.SortFieldLastUpdatedBy), Value: 1},
 				},
 			},
 			// Index for 'source' field (optional for search optimization)
 			mongo.IndexModel{
 				Keys: bson.D{
-					{Key: string(redirectstore.SortFieldSource), Value: 1},
+					{Key: string(storex.SortFieldSource), Value: 1},
 				},
 			},
 		),
-		// define max time for index creation
-		keelmongo.CollectionWithIndexesMaxTime(time.Second*10),
 	)
 	if cErr != nil {
 		return nil, cErr
@@ -78,8 +75,8 @@ func NewBaseRedirectsDefinitionRepository(l *zap.Logger, persistor *keelmongo.Pe
 	return NewRedirectsDefinitionRepository(l, collection), nil
 }
 
-func (rs *BaseRedirectsDefinitionRepository) FindOne(ctx context.Context, id, source string) (*redirectstore.RedirectDefinition, error) {
-	var result redirectstore.RedirectDefinition
+func (rs *BaseRedirectsDefinitionRepository) FindOne(ctx context.Context, id, source string) (*storex.RedirectDefinition, error) {
+	var result storex.RedirectDefinition
 
 	findErr := rs.collection.FindOne(ctx, bson.M{"id": id, "source": source}, &result)
 	if findErr != nil {
@@ -92,11 +89,11 @@ func (rs *BaseRedirectsDefinitionRepository) FindOne(ctx context.Context, id, so
 func (rs *BaseRedirectsDefinitionRepository) FindMany(
 	ctx context.Context,
 	source, dimension string,
-	redirectType redirectstore.RedirectionType,
-	activeState redirectstore.ActiveStateType,
-	pagination redirectstore.Pagination,
-	sort redirectstore.Sort,
-) (*redirectstore.PaginatedResult, error) {
+	redirectType storex.RedirectionType,
+	activeState storex.ActiveStateType,
+	pagination storex.Pagination,
+	sort storex.Sort,
+) (*storex.PaginatedResult, error) {
 	// Validate pagination
 	if pagination.Page < 1 {
 		pagination.Page = 1
@@ -106,13 +103,13 @@ func (rs *BaseRedirectsDefinitionRepository) FindMany(
 		pagination.PageSize = 20 // Default page size
 	}
 
-	var result []*redirectstore.RedirectDefinition
+	var result []*storex.RedirectDefinition
 
 	filter := bson.M{}
 
 	// Apply filters
 	if source != "" {
-		pattern := primitive.Regex{Pattern: source, Options: "i"} // Case-insensitive regex
+		pattern := bson.Regex{Pattern: source, Options: "i"} // Case-insensitive regex
 		filter["source"] = pattern
 	}
 
@@ -139,7 +136,7 @@ func (rs *BaseRedirectsDefinitionRepository) FindMany(
 	// Sorting settings
 	sortField := sort.Field
 	if sortField == "" {
-		sortField = redirectstore.SortFieldSource // Default sort field
+		sortField = storex.SortFieldSource // Default sort field
 	}
 
 	opts.SetSort(bson.D{
@@ -156,7 +153,7 @@ func (rs *BaseRedirectsDefinitionRepository) FindMany(
 
 	// Decode results
 	for cursor.Next(ctx) {
-		var red redirectstore.RedirectDefinition
+		var red storex.RedirectDefinition
 		if err := cursor.Decode(&red); err != nil {
 			return nil, err
 		}
@@ -169,7 +166,7 @@ func (rs *BaseRedirectsDefinitionRepository) FindMany(
 		return nil, err
 	}
 
-	return &redirectstore.PaginatedResult{
+	return &storex.PaginatedResult{
 		Results:  result,
 		Total:    int(total),
 		Page:     pagination.Page,
@@ -177,8 +174,8 @@ func (rs *BaseRedirectsDefinitionRepository) FindMany(
 	}, nil
 }
 
-func (rs *BaseRedirectsDefinitionRepository) FindAll(ctx context.Context, onlyActive bool) (map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
-	var results []redirectstore.RedirectDefinition
+func (rs *BaseRedirectsDefinitionRepository) FindAll(ctx context.Context, onlyActive bool) (map[storex.Dimension]map[storex.RedirectSource]*storex.RedirectDefinition, error) {
+	var results []storex.RedirectDefinition
 
 	filter := bson.M{}
 
@@ -200,13 +197,13 @@ func (rs *BaseRedirectsDefinitionRepository) FindAll(ctx context.Context, onlyAc
 	}
 
 	// Convert results into the expected map format
-	retResult := make(map[redirectstore.Dimension]map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition)
+	retResult := make(map[storex.Dimension]map[storex.RedirectSource]*storex.RedirectDefinition)
 
 	for _, res := range results {
 		resCopy := res // Create a copy to avoid pointer issues
 
 		if _, exists := retResult[res.Dimension]; !exists {
-			retResult[res.Dimension] = make(map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition)
+			retResult[res.Dimension] = make(map[storex.RedirectSource]*storex.RedirectDefinition)
 		}
 
 		retResult[res.Dimension][res.Source] = &resCopy
@@ -215,8 +212,8 @@ func (rs *BaseRedirectsDefinitionRepository) FindAll(ctx context.Context, onlyAc
 	return retResult, nil
 }
 
-func (rs *BaseRedirectsDefinitionRepository) FindAllByDimension(ctx context.Context, dimension redirectstore.Dimension, onlyActive bool) (map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition, error) {
-	var results []redirectstore.RedirectDefinition
+func (rs *BaseRedirectsDefinitionRepository) FindAllByDimension(ctx context.Context, dimension storex.Dimension, onlyActive bool) (map[storex.RedirectSource]*storex.RedirectDefinition, error) {
+	var results []storex.RedirectDefinition
 
 	filter := bson.M{"dimension": dimension}
 
@@ -230,7 +227,7 @@ func (rs *BaseRedirectsDefinitionRepository) FindAllByDimension(ctx context.Cont
 		return nil, err
 	}
 
-	defs := make(map[redirectstore.RedirectSource]*redirectstore.RedirectDefinition)
+	defs := make(map[storex.RedirectSource]*storex.RedirectDefinition)
 
 	for _, def := range results {
 		defCopy := def
@@ -240,9 +237,9 @@ func (rs *BaseRedirectsDefinitionRepository) FindAllByDimension(ctx context.Cont
 	return defs, nil
 }
 
-func (rs *BaseRedirectsDefinitionRepository) Insert(ctx context.Context, def *redirectstore.RedirectDefinition) error {
+func (rs *BaseRedirectsDefinitionRepository) Insert(ctx context.Context, def *storex.RedirectDefinition) error {
 	if def.ID == "" {
-		def.ID = redirectstore.NewEntityID()
+		def.ID = storex.NewEntityID()
 	}
 
 	_, err := rs.collection.Col().InsertOne(ctx, def)
@@ -250,7 +247,7 @@ func (rs *BaseRedirectsDefinitionRepository) Insert(ctx context.Context, def *re
 	return err
 }
 
-func (rs *BaseRedirectsDefinitionRepository) Update(ctx context.Context, def *redirectstore.RedirectDefinition) error {
+func (rs *BaseRedirectsDefinitionRepository) Update(ctx context.Context, def *storex.RedirectDefinition) error {
 	filter := bson.D{{Key: "id", Value: def.ID}}
 	update := bson.D{{Key: "$set", Value: def}}
 
@@ -259,7 +256,7 @@ func (rs *BaseRedirectsDefinitionRepository) Update(ctx context.Context, def *re
 	return err
 }
 
-func (rs *BaseRedirectsDefinitionRepository) UpsertMany(ctx context.Context, defs []*redirectstore.RedirectDefinition) error {
+func (rs *BaseRedirectsDefinitionRepository) UpsertMany(ctx context.Context, defs []*storex.RedirectDefinition) error {
 	chunkSize := 1000
 	retries := 3
 
@@ -280,22 +277,22 @@ func (rs *BaseRedirectsDefinitionRepository) UpsertMany(ctx context.Context, def
 	return nil
 }
 
-func (rs *BaseRedirectsDefinitionRepository) Delete(ctx context.Context, id redirectstore.EntityID) error {
+func (rs *BaseRedirectsDefinitionRepository) Delete(ctx context.Context, id storex.EntityID) error {
 	filter := bson.D{{Key: "id", Value: id}}
 	_, err := rs.collection.Col().DeleteOne(ctx, filter)
 
 	return err
 }
 
-func (rs *BaseRedirectsDefinitionRepository) DeleteMany(ctx context.Context, ids []redirectstore.EntityID) error {
+func (rs *BaseRedirectsDefinitionRepository) DeleteMany(ctx context.Context, ids []storex.EntityID) error {
 	filter := bson.M{"id": bson.M{"$in": ids}}
 	_, err := rs.collection.Col().DeleteMany(ctx, filter)
 
 	return err
 }
 
-func (rs *BaseRedirectsDefinitionRepository) FindByIDs(ctx context.Context, ids []*redirectstore.EntityID) ([]*redirectstore.RedirectDefinition, error) {
-	var results []*redirectstore.RedirectDefinition
+func (rs *BaseRedirectsDefinitionRepository) FindByIDs(ctx context.Context, ids []*storex.EntityID) ([]*storex.RedirectDefinition, error) {
+	var results []*storex.RedirectDefinition
 
 	// Query all redirects matching the given IDs
 	err := rs.collection.Find(ctx, bson.M{"_id": bson.M{"$in": ids}}, &results)
@@ -307,7 +304,7 @@ func (rs *BaseRedirectsDefinitionRepository) FindByIDs(ctx context.Context, ids 
 	return results, nil
 }
 
-func (rs *BaseRedirectsDefinitionRepository) upsertChunkWithRetry(ctx context.Context, defs []*redirectstore.RedirectDefinition, retries int) error {
+func (rs *BaseRedirectsDefinitionRepository) upsertChunkWithRetry(ctx context.Context, defs []*storex.RedirectDefinition, retries int) error {
 	for i := range retries {
 		err := rs.upsertChunk(ctx, defs)
 		if err == nil {
@@ -322,12 +319,12 @@ func (rs *BaseRedirectsDefinitionRepository) upsertChunkWithRetry(ctx context.Co
 	return fmt.Errorf("failed to upsert chunk after %d retries", retries)
 }
 
-func (rs *BaseRedirectsDefinitionRepository) upsertChunk(ctx context.Context, defs []*redirectstore.RedirectDefinition) error {
+func (rs *BaseRedirectsDefinitionRepository) upsertChunk(ctx context.Context, defs []*storex.RedirectDefinition) error {
 	operations := make([]mongo.WriteModel, 0, len(defs))
 
 	for _, def := range defs {
 		if def.ID == "" {
-			def.ID = redirectstore.NewEntityID()
+			def.ID = storex.NewEntityID()
 		}
 
 		operation := mongo.NewUpdateOneModel()
@@ -339,10 +336,9 @@ func (rs *BaseRedirectsDefinitionRepository) upsertChunk(ctx context.Context, de
 		operations = append(operations, operation)
 	}
 
-	bulkOption := options.BulkWriteOptions{}
-	bulkOption.SetOrdered(false)
+	bulkOption := options.BulkWrite().SetOrdered(false)
 
-	result, err := rs.collection.Col().BulkWrite(ctx, operations, &bulkOption)
+	result, err := rs.collection.Col().BulkWrite(ctx, operations, bulkOption)
 	if err != nil {
 		rs.l.Error("Bulk write error", zap.Error(err))
 		return err

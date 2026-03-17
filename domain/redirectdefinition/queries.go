@@ -1,10 +1,10 @@
 package redirectdefinition
 
 import (
-	redirectquery "github.com/foomo/redirects/v2/domain/redirectdefinition/query"
+	queryx "github.com/foomo/redirects/v2/domain/redirectdefinition/query"
 )
 
 type Queries struct {
-	GetRedirects redirectquery.GetRedirectsHandlerFn
-	Search       redirectquery.SearchHandlerFn
+	GetRedirects queryx.GetRedirectsHandlerFn
+	Search       queryx.SearchHandlerFn
 }

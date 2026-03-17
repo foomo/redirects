@@ -1,6 +1,7 @@
 package redirectprovider
 
 import (
+	"maps"
 	"net/http"
 	"net/url"
 	"strings"
@@ -41,13 +42,9 @@ func mergeQueryStrings(base string, override string) (string, error) {
 	}
 
 	newValues := url.Values{}
-	for k, v := range baseValues {
-		newValues[k] = v
-	}
+	maps.Copy(newValues, baseValues)
 
-	for k, v := range overrideValues {
-		newValues[k] = v
-	}
+	maps.Copy(newValues, overrideValues)
 
 	query, err := normalizeQueryString(newValues.Encode())
 	if err != nil {
