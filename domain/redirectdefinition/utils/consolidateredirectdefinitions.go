@@ -131,6 +131,7 @@ func mapsToSlice(upsertRedirectsMap map[string]*redirectstore.RedirectDefinition
 	for _, redirect := range upsertRedirectsMap {
 		upsertRedirectDefinitions = append(upsertRedirectDefinitions, redirect)
 	}
+
 	return upsertRedirectDefinitions
 }
 

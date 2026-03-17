@@ -19,7 +19,7 @@ func validateRedirect(
 	repo redirectrepository.RedirectsDefinitionRepository,
 	restrictedSourcesProvider redirectprovider.RestrictedSourcesProviderFunc,
 	redirect *redirectstore.RedirectDefinition,
-	next interface{},
+	next any,
 ) error {
 	// Get restricted sources
 	restrictedSources := []string{}
@@ -41,6 +41,7 @@ func validateRedirect(
 
 	for _, restricted := range restrictedSources {
 		restricted = strings.ToLower(restricted)
+
 		matched, _ := path.Match(restricted, source)
 		if matched {
 			return fmt.Errorf("source '%s' is restricted due to pattern '%s'", redirect.Source, restricted)

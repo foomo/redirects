@@ -37,6 +37,7 @@ func applyFlattening(
 	}
 
 	l.Info("Successfully updated changed redirects", zap.Int("count", len(flattenedRedirects)))
+
 	return nil
 }
 

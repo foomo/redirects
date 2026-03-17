@@ -126,6 +126,7 @@ func (a *API) setLastUpdatedBy(ctx context.Context, definition *redirectstore.Re
 		if username == "" {
 			username = "unknown"
 		}
+
 		definition.LastUpdatedBy = username
 		definition.Updated = redirectstore.NewDateTime(time.Now())
 	}

@@ -13,7 +13,7 @@ func (a ActiveStateType) IsValid() bool {
 	return a == ActiveStateTypeEnabled || a == ActiveStateTypeDisabled || a == ActiveStateTypeAll
 }
 
-func (a ActiveStateType) ToFilter() (interface{}, bool) {
+func (a ActiveStateType) ToFilter() (any, bool) {
 	switch a {
 	case ActiveStateTypeEnabled:
 		return false, true
@@ -34,7 +34,7 @@ func (r RedirectionType) IsValid() bool {
 	return r == RedirectionTypeAutomatic || r == RedirectionTypeManual || r == RedirectionTypeAll
 }
 
-func (r RedirectionType) ToFilter() (interface{}, bool) {
+func (r RedirectionType) ToFilter() (any, bool) {
 	switch r {
 	case RedirectionTypeManual:
 		return RedirectionTypeManual, true

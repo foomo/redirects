@@ -30,6 +30,7 @@ func (d DateTime) MustTime() time.Time {
 	if err != nil {
 		panic("failed to parse time: " + err.Error())
 	}
+
 	return t
 }
 

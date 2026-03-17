@@ -71,7 +71,9 @@ func WithMatcherFuncs(matcherFuncs ...MatcherFunc) RedirectsProviderOption {
 		if len(matcherFuncs) == 0 {
 			return errors.New("no matcher functions provided")
 		}
+
 		provider.matcherFuncs = matcherFuncs
+
 		return nil
 	}
 }
@@ -83,27 +85,11 @@ func WithUseStandardRedirects() RedirectsProviderOption {
 	}
 }
 
-func (p *RedirectsProvider) loadRedirects(ctx context.Context) error {
-	redirectDefinitions, err, clientErr := p.redirectsProviderFunc(ctx)
-	if err != nil {
-		return err
-	}
-	if clientErr != nil {
-		return clientErr
-	}
-	if redirectDefinitions != nil {
-		p.Lock()
-		p.redirects = redirectDefinitions
-		p.Unlock()
-		return nil
-	}
-	return errors.New("no redirects loaded")
-}
-
 func (p *RedirectsProvider) Start(ctx context.Context) error {
 	if err := p.loadRedirects(ctx); err != nil {
 		return err
 	}
+
 	go func() {
 		for {
 			select {
@@ -116,6 +102,7 @@ func (p *RedirectsProvider) Start(ctx context.Context) error {
 			}
 		}
 	}()
+
 	return nil
 }
 
@@ -158,6 +145,7 @@ func (p *RedirectsProvider) Process(r *http.Request) (redirect *store.Redirect, 
 			keellog.WithError(l, err).Error("could not create redirect response")
 			return nil, err
 		}
+
 		return redirect, nil
 	}
 
@@ -184,7 +172,29 @@ func (p *RedirectsProvider) Process(r *http.Request) (redirect *store.Redirect, 
 	}
 
 	l.Debug("redirect based on standard rules")
+
 	return redirect, nil
+}
+
+func (p *RedirectsProvider) loadRedirects(ctx context.Context) error {
+	redirectDefinitions, err, clientErr := p.redirectsProviderFunc(ctx)
+	if err != nil {
+		return err
+	}
+
+	if clientErr != nil {
+		return clientErr
+	}
+
+	if redirectDefinitions != nil {
+		p.Lock()
+		p.redirects = redirectDefinitions
+		p.Unlock()
+
+		return nil
+	}
+
+	return errors.New("no redirects loaded")
 }
 
 // matchRedirectDefinition checks if there is a redirect definition matching the request
@@ -202,6 +212,7 @@ func (p *RedirectsProvider) matchRedirectDefinition(r *http.Request, dimension s
 	if definition != nil {
 		return definition, nil
 	}
+
 	l.Debug("no cached definition found for full URL, checking without query parameters")
 
 	if strings.Contains(r.URL.RequestURI(), "?") {
@@ -209,6 +220,7 @@ func (p *RedirectsProvider) matchRedirectDefinition(r *http.Request, dimension s
 		if definition != nil && definition.RespectParams {
 			return definition, nil
 		}
+
 		l.Debug("no cached definition found for path with respect to parameters, on check without query parameters")
 	} else {
 		l.Debug("no query parameters in request, using path only for matching")
@@ -230,6 +242,7 @@ func (p *RedirectsProvider) matchRedirectDefinition(r *http.Request, dimension s
 func (p *RedirectsProvider) definitionForDimensionAndSource(dimension store.Dimension, source store.RedirectSource) *store.RedirectDefinition {
 	p.RLock()
 	defer p.RUnlock()
+
 	definitions, ok := p.redirects[dimension]
 	if !ok {
 		p.l.Info("no redirects found for dimension", zap.String("dimension", string(dimension)))
@@ -247,28 +260,13 @@ func (p *RedirectsProvider) definitionForDimensionAndSource(dimension store.Dime
 	if err != nil {
 		return nil
 	}
+
 	definition, ok = definitions[store.RedirectSource(unescapedSource)]
 	if ok {
 		return definition
 	}
 
 	return nil
-}
-
-// isBlacklisted define a series of paths/... redirection should leave alone
-func isBlacklisted(r *http.Request) bool {
-	request := store.RedirectRequest(r.URL.RequestURI())
-
-	isHome, err := request.IsHomepage()
-	if err != nil {
-		return false
-	}
-	prefixes := []string{"/services", "/gateway"}
-	contains := []string{"/_next/"}
-	if isHome || request.HasPrefix(prefixes) || request.Contains(contains) {
-		return true
-	}
-	return false
 }
 
 // execMatcherFuncs executes the matcher functions
@@ -278,6 +276,7 @@ func (p *RedirectsProvider) execMatcherFuncs(r *http.Request) (definition *store
 			return definition, nil
 		}
 	}
+
 	return definition, err
 }
 
@@ -297,8 +296,10 @@ func (p *RedirectsProvider) createRedirect(r *http.Request, definition *store.Re
 			keellog.WithError(p.l, err).Error("could not merge the query strings of the requests")
 			return nil, err
 		}
+
 		redirect.Response = store.RedirectResponse(response)
 	}
+
 	return redirect, nil
 }
 
@@ -311,6 +312,7 @@ func (p *RedirectsProvider) checkForStandardRedirect(r *http.Request) (definitio
 	if err != nil {
 		return nil, err
 	}
+
 	if redirectNeeded {
 		definition = &store.RedirectDefinition{
 			ID:             "",
@@ -321,5 +323,25 @@ func (p *RedirectsProvider) checkForStandardRedirect(r *http.Request) (definitio
 			TransferParams: false,
 		}
 	}
+
 	return definition, nil
+}
+
+// isBlacklisted define a series of paths/... redirection should leave alone
+func isBlacklisted(r *http.Request) bool {
+	request := store.RedirectRequest(r.URL.RequestURI())
+
+	isHome, err := request.IsHomepage()
+	if err != nil {
+		return false
+	}
+
+	prefixes := []string{"/services", "/gateway"}
+
+	contains := []string{"/_next/"}
+	if isHome || request.HasPrefix(prefixes) || request.Contains(contains) {
+		return true
+	}
+
+	return false
 }

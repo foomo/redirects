@@ -9,6 +9,7 @@ import (
 	"github.com/foomo/contentserver/content"
 	rdutils "github.com/foomo/redirects/v2/domain/redirectdefinition/utils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
 
@@ -22,15 +23,19 @@ var contentNodesChanged []byte
 
 func Test_AutoCreateRedirectDefinitionsParse(t *testing.T) {
 	p := map[string]*content.RepoNode{}
+
 	err := json.Unmarshal(contentNodes, &p)
 	if err != nil {
 		fmt.Println(err)
 	}
+
 	pChanged := map[string]*content.RepoNode{}
+
 	err = json.Unmarshal(contentNodesChanged, &pChanged)
 	if err != nil {
 		fmt.Println(err)
 	}
+
 	redirects, err := rdutils.AutoCreateRedirectDefinitions(
 		zap.L(),
 		rdutils.CreateFlatRepoNodeMap(p["de"], make(map[string]*content.RepoNode)),
@@ -38,8 +43,8 @@ func Test_AutoCreateRedirectDefinitionsParse(t *testing.T) {
 		"HMD-de",
 		false,
 	)
-	assert.NoError(t, err)
-	assert.Equal(t, 12, len(redirects))
+	require.NoError(t, err)
+	assert.Len(t, redirects, 12)
 }
 
 func Test_AutoCreateRedirectDefinitionsCoverAll(t *testing.T) {
@@ -139,8 +144,8 @@ func Test_AutoCreateRedirectDefinitionsCoverAll(t *testing.T) {
 		"HMD-de",
 		false,
 	)
-	assert.NoError(t, err)
-	assert.Equal(t, 3, len(redirects))
+	require.NoError(t, err)
+	assert.Len(t, redirects, 3)
 }
 
 // if newMap is missing node:
@@ -218,6 +223,7 @@ func Test_AutoCreateRedirectDefinitions(t *testing.T) {
 			},
 		},
 	}
+
 	redirects, err := rdutils.AutoCreateRedirectDefinitions(
 		zap.L(),
 		rdutils.CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
@@ -225,11 +231,8 @@ func Test_AutoCreateRedirectDefinitions(t *testing.T) {
 		"HMD-de",
 		false,
 	)
-	if err != nil {
-		assert.Error(t, err)
-	}
-	assert.NoError(t, err)
-	assert.Equal(t, 2, len(redirects))
+	require.NoError(t, err)
+	assert.Len(t, redirects, 2)
 }
 
 func Test_AutoCreateRedirectDefinitionsExg1(t *testing.T) {
@@ -311,6 +314,7 @@ func Test_AutoCreateRedirectDefinitionsExg1(t *testing.T) {
 			},
 		},
 	}
+
 	redirects, err := rdutils.AutoCreateRedirectDefinitions(
 		zap.L(),
 		rdutils.CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
@@ -318,11 +322,8 @@ func Test_AutoCreateRedirectDefinitionsExg1(t *testing.T) {
 		"HMD-de",
 		false,
 	)
-	if err != nil {
-		assert.Error(t, err)
-	}
-	assert.NoError(t, err)
-	assert.Equal(t, 3, len(redirects))
+	require.NoError(t, err)
+	assert.Len(t, redirects, 3)
 }
 
 func Test_AutoCreateRedirectDefinitionsExg2(t *testing.T) {
@@ -404,6 +405,7 @@ func Test_AutoCreateRedirectDefinitionsExg2(t *testing.T) {
 			},
 		},
 	}
+
 	redirects, err := rdutils.AutoCreateRedirectDefinitions(
 		zap.L(),
 		rdutils.CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
@@ -411,11 +413,9 @@ func Test_AutoCreateRedirectDefinitionsExg2(t *testing.T) {
 		"HMD-de",
 		false,
 	)
-	if err != nil {
-		assert.Error(t, err)
-	}
-	assert.NoError(t, err)
-	assert.Equal(t, 3, len(redirects))
+
+	require.NoError(t, err)
+	assert.Len(t, redirects, 3)
 }
 
 func Test_AutoCreateRedirectDefinitionsExg3(t *testing.T) {
@@ -497,6 +497,7 @@ func Test_AutoCreateRedirectDefinitionsExg3(t *testing.T) {
 			},
 		},
 	}
+
 	redirects, err := rdutils.AutoCreateRedirectDefinitions(
 		zap.L(),
 		rdutils.CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
@@ -504,16 +505,14 @@ func Test_AutoCreateRedirectDefinitionsExg3(t *testing.T) {
 		"HMD-de",
 		false,
 	)
-	if err != nil {
-		assert.Error(t, err)
-	}
-	assert.NoError(t, err)
-	assert.Equal(t, 3, len(redirects))
+	require.NoError(t, err)
+	assert.Len(t, redirects, 3)
 }
 
 func Test_AutoCreateRedirectDefinitionsEmptyAndNilArgs(t *testing.T) {
 	oldNodes := &content.RepoNode{}
 	newNodes := &content.RepoNode{}
+
 	redirects, err := rdutils.AutoCreateRedirectDefinitions(
 		zap.L(),
 		rdutils.CreateFlatRepoNodeMap(oldNodes, make(map[string]*content.RepoNode)),
@@ -521,11 +520,9 @@ func Test_AutoCreateRedirectDefinitionsEmptyAndNilArgs(t *testing.T) {
 		"HMD-de",
 		false,
 	)
-	if err != nil {
-		fmt.Print(err)
-	}
-	assert.NoError(t, err)
-	assert.Equal(t, len(redirects), 0)
+	require.NoError(t, err)
+	assert.Empty(t, redirects)
+
 	oldNodes = nil
 	newNodes = nil
 	redirects, err = rdutils.AutoCreateRedirectDefinitions(
@@ -535,8 +532,8 @@ func Test_AutoCreateRedirectDefinitionsEmptyAndNilArgs(t *testing.T) {
 		"HMD-de",
 		false,
 	)
-	assert.Error(t, err)
-	assert.Equal(t, len(redirects), 0)
+	require.Error(t, err)
+	assert.Empty(t, redirects)
 }
 
 // FindAllURIs finds and collects all URIs in the tree starting from the given node.
@@ -563,9 +560,11 @@ func FindAllPaths(root *content.RepoNode) []string {
 		result = append(result, root.URI)
 		return result
 	}
+
 	for _, child := range root.Nodes {
 		result = append(result, FindAllPaths(child)...)
 	}
+
 	return result
 }
 
@@ -584,11 +583,13 @@ func FindNodeByURI(root *content.RepoNode, uri string) *content.RepoNode {
 	if root.URI == uri {
 		return root
 	}
+
 	for _, child := range root.Nodes {
 		found := FindNodeByURI(child, uri)
 		if found != nil {
 			return found
 		}
 	}
+
 	return nil
 }

@@ -74,19 +74,23 @@ func Test_ConsolidateRedirectDefinitions(t *testing.T) {
 	)
 
 	// Assertions
-	assert.Equal(t, len(expectedUpdated), len(updatedDefs), "Mismatch in updated redirect count")
-	assert.Equal(t, len(expectedDeleted), len(deletedIDs), "Mismatch in deleted redirect count")
+	assert.Len(t, updatedDefs, len(expectedUpdated), "Mismatch in updated redirect count")
+	assert.Len(t, deletedIDs, len(expectedDeleted), "Mismatch in deleted redirect count")
 
 	// Ensure that expected updates exist
 	for _, expected := range expectedUpdated {
 		found := false
+
 		for _, actual := range updatedDefs {
 			if expected.Source == actual.Source {
 				assert.Equal(t, expected.Target, actual.Target, "Unexpected target for source %s", expected.Source)
+
 				found = true
+
 				break
 			}
 		}
+
 		assert.True(t, found, "Expected redirect not found for source: %s", expected.Source)
 	}
 }
@@ -158,7 +162,7 @@ func Test_ConsolidateRedirectDefinitions_NoCycle(t *testing.T) {
 	)
 
 	// Assertions
-	assert.Equal(t, len(newRedirects), len(updatedDefs), "Mismatch in updated redirect count")
+	assert.Len(t, updatedDefs, len(newRedirects), "Mismatch in updated redirect count")
 	assert.Empty(t, deletedIDs, "No redirects should be deleted")
 
 	// Ensure the new target for `/b` is correctly updated
