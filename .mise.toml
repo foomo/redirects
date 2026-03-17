@@ -1,5 +1,7 @@
 [tools]
 # https://mise-tools.jdx.dev/tools/lefthook
-lefthook = "latest"
+lefthook = "2.1.4"
 # https://mise-tools.jdx.dev/tools/golangci-lint
-golangci-lint = "latest"
+golangci-lint = "2.11.3"
+# https://github.com/foomo/gotsrpc/releases
+"github:foomo/gotsrpc" = "2.14.0"

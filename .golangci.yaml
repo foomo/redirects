@@ -1,15 +1,14 @@
-# https://golangci-lint.run/usage/configuration/
 # yaml-language-server: $schema=https://golangci-lint.run/jsonschema/golangci.jsonschema.json
 version: "2"
 
 run:
+  build-tags: [ safe ]
   modules-download-mode: readonly
 
 linters:
   default: all
   disable:
     # Project specific linters
-    #- wsl_v5
     # Discouraged linters
     - noinlineerr # Disallows inline error handling (`if err := ...; err != nil {`).
     - embeddedstructfieldcheck #  Embedded types should be at the top of the field list of a struct, and there must be an empty line separating embedded fields from regular fields. [fast]
@@ -18,6 +17,7 @@ linters:
     - dogsled # Checks assignments with too many blank identifiers (e.g. x, _, _, _, := f()) [fast: true, auto-fix: false]
     - dupl # Tool for code clone detection [fast: true, auto-fix: false]
     - dupword # checks for duplicate words in the source code [fast: true, auto-fix: false]
+    - dogsled # Checks assignments with too many blank identifiers (e.g. x, _, _, _, := f()) [fast: true, auto-fix: false]
     - err113 # Go linter to check the errors handling expressions [fast: false, auto-fix: false]
     - exhaustruct # Checks if all structure fields are initialized [fast: false, auto-fix: false]
     - funlen # Tool for detection of long functions [fast: true, auto-fix: false]
@@ -45,50 +45,38 @@ linters:
     - unparam # Reports unused function parameters [fast: false, auto-fix: false]
     - varnamelen # checks that the length of a variable's name matches its scope [fast: false, auto-fix: false]
     - wrapcheck # Checks that errors returned from external packages are wrapped [fast: false, auto-fix: false]
-    - nilnil # Checks that there is no simultaneous return of `nil` error and an invalid value. [fast: false, auto-fix: false]
     - zerologlint # Detects the wrong usage of `zerolog` that a user forgets to dispatch with `Send` or `Msg` [fast: false, auto-fix: false]
-    # Deprecated linters
+    # Deprected linters
     - wsl
 
   # https://golangci-lint.run/docs/linters/
   settings:
+    # https://golangci-lint.run/docs/linters/configuration/#exhaustive
     exhaustive:
       default-signifies-exhaustive: true
-    gocritic:
-      disabled-checks:
-        - commentFormatting
+    # https://golangci-lint.run/docs/linters/configuration/#gosec
     gosec:
+      severity: medium
       confidence: medium
-    importas:
-      no-unaliased: true
-      alias:
-        - pkg: '^github.com\/foomo\/redirects\/(.*\/)?([^\/]+)\/?$'
-          alias: '${2}x' # enforce `x` suffix
+    # https://golangci-lint.run/docs/linters/configuration/#revive
+    revive:
+      rules:
+        - name: package-comments
+          disabled: true
   exclusions:
-    generated: lax
     presets:
       - comments
       - common-false-positives
       - legacy
       - std-error-handling
     rules:
-      - linters:
-          - asasalint
-        path: (.+)_test\.go
+      - path: _test\.go
+        linters:
+          - forbidigo
     paths:
+      - docs
       - tmp
-      - third_party$
-      - builtin$
-      - examples$
-
 formatters:
   enable:
     - gofmt
     - goimports
-  exclusions:
-    generated: lax
-    paths:
-      - tmp
-      - third_party$
-      - builtin$
-      - examples$

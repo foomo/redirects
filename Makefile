@@ -15,11 +15,6 @@ endef
 %: .mise .lefthook
 	@:
 
-.PHONY: .lefthook
-# Configure git hooks for lefthook
-.lefthook:
-	@lefthook install --reset-hooks-path
-
 .PHONY: .mise
 # Install dependencies
 .mise:
@@ -28,72 +23,78 @@ ifeq (, $(shell command -v mise))
 endif
 	@mise install
 
+.PHONY: .lefthook
+# Configure git hooks for lefthook
+.lefthook:
+	@lefthook install --reset-hooks-path
+
 ### Tasks
+
+.PHONY: check
+## Run lint & test
+check: tidy generate lint test
 
 .PHONY: tidy
 ## Run go mod tidy
 tidy:
-	@echo "〉running go mod tidy"
+	@echo "〉go mod tidy"
 	@go mod tidy
-
-.PHONY: generate
-## Run go generate
-generate:
-	@echo "〉running go generate"
-	@go generate ./...
-
-.PHONY: test
-## Run tests
-test:
-	@echo "〉running tests"
-	@go test -coverprofile=coverage.out ./...
-
-.PHONY: test.race
-## Run tests with `-race` flag
-test.race:
-	@echo "〉running tests with -race flag"
-	@go test -race -coverprofile=coverage.out ./...
-
-.PHONY: test.cover
-## Run tests with coverage
-test.cover:
-	@echo "〉running tests with coverage"
-	@go test -v -coverprofile=coverage.out ./...
-	@go tool cover -func=coverage.out
-	@go tool cover -html=coverage.out
-
-.PHONY: fmt
-## Run format
-fmt:
-	@echo "〉formatting files"
-	@golangci-lint fmt ./...
 
 .PHONY: lint
 ## Run linter
 lint:
-	@echo "〉linting files"
+	@echo "〉golangci-lint run"
 	@golangci-lint run
 
 .PHONY: lint.fix
 ## Fix lint violations
 lint.fix:
-	@echo "〉fixing lint errors"
+	@echo "〉golangci-lint run fix"
 	@golangci-lint run --fix
+
+.PHONY: lint.branch
+## Run linter with --new-from-rev=origin/main
+lint.branch:
+	@echo "〉golangci-lint run with --new-from-rev=origin/main"
+	@golangci-lint run --new-from-rev=origin/main
+
+.PHONY: test
+## Run tests
+test:
+	@echo "〉go test"
+	@GO_TEST_TAGS=-skip go test -coverprofile=coverage.out -tags=safe ./...
+
+.PHONY: test.race
+## Run tests with -race
+test.race:
+	@echo "〉go test -race"
+	@GO_TEST_TAGS=-skip go test -coverprofile=coverage.out -tags=safe -race ./...
+
+.PHONY: test.nocache
+## Run tests with -count=1
+test.nocache:
+	@echo "〉go test -count=1"
+	@GO_TEST_TAGS=-skip go test -coverprofile=coverage.out -tags=safe -count=1 ./...
 
 .PHONY: outdated
 ## Show outdated direct dependencies
 outdated:
-	@echo "〉listing outdated dependencies"
+	@echo "〉go mod outdated"
 	@go list -u -m -json all | go-mod-outdated -update -direct
+
+.PHONY: generate
+## Run go generate
+generate:
+	@echo "〉go generate"
+	@go generate ./...
 
 ### Documentation
 
-.PHONY: doc
+.PHONY: godocs
 ## Open go docs
-doc:
+godocs:
 	@echo "〉starting go docs"
-	@open "http://localhost:6060/pkg/github.com/foomo/redirects/v2/"
-	@godoc -http=localhost:6060 -play
+	@go doc -http
 
 ### Utils
 
@@ -101,8 +102,9 @@ doc:
 ## Show help text
 help:
 	@echo ""
-	@echo "Welcome to redirects!"
-	@echo "\nUsage:\n  make [task]"
+	@echo "REDIRECTS"
+	@echo ""
+	@echo "Usage:\n  make [task]"
 	@awk '{ \
 		if($$0 ~ /^### /){ \
 			if(help) printf "%-23s %s\n\n", cmd, help; help=""; \
@@ -111,7 +113,7 @@ help:
 			cmd = substr($$0, 1, index($$0, ":")-1); \
 			if(help) printf "  %-23s %s\n", cmd, help; help=""; \
 		} else if($$0 ~ /^##/){ \
-			help = help ? help "\n                          " substr($$0,3) : substr($$0,3); \
+			help = help ? help "\n                        " substr($$0,3) : substr($$0,3); \
 		} else if(help){ \
 			print "\n                        " help "\n"; help=""; \
 		} \

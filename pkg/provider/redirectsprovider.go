@@ -129,7 +129,7 @@ func (p *RedirectsProvider) Process(r *http.Request) (*storex.Redirect, error) {
 	// check if the request is on the blacklist
 	if isBlacklisted(request) {
 		l.Debug("request is on black list")
-		return nil, nil
+		return nil, nil //nolint:nilnil // needs refactoring
 	}
 
 	definition, err := p.matchRedirectDefinition(request, dimension)
@@ -162,7 +162,7 @@ func (p *RedirectsProvider) Process(r *http.Request) (*storex.Redirect, error) {
 
 	if definition == nil {
 		l.Debug("no redirect necessary")
-		return nil, nil
+		return nil, nil //nolint:nilnil // needs refactoring
 	}
 
 	redirect, err := p.createRedirect(request, definition)
@@ -327,7 +327,7 @@ func (p *RedirectsProvider) checkForStandardRedirect(r *http.Request) (*storex.R
 		}, nil
 	}
 
-	return nil, nil
+	return nil, nil //nolint:nilnil // needs refactoring
 }
 
 func (p *RedirectsProvider) loadRedirects(ctx context.Context) error {
