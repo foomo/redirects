@@ -52,10 +52,12 @@ func (rs *Service) CreateRedirectsFromContentserverexport(
 	newState map[string]*content.RepoNode,
 ) error {
 	rs.l.Info("CreateRedirectsFromContentserverexport called ")
+
 	if !rs.enableCreationOfAutomaticRedirects() {
 		rs.l.Info("CreateRedirectsFromContentserverexport not enabled")
 		return nil
 	}
+
 	return rs.api.CreateRedirects(r.Context(),
 		redirectcommand.CreateRedirects{
 			OldState: oldState,
@@ -79,6 +81,7 @@ func (rs *Service) Search(
 	if params.Page < 1 {
 		params.Page = 1
 	}
+
 	if params.PageSize < 1 {
 		params.PageSize = 10 // Default page size
 	}
@@ -111,8 +114,10 @@ func (rs *Service) Create(_ http.ResponseWriter, r *http.Request, def *redirects
 	if err != nil {
 		return "", redirectstore.NewRedirectDefinitionError(err.Error())
 	}
+
 	def.Dimension = redirectstore.Dimension(fmt.Sprintf("%s-%s", site, locale))
 	rs.api.setLastUpdatedBy(r.Context(), def)
+
 	err = rs.api.CreateRedirect(r.Context(),
 		redirectcommand.CreateRedirect{
 			RedirectDefinition: def,
@@ -120,6 +125,7 @@ func (rs *Service) Create(_ http.ResponseWriter, r *http.Request, def *redirects
 	if err != nil {
 		return "", redirectstore.NewRedirectDefinitionError(err.Error())
 	}
+
 	return def.ID, nil
 }
 
@@ -133,6 +139,7 @@ func (rs *Service) Delete(_ http.ResponseWriter, r *http.Request, id string) *re
 	if err != nil {
 		return redirectstore.NewRedirectDefinitionError(err.Error())
 	}
+
 	return nil
 }
 
@@ -141,6 +148,7 @@ func (rs *Service) Delete(_ http.ResponseWriter, r *http.Request, id string) *re
 func (rs *Service) Update(_ http.ResponseWriter, r *http.Request, def *redirectstore.RedirectDefinition) *redirectstore.RedirectDefinitionError {
 	def.Updated = redirectstore.NewDateTime(time.Now())
 	rs.api.setLastUpdatedBy(r.Context(), def)
+
 	err := rs.api.UpdateRedirect(r.Context(),
 		redirectcommand.UpdateRedirect{
 			RedirectDefinition: def,
@@ -148,6 +156,7 @@ func (rs *Service) Update(_ http.ResponseWriter, r *http.Request, def *redirects
 	if err != nil {
 		return redirectstore.NewRedirectDefinitionError(err.Error())
 	}
+
 	return nil
 }
 

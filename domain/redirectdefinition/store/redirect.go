@@ -37,12 +37,15 @@ func (r RedirectCode) Valid() bool {
 // the url requirement - lowercased, no trailing slash
 func (r RedirectRequest) GenericTransform() (newRequest RedirectRequest, hasChanged bool, err error) {
 	newRequest = r
+
 	base, err := url.Parse(string(r))
 	if err != nil {
 		return
 	}
+
 	base.Path = strings.TrimSuffix(strings.ToLower(base.Path), "/")
 	newRequest = RedirectRequest(base.String())
+
 	return newRequest, newRequest != r, nil
 }
 
@@ -52,6 +55,7 @@ func (r RedirectRequest) IsHomepage() (isHome bool, err error) {
 	if err != nil {
 		return
 	}
+
 	return base.Path == "/", nil
 }
 
@@ -61,6 +65,7 @@ func (r RedirectRequest) HasPrefix(patterns []string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -70,6 +75,7 @@ func (r RedirectRequest) Contains(patterns []string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 

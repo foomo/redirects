@@ -21,12 +21,15 @@ func Redirects(provider redirectprovider.RedirectsProviderInterface) middleware.
 					// redirect problems should never impair the gateway
 					keellog.WithError(l, err).Info("error occurred during redirect processing", keellog.FValue(r.URL.RequestURI()))
 				}
+
 				if redirect != nil {
 					l.Debug("performing redirect", keellog.FValue(redirect.Response), keellog.FValue(redirect.Code))
 					http.Redirect(w, r, string(redirect.Response), int(redirect.Code))
+
 					return
 				}
 			}
+
 			next.ServeHTTP(w, r)
 		})
 	}

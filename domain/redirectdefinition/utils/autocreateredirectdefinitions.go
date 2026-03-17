@@ -20,6 +20,7 @@ func AutoCreateRedirectDefinitions(
 	if len(oldMap) == 0 || len(newMap) == 0 {
 		return nil, errors.New("calling auto create difference with nil arguments")
 	}
+
 	redirects := []*redirectstore.RedirectDefinition{}
 
 	for newNodeID, newNode := range newMap {
@@ -59,5 +60,6 @@ func CreateFlatRepoNodeMap(node *content.RepoNode, nodeMap map[string]*content.R
 	for _, child := range node.Nodes {
 		nodeMap = CreateFlatRepoNodeMap(child, nodeMap)
 	}
+
 	return nodeMap
 }

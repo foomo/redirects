@@ -34,10 +34,8 @@ type (
 func SearchHandler(repo redirectrepository.RedirectsDefinitionRepository) SearchHandlerFn {
 	return func(ctx context.Context, _ *zap.Logger, qry Search) (*redirectstore.PaginatedResult, error) {
 		// Default pagination values if not provided
-		page := qry.Page
-		if page < 1 {
-			page = 1
-		}
+		page := max(qry.Page, 1)
+
 		pageSize := qry.PageSize
 		if pageSize < 1 {
 			pageSize = 20 // Default page size
@@ -71,9 +69,11 @@ func SearchHandlerComposed(handler SearchHandlerFn, middlewares ...SearchMiddlew
 				return localNext(ctx, l, qry)
 			})
 		}
+
 		return next
 	}
 	handlerName := strings.Split(runtime.FuncForPC(reflect.ValueOf(handler).Pointer()).Name(), ".")[2]
+
 	return composed(func(ctx context.Context, l *zap.Logger, qry Search) (*redirectstore.PaginatedResult, error) {
 		trace.SpanFromContext(ctx).AddEvent(handlerName)
 		return handler(ctx, l, qry)
