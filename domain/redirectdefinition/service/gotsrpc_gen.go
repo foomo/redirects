@@ -3,6 +3,7 @@
 package service
 
 import (
+	"io"
 	http "net/http"
 	time "time"
 
@@ -11,105 +12,6 @@ import (
 	github_com_foomo_redirects_v2_domain_redirectdefinition "github.com/foomo/redirects/v2/domain/redirectdefinition"
 	github_com_foomo_redirects_v2_domain_redirectdefinition_store "github.com/foomo/redirects/v2/domain/redirectdefinition/store"
 )
-
-const (
-	InternalServiceGoTSRPCProxyCreateRedirectsFromContentserverexport = "CreateRedirectsFromContentserverexport"
-	InternalServiceGoTSRPCProxyGetRedirects                           = "GetRedirects"
-)
-
-type InternalServiceGoTSRPCProxy struct {
-	EndPoint string
-	service  InternalService
-}
-
-func NewDefaultInternalServiceGoTSRPCProxy(service InternalService) *InternalServiceGoTSRPCProxy {
-	return NewInternalServiceGoTSRPCProxy(service, "/services/redirectdefinition/internal")
-}
-
-func NewInternalServiceGoTSRPCProxy(service InternalService, endpoint string) *InternalServiceGoTSRPCProxy {
-	return &InternalServiceGoTSRPCProxy{
-		EndPoint: endpoint,
-		service:  service,
-	}
-}
-
-// ServeHTTP exposes your service
-func (p *InternalServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodOptions {
-		return
-	} else if r.Method != http.MethodPost {
-		gotsrpc.ErrorMethodNotAllowed(w)
-		return
-	}
-
-	funcName := gotsrpc.GetCalledFunc(r, p.EndPoint)
-	callStats, _ := gotsrpc.GetStatsForRequest(r)
-	if callStats != nil {
-		callStats.Func = funcName
-		callStats.Package = "github.com/foomo/redirects/v2/domain/redirectdefinition/service"
-		callStats.Service = "InternalService"
-	}
-	switch funcName {
-	case InternalServiceGoTSRPCProxyCreateRedirectsFromContentserverexport:
-		var (
-			args []any
-			rets []any
-		)
-		var (
-			arg_oldState map[string]*github_com_foomo_contentserver_content.RepoNode
-			arg_newState map[string]*github_com_foomo_contentserver_content.RepoNode
-		)
-		args = []any{&arg_oldState, &arg_newState}
-		if err := gotsrpc.LoadArgs(&args, callStats, r); err != nil {
-			gotsrpc.ErrorCouldNotLoadArgs(w)
-			return
-		}
-		var executionStart time.Time
-		if callStats != nil {
-			executionStart = time.Now()
-		}
-		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
-		createRedirectsFromContentserverexportRet := p.service.CreateRedirectsFromContentserverexport(&rw, r, arg_oldState, arg_newState)
-		if callStats != nil {
-			callStats.Execution = time.Since(executionStart)
-		}
-		if rw.Status() == http.StatusOK {
-			rets = []any{gotsrpc.ErrorReply(createRedirectsFromContentserverexportRet)}
-			if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
-				gotsrpc.ErrorCouldNotReply(w)
-				return
-			}
-		}
-		gotsrpc.Monitor(w, r, args, rets, callStats)
-		return
-	case InternalServiceGoTSRPCProxyGetRedirects:
-		var (
-			args []any
-			rets []any
-		)
-		var executionStart time.Time
-		if callStats != nil {
-			executionStart = time.Now()
-		}
-		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
-		getRedirectsRet, getRedirectsRet_1 := p.service.GetRedirects(&rw, r)
-		if callStats != nil {
-			callStats.Execution = time.Since(executionStart)
-		}
-		if rw.Status() == http.StatusOK {
-			rets = []any{getRedirectsRet, gotsrpc.ErrorReply(getRedirectsRet_1)}
-			if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
-				gotsrpc.ErrorCouldNotReply(w)
-				return
-			}
-		}
-		gotsrpc.Monitor(w, r, args, rets, callStats)
-		return
-	default:
-		gotsrpc.ClearStats(r)
-		gotsrpc.ErrorFuncNotFound(w)
-	}
-}
 
 const (
 	AdminServiceGoTSRPCProxyCreate       = "Create"
@@ -143,10 +45,11 @@ func (p *AdminServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Requ
 		gotsrpc.ErrorMethodNotAllowed(w)
 		return
 	}
+	defer io.Copy(io.Discard, r.Body) // Drain Request Body
 
 	funcName := gotsrpc.GetCalledFunc(r, p.EndPoint)
-	callStats, _ := gotsrpc.GetStatsForRequest(r)
-	if callStats != nil {
+	callStats, callStatsOk := gotsrpc.GetStatsForRequest(r)
+	if callStatsOk {
 		callStats.Func = funcName
 		callStats.Package = "github.com/foomo/redirects/v2/domain/redirectdefinition/service"
 		callStats.Service = "AdminService"
@@ -167,12 +70,12 @@ func (p *AdminServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Requ
 			return
 		}
 		var executionStart time.Time
-		if callStats != nil {
+		if callStatsOk {
 			executionStart = time.Now()
 		}
 		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
 		createRet, createRet_1 := p.service.Create(&rw, r, arg_def, arg_locale)
-		if callStats != nil {
+		if callStatsOk {
 			callStats.Execution = time.Since(executionStart)
 		}
 		if rw.Status() == http.StatusOK {
@@ -198,12 +101,12 @@ func (p *AdminServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Requ
 			return
 		}
 		var executionStart time.Time
-		if callStats != nil {
+		if callStatsOk {
 			executionStart = time.Now()
 		}
 		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
 		deleteRet := p.service.Delete(&rw, r, arg_id)
-		if callStats != nil {
+		if callStatsOk {
 			callStats.Execution = time.Since(executionStart)
 		}
 		if rw.Status() == http.StatusOK {
@@ -229,12 +132,12 @@ func (p *AdminServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Requ
 			return
 		}
 		var executionStart time.Time
-		if callStats != nil {
+		if callStatsOk {
 			executionStart = time.Now()
 		}
 		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
 		searchRet, searchRet_1 := p.service.Search(&rw, r, arg_params)
-		if callStats != nil {
+		if callStatsOk {
 			callStats.Execution = time.Since(executionStart)
 		}
 		if rw.Status() == http.StatusOK {
@@ -260,12 +163,12 @@ func (p *AdminServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Requ
 			return
 		}
 		var executionStart time.Time
-		if callStats != nil {
+		if callStatsOk {
 			executionStart = time.Now()
 		}
 		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
 		updateRet := p.service.Update(&rw, r, arg_def)
-		if callStats != nil {
+		if callStatsOk {
 			callStats.Execution = time.Since(executionStart)
 		}
 		if rw.Status() == http.StatusOK {
@@ -292,16 +195,116 @@ func (p *AdminServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Requ
 			return
 		}
 		var executionStart time.Time
-		if callStats != nil {
+		if callStatsOk {
 			executionStart = time.Now()
 		}
 		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
 		updateStatesRet := p.service.UpdateStates(&rw, r, arg_ids, arg_state)
-		if callStats != nil {
+		if callStatsOk {
 			callStats.Execution = time.Since(executionStart)
 		}
 		if rw.Status() == http.StatusOK {
 			rets = []any{updateStatesRet}
+			if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
+				gotsrpc.ErrorCouldNotReply(w)
+				return
+			}
+		}
+		gotsrpc.Monitor(w, r, args, rets, callStats)
+		return
+	default:
+		gotsrpc.ClearStats(r)
+		gotsrpc.ErrorFuncNotFound(w)
+	}
+}
+
+const (
+	InternalServiceGoTSRPCProxyCreateRedirectsFromContentserverexport = "CreateRedirectsFromContentserverexport"
+	InternalServiceGoTSRPCProxyGetRedirects                           = "GetRedirects"
+)
+
+type InternalServiceGoTSRPCProxy struct {
+	EndPoint string
+	service  InternalService
+}
+
+func NewDefaultInternalServiceGoTSRPCProxy(service InternalService) *InternalServiceGoTSRPCProxy {
+	return NewInternalServiceGoTSRPCProxy(service, "/services/redirectdefinition/internal")
+}
+
+func NewInternalServiceGoTSRPCProxy(service InternalService, endpoint string) *InternalServiceGoTSRPCProxy {
+	return &InternalServiceGoTSRPCProxy{
+		EndPoint: endpoint,
+		service:  service,
+	}
+}
+
+// ServeHTTP exposes your service
+func (p *InternalServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodOptions {
+		return
+	} else if r.Method != http.MethodPost {
+		gotsrpc.ErrorMethodNotAllowed(w)
+		return
+	}
+	defer io.Copy(io.Discard, r.Body) // Drain Request Body
+
+	funcName := gotsrpc.GetCalledFunc(r, p.EndPoint)
+	callStats, callStatsOk := gotsrpc.GetStatsForRequest(r)
+	if callStatsOk {
+		callStats.Func = funcName
+		callStats.Package = "github.com/foomo/redirects/v2/domain/redirectdefinition/service"
+		callStats.Service = "InternalService"
+	}
+	switch funcName {
+	case InternalServiceGoTSRPCProxyCreateRedirectsFromContentserverexport:
+		var (
+			args []any
+			rets []any
+		)
+		var (
+			arg_oldState map[string]*github_com_foomo_contentserver_content.RepoNode
+			arg_newState map[string]*github_com_foomo_contentserver_content.RepoNode
+		)
+		args = []any{&arg_oldState, &arg_newState}
+		if err := gotsrpc.LoadArgs(&args, callStats, r); err != nil {
+			gotsrpc.ErrorCouldNotLoadArgs(w)
+			return
+		}
+		var executionStart time.Time
+		if callStatsOk {
+			executionStart = time.Now()
+		}
+		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
+		createRedirectsFromContentserverexportRet := p.service.CreateRedirectsFromContentserverexport(&rw, r, arg_oldState, arg_newState)
+		if callStatsOk {
+			callStats.Execution = time.Since(executionStart)
+		}
+		if rw.Status() == http.StatusOK {
+			rets = []any{gotsrpc.ErrorReply(createRedirectsFromContentserverexportRet)}
+			if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
+				gotsrpc.ErrorCouldNotReply(w)
+				return
+			}
+		}
+		gotsrpc.Monitor(w, r, args, rets, callStats)
+		return
+	case InternalServiceGoTSRPCProxyGetRedirects:
+		var (
+			args []any
+			rets []any
+		)
+		var executionStart time.Time
+		if callStatsOk {
+			executionStart = time.Now()
+		}
+		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
+		getRedirectsRet, getRedirectsRet_1 := p.service.GetRedirects(&rw, r)
+		if callStatsOk {
+			callStats.Execution = time.Since(executionStart)
+		}
+		if rw.Status() == http.StatusOK {
+			rets = []any{getRedirectsRet, gotsrpc.ErrorReply(getRedirectsRet_1)}
 			if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
 				gotsrpc.ErrorCouldNotReply(w)
 				return
