@@ -4,13 +4,13 @@ import (
 	"net/http"
 
 	keellog "github.com/foomo/keel/log"
-	"github.com/foomo/keel/net/http/middleware"
+	keelhttp "github.com/foomo/keel/net/http"
 	providerx "github.com/foomo/redirects/v2/pkg/provider"
 	"go.uber.org/zap"
 )
 
 // Redirects middleware
-func Redirects(provider providerx.RedirectsProviderInterface) middleware.Middleware {
+func Redirects(provider providerx.RedirectsProviderInterface) keelhttp.Middleware {
 	return func(l *zap.Logger, _ string, next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// only get request will ever be in need of redirects

@@ -1,7 +1,7 @@
 .DEFAULT_GOAL:=help
 -include .makerc
 
-# --- Config -----------------------------------------------------------------
+# --- Config ------------------------------------------------------------------
 
 # Newline hack for error output
 define br
@@ -28,11 +28,16 @@ endif
 .lefthook:
 	@lefthook install --reset-hooks-path
 
+# Ensure go.work file
+go.work:
+	@echo "〉initializing go work"
+	@go work init && go work use -r . && go work sync
+
 ### Tasks
 
 .PHONY: check
-## Run lint & test
-check: tidy generate lint test
+## Run lint & tests
+check: tidy generate lint test audit
 
 .PHONY: tidy
 ## Run go mod tidy
@@ -47,7 +52,7 @@ lint:
 	@golangci-lint run
 
 .PHONY: lint.fix
-## Fix lint violations
+## Run golangci-lint & fix
 lint.fix:
 	@echo "〉golangci-lint run fix"
 	@golangci-lint run --fix
@@ -58,37 +63,71 @@ lint.branch:
 	@echo "〉golangci-lint run with --new-from-rev=origin/main"
 	@golangci-lint run --new-from-rev=origin/main
 
-.PHONY: test
-## Run tests
-test:
-	@echo "〉go test"
-	@GO_TEST_TAGS=-skip go test -coverprofile=coverage.out -tags=safe ./...
-
-.PHONY: test.race
-## Run tests with -race
-test.race:
-	@echo "〉go test -race"
-	@GO_TEST_TAGS=-skip go test -coverprofile=coverage.out -tags=safe -race ./...
-
-.PHONY: test.nocache
-## Run tests with -count=1
-test.nocache:
-	@echo "〉go test -count=1"
-	@GO_TEST_TAGS=-skip go test -coverprofile=coverage.out -tags=safe -count=1 ./...
-
-.PHONY: outdated
-## Show outdated direct dependencies
-outdated:
-	@echo "〉go mod outdated"
-	@go list -u -m -json all | go-mod-outdated -update -direct
-
 .PHONY: generate
 ## Run go generate
 generate:
 	@echo "〉go generate"
 	@go generate ./...
 
+.PHONY: test
+## Run tests
+test:
+	@echo "〉go test"
+	@GO_TEST_TAGS=-skip go test -tags=safe -shuffle=on -coverprofile=coverage.out ./...
+
+.PHONY: test.race
+## Run tests with -race
+test.race:
+	@echo "〉go test -race"
+	@GO_TEST_TAGS=-skip go test -tags=safe -shuffle=on -coverprofile=coverage.out -race ./...
+
+.PHONY: test.nocache
+## Run tests with -count=1
+test.nocache:
+	@echo "〉go test -count=1"
+	@GO_TEST_TAGS=-skip go test -tags=safe -shuffle=on -coverprofile=coverage.out -count=1 ./...
+
+.PHONY: test.bench
+## Run tests with -bench
+test.bench:
+	@GO_TEST_TAGS=-skip go test -tags=safe -bench=. -benchmem ./...
+
+### Dependencies
+
+.PHONY: audit
+## Run security audit
+audit:
+	@echo "〉security audit"
+	@go install golang.org/x/vuln/cmd/govulncheck@latest
+	@govulncheck ./...
+
+.PHONY: outdated
+## Show outdated direct dependencies
+outdated:
+	@echo "〉mise"
+	@mise outdated -l --local
+	@echo "〉go mod outdated"
+	@go list -u -m -json all | go-mod-outdated -update -direct
+
+.PHONY: upgrade
+## Show outdated direct dependencies
+upgrade: go.work
+	@echo "〉go mod upgrade"
+	@go get -u ./...
+
 ### Documentation
+
+.PHONY: docs
+## Open docs
+docs:
+	@echo "〉starting docs"
+	@cd docs && bun install && bun run dev
+
+.PHONY: docs.build
+## Open docs
+docs.build:
+	@echo "〉building docs"
+	@cd docs && bun install && bun run build
 
 .PHONY: godocs
 ## Open go docs
@@ -102,7 +141,7 @@ godocs:
 ## Show help text
 help:
 	@echo ""
-	@echo "REDIRECTS"
+	@echo "redirects"
 	@echo ""
 	@echo "Usage:\n  make [task]"
 	@awk '{ \
