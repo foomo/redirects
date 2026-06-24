@@ -294,8 +294,10 @@ func (rs *BaseRedirectsDefinitionRepository) DeleteMany(ctx context.Context, ids
 func (rs *BaseRedirectsDefinitionRepository) FindByIDs(ctx context.Context, ids []*storex.EntityID) ([]*storex.RedirectDefinition, error) {
 	var results []*storex.RedirectDefinition
 
-	// Query all redirects matching the given IDs
-	err := rs.collection.Find(ctx, bson.M{"_id": bson.M{"$in": ids}}, &results)
+	// Match on the "id" field that holds the EntityID (consistent with Update,
+	// Delete and DeleteMany). Mongo's "_id" is a separate auto-generated ObjectID,
+	// so querying it here matched nothing.
+	err := rs.collection.Find(ctx, bson.M{"id": bson.M{"$in": ids}}, &results)
 	if err != nil {
 		rs.l.Error("Failed to fetch redirects by IDs", zap.Error(err))
 		return nil, err
