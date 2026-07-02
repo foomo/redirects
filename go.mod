@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/foomo/contentserver v1.18.1
-	github.com/foomo/gotsrpc/v2 v2.14.1
+	github.com/foomo/gotsrpc/v2 v2.15.0
 	github.com/foomo/keel v0.25.0
 	github.com/foomo/keel/persistence/mongo v0.25.0
 	github.com/google/uuid v1.6.0
@@ -47,7 +47,6 @@ require (
 	go.opentelemetry.io/otel/metric v1.43.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.50.0 // indirect
-	golang.org/x/mod v0.35.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.43.0 // indirect
 	golang.org/x/text v0.36.0 // indirect
