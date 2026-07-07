@@ -1,6 +1,7 @@
-[![Build Status](https://github.com/foomo/redirects/actions/workflows/test.yml/badge.svg?branch=main&event=push)](https://github.com/foomo/redirects/actions/workflows/test.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/foomo/redirects)](https://goreportcard.com/report/github.com/foomo/redirects)
-[![GoDoc](https://godoc.org/github.com/foomo/redirects?status.svg)](https://godoc.org/github.com/foomo/redirects)
+[![Go Report Card](https://goreportcard.com/badge/github.com/foomo/redirects?style=flat-square)](https://goreportcard.com/report/github.com/foomo/redirects)
+[![GoDoc](https://img.shields.io/badge/GoDoc-✓-informational.svg?style=flat-square&logo=go)](https://godoc.org/github.com/foomo/redirects)
+[![Coverage](https://img.shields.io/codecov/c/github/foomo/redirects?style=flat-square&logo=github)](https://app.codecov.io/gh/foomo/redirects)
+[![GitHub Stars](https://img.shields.io/github/stars/foomo/redirects.svg?style=flat-square&logo=github)](https://github.com/foomo/redirects)
 
 <p align="center">
   <img alt="redirects" src="docs/public/logo.png" width="400" height="400"/>
