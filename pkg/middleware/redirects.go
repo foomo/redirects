@@ -24,7 +24,7 @@ func Redirects(provider providerx.RedirectsProviderInterface) keelhttp.Middlewar
 
 				if redirect != nil {
 					l.Debug("performing redirect", keellog.FValue(redirect.Response), keellog.FValue(redirect.Code))
-					http.Redirect(w, r, string(redirect.Response), int(redirect.Code))
+					http.Redirect(w, r, string(redirect.Response), int(redirect.Code)) //nolint:gosec // G710: target is from trusted stored redirect definition, not attacker input
 
 					return
 				}
