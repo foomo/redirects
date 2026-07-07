@@ -1,16 +1,15 @@
 {
-  "name": "redirects-docs",
+  "name": "redirects",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
   "scripts": {
     "dev": "vitepress dev",
     "build": "vitepress build",
     "preview": "vitepress preview"
   },
   "devDependencies": {
-    "mermaid": "^11.4.0",
-    "vitepress": "^1.5.0",
-    "vitepress-plugin-mermaid": "^2.0.17"
+    "mermaid": "11.16.0",
+    "vitepress": "1.6.4",
+		"@catppuccin/vitepress": "0.1.2",
+    "vitepress-plugin-mermaid": "2.0.17"
   }
 }
