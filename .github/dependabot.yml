@@ -1,33 +1,47 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/SchemaStore/schemastore/refs/heads/master/src/schemas/json/dependabot-2.0.json
+# yaml-language-server: $schema=https://json.schemastore.org/dependabot-2.0.json
 version: 2
 
 updates:
   - package-ecosystem: github-actions
-    open-pull-requests-limit: 1
     commit-message: { prefix: 'chore(deps)' }
     directory: '/'
     schedule:
       day: sunday
       interval: weekly
       timezone: Europe/Berlin
-    cooldown:
-      default-days: 1
-
-  - package-ecosystem: gomod
-    open-pull-requests-limit: 1
-    commit-message: { prefix: 'sec(deps)' }
-    directories: [ '**/*' ]
-    schedule:
-      interval: daily
     groups:
+      deps:
+        applies-to: version-updates
+        patterns: [ '*' ]
       security:
         applies-to: security-updates
-        update-types: [ minor, patch ]
+        patterns: [ '*' ]
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: gomod
+    commit-message: { prefix: 'chore(deps)' }
+    directories: [ '**/*' ]
+    schedule:
+      day: sunday
+      interval: weekly
+      timezone: Europe/Berlin
     ignore:
       - dependency-name: '*'
         update-types: [ 'version-update:semver-major' ]
+    groups:
+      deps:
+        applies-to: version-updates
+        patterns: [ '*' ]
+        exclude-patterns: [ 'github.com/foomo/*' ]
+      foomo:
+        applies-to: version-updates
+        patterns: [ 'github.com/foomo/*' ]
+      security:
+        applies-to: security-updates
+        patterns: [ '*' ]
     cooldown:
-      default-days: 1
-      semver-major-days: 14
+      default-days: 7
       semver-minor-days: 7
-      semver-patch-days: 1
+      semver-patch-days: 3
+      exclude: [ 'github.com/foomo/*' ]
