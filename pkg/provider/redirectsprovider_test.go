@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -203,4 +204,30 @@ func TestProcess_BlacklistRunsBeforeLookup(t *testing.T) {
 	assert.Nil(t, redirect)
 	assert.Equal(t, 2, blacklistCalls)
 	assert.Zero(t, matcherCalls, "matcher funcs must not run for blacklisted requests")
+}
+
+func TestProcess_StandardRedirectNoOpenRedirect(t *testing.T) {
+	t.Parallel()
+
+	provider := newTestProvider(t, nil, redirectprovider.WithUseStandardRedirects())
+
+	for _, uri := range []string{"//evil.com/Foo/", "/%2Fevil.com/Foo", "/\\evil.com/Foo/"} {
+		req := newRequest(t, "/")
+		// set the raw request target like net/http's server would for "GET <uri>"
+		u, err := url.ParseRequestURI(uri)
+		require.NoError(t, err)
+
+		req.URL = u
+		req.RequestURI = uri
+
+		redirect, err := provider.Process(req)
+		require.NoError(t, err, uri)
+		assert.Nil(t, redirect, uri)
+	}
+
+	// regular standard redirects keep working
+	redirect, err := provider.Process(newRequest(t, "/Foo/"))
+	require.NoError(t, err)
+	require.NotNil(t, redirect)
+	assert.Equal(t, storex.RedirectResponse("/foo"), redirect.Response)
 }

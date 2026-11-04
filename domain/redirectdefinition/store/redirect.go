@@ -34,11 +34,18 @@ func (r RedirectCode) Valid() bool {
 }
 
 // GenericTransform checks whether the url need to be transformed to confirm to
-// the url requirement - lowercased, no trailing slash
+// the url requirement - lowercased, no trailing slash.
+// Only path-only request URIs are transformed: anything that parses to a scheme
+// or host (e.g. "//evil.com/Foo", "/%2Fevil.com/Foo") or that browsers would
+// treat as protocol-relative ("/\evil.com") is never redirected, to prevent open redirects.
 func (r RedirectRequest) GenericTransform() (RedirectRequest, bool, error) {
 	base, err := url.Parse(string(r))
 	if err != nil {
 		return r, false, err
+	}
+
+	if base.Scheme != "" || base.Host != "" || strings.HasPrefix(base.Path, "//") || strings.HasPrefix(base.Path, "/\\") {
+		return r, false, nil
 	}
 
 	base.Path = strings.TrimSuffix(strings.ToLower(base.Path), "/")
