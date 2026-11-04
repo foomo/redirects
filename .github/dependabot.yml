@@ -45,3 +45,26 @@ updates:
       semver-minor-days: 7
       semver-patch-days: 3
       exclude: [ 'github.com/foomo/*' ]
+
+  - package-ecosystem: bun
+    commit-message: { prefix: chore(bun) }
+    directories: [ '**/*' ]
+    schedule:
+      day: sunday
+      interval: weekly
+      timezone: Europe/Berlin
+    groups:
+      deps:
+        applies-to: version-updates
+        patterns: [ "*" ]
+      # NOTE: security updates are currently not supported
+      security:
+        applies-to: security-updates
+        patterns: [ "*" ]
+    ignore:
+      - dependency-name: "*"
+        update-types: [ "version-update:semver-major" ]
+    cooldown:
+      default-days: 7
+      semver-minor-days: 7
+      semver-patch-days: 3

@@ -1,7 +1,7 @@
 .DEFAULT_GOAL:=help
 -include .makerc
 
-# --- Config ------------------------------------------------------------------
+# --- Config -----------------------------------------------------------------
 
 # Newline hack for error output
 define br
@@ -37,7 +37,7 @@ go.work:
 
 .PHONY: check
 ## Run lint & tests
-check: tidy generate actionlint lint.race test audit
+check: tidy generate actionlint lint.fix test.race audit
 
 .PHONY: tidy
 ## Run go mod tidy
@@ -52,16 +52,10 @@ lint:
 	@golangci-lint run
 
 .PHONY: lint.fix
-## Run golangci-lint & fix
+## Fix lint violations
 lint.fix:
 	@echo "〉golangci-lint run fix"
 	@golangci-lint run --fix
-
-.PHONY: lint.branch
-## Run linter with --new-from-rev=origin/main
-lint.branch:
-	@echo "〉golangci-lint run with --new-from-rev=origin/main"
-	@golangci-lint run --new-from-rev=origin/main
 
 .PHONY: generate
 ## Run go generate
