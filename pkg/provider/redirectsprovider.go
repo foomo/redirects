@@ -40,6 +40,7 @@ type RedirectsProvider struct {
 	// optional features
 	matcherFuncs         []MatcherFunc
 	useStandardRedirects bool
+	blacklistFunc        BlacklistFunc
 }
 
 func NewProvider(
@@ -54,6 +55,7 @@ func NewProvider(
 		redirectsProviderFunc: providerFunc,
 		dimensionProviderFunc: dimensionProviderFunc,
 		updateChannel:         updateChannel,
+		blacklistFunc:         DefaultBlacklist,
 	}
 
 	for _, opt := range options {
@@ -73,6 +75,20 @@ func WithMatcherFuncs(matcherFuncs ...MatcherFunc) RedirectsProviderOption {
 		}
 
 		provider.matcherFuncs = matcherFuncs
+
+		return nil
+	}
+}
+
+// WithBlacklistFunc replaces DefaultBlacklist. Requests for which f returns true
+// are passed through without any redirect lookup (including matcher funcs and standard redirects).
+func WithBlacklistFunc(f BlacklistFunc) RedirectsProviderOption {
+	return func(provider *RedirectsProvider) error {
+		if f == nil {
+			return errors.New("no blacklist function provided")
+		}
+
+		provider.blacklistFunc = f
 
 		return nil
 	}
@@ -127,7 +143,7 @@ func (p *RedirectsProvider) Process(r *http.Request) (*storex.Redirect, error) {
 	}
 
 	// check if the request is on the blacklist
-	if isBlacklisted(request) {
+	if p.blacklistFunc(request) {
 		l.Debug("request is on black list")
 		return nil, nil //nolint:nilnil // needs refactoring
 	}
@@ -246,25 +262,6 @@ func (p *RedirectsProvider) definitionForDimensionAndSource(dimension storex.Dim
 	}
 
 	return nil
-}
-
-// isBlacklisted define a series of paths/... redirection should leave alone
-func isBlacklisted(r *http.Request) bool {
-	request := storex.RedirectRequest(r.URL.RequestURI())
-
-	isHome, err := request.IsHomepage()
-	if err != nil {
-		return false
-	}
-
-	prefixes := []string{"/services", "/gateway"}
-
-	contains := []string{"/_next/"}
-	if isHome || request.HasPrefix(prefixes) || request.Contains(contains) {
-		return true
-	}
-
-	return false
 }
 
 // execMatcherFuncs executes the matcher functions

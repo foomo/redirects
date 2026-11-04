@@ -1,6 +1,8 @@
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 version: 2
 
+project_name: redirects
+
 builds:
   - skip: true
 
@@ -8,11 +10,14 @@ release:
   prerelease: auto
 
 archives:
-  - format: tar.gz
+  - formats: [ tar.gz ]
     format_overrides:
       - goos: windows
-        format: zip
+        formats: [ zip ]
     files: [ LICENSE, README.md ]
+
+checksum:
+  name_template: checksums.txt
 
 changelog:
   use: github-native

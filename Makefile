@@ -37,7 +37,13 @@ go.work:
 
 .PHONY: check
 ## Run lint & tests
-check: tidy generate lint.fix test audit
+check: tidy generate actionlint lint.fix test.race audit
+
+.PHONY: tidy
+## Run go mod tidy
+tidy:
+	@echo "〉go mod tidy"
+	@go mod tidy
 
 .PHONY: lint
 ## Run linter
@@ -61,53 +67,33 @@ generate:
 ## Run tests
 test:
 	@echo "〉go test"
-	@GO_TEST_TAGS=-skip go test -tags=safe -shuffle=on -coverprofile=coverage.out ./...
+	@GO_TEST_TAGS=-skip gotestsum -- -tags=safe -shuffle=on -coverprofile=coverage.out ./...
 
 .PHONY: test.race
 ## Run tests with -race
 test.race:
 	@echo "〉go test -race"
-	@GO_TEST_TAGS=-skip go test -tags=safe -shuffle=on -coverprofile=coverage.out -race ./...
-
-.PHONY: test.nocache
-## Run tests with -count=1
-test.nocache:
-	@echo "〉go test -count=1"
-	@GO_TEST_TAGS=-skip go test -tags=safe -shuffle=on -coverprofile=coverage.out -count=1 ./...
+	@GO_TEST_TAGS=-skip gotestsum -- -tags=safe -shuffle=on -coverprofile=coverage.out -race ./...
 
 .PHONY: test.bench
 ## Run tests with -bench
 test.bench:
-	@GO_TEST_TAGS=-skip go test -tags=safe -bench=. -benchmem ./...
-
-### Security
-
-.PHONY: audit
-## Run security audit
-audit:
-	@echo "〉security audit"
-	@go install golang.org/x/vuln/cmd/govulncheck@latest
-	@govulncheck ./...
+	@GO_TEST_TAGS=-skip gotestsum -- -tags=safe -bench=. -benchmem ./...
 
 ### Dependencies
-
-.PHONY: tidy
-## Run go mod tidy
-tidy:
-	@echo "〉go mod tidy"
-	@go mod tidy
 
 .PHONY: outdated
 ## Show outdated direct dependencies
 outdated:
 	@echo "〉go mod outdated"
-	@go list -u -m -json all | go-mod-outdated -update -direct
+	@go-mod-upgrade --cooldown 7d --list
 
 .PHONY: upgrade
-## Show outdated direct dependencies
-upgrade: go.work
+## Upgrade direct dependencies
+upgrade:
 	@echo "〉go mod upgrade"
-	@go get -u ./...
+	@go-mod-upgrade --cooldown 7d
+	@$(MAKE) tidy
 
 ### Documentation
 
@@ -129,10 +115,23 @@ godocs:
 	@echo "〉starting go docs"
 	@go doc -http
 
+### Security
+
+.PHONY: audit
+## Run security audit
+audit:
+	@echo "〉security audit"
+	@osv-scanner --call-analysis=all --config=.osv-scanner.toml $(if $(GITHUB_ACTIONS),--format=gh-annotations) -r .
+.PHONY: help
+
 ### Utils
 
-.PHONY: help
-# https://patorjk.com/software/taag/#p=display&f=miniwi&t=redirects&x=none&v=4&h=4&w=80&we=false
+.PHONY: actionlint
+## Run actionlint
+actionlint:
+	@actionlint
+
+# https://patorjk.com/software/taag/#p=display&f=Future+Smooth&t=redirects&x=none&v=4&h=4&w=80&we=false
 ## Show help text
 help: g=\033[0;32m
 help: b=\033[0;34m
@@ -140,10 +139,9 @@ help: w=\033[0;90m
 help: e=\033[0m
 help:
 	@echo "$(g)"
-	@echo "     ▌▘      ▗"
-	@echo "▛▘█▌▛▌▌▛▘█▌▛▘▜▘▛▘"
-	@echo "▌ ▙▖▙▌▌▌ ▙▖▙▖▐▖▄▌"
-	@echo "                 "
+	@echo "╭─╮╭─╴╶┬╮╷╭─╮╭─╴╭─╴╶┬╴╭─╮"
+	@echo "├┬╯├╴  │││├┬╯├╴ │   │ ╰─╮"
+	@echo "╵╰╴╰─╴╶┴╯╵╵╰╴╰─╴╰─╴ ╵ ╰─╯"
 	@echo "with ❤ foomo by bestbytes"
 	@echo "$(e)"
 	@echo "$(b)Usage:$(e)\n  make [task]"
@@ -161,4 +159,3 @@ help:
 		} \
 	}' $(MAKEFILE_LIST)
 	@echo ""
-

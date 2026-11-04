@@ -1,6 +1,6 @@
-[![Go Report Card](https://goreportcard.com/badge/github.com/foomo/redirects?style=flat-square)](https://goreportcard.com/report/github.com/foomo/redirects)
-[![GoDoc](https://img.shields.io/badge/GoDoc-✓-informational.svg?style=flat-square&logo=go)](https://godoc.org/github.com/foomo/redirects)
+[![CodeQL](https://github.com/foomo/redirects/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/foomo/redirects/actions/workflows/github-code-scanning/codeql)
 [![Coverage](https://img.shields.io/codecov/c/github/foomo/redirects?style=flat-square&logo=github)](https://app.codecov.io/gh/foomo/redirects)
+[![GoDoc](https://godoc.org/github.com/foomo/redirects?status.svg)](https://godoc.org/github.com/foomo/redirects)
 [![GitHub Stars](https://img.shields.io/github/stars/foomo/redirects.svg?style=flat-square&logo=github)](https://github.com/foomo/redirects)
 
 <p align="center">
@@ -125,6 +125,61 @@ The redirects service supports additional providers for enhanced customization a
 
 - **Automatic Redirect Stale State Provider**
   Defines whether newly created automatic redirects should start as inactive (stale) or active by default.
+
+## Redirects Provider
+
+The redirects provider (`pkg/provider`) keeps the redirect definitions in memory and resolves incoming
+requests. It is used by the redirects middleware (`pkg/middleware`), which only handles `GET` requests.
+
+`Process` handles a request in this order:
+
+1. **Normalize**: trim the trailing slash and sort the query parameters.
+2. **Blacklist**: if the request is blacklisted, it passes through without a redirect.
+3. **Exact match**: look up a definition for the full request URI. If the request has query parameters and
+   nothing matched, look up the path alone; that match is only used if the definition has `RespectParams` set.
+4. **Matcher funcs**: run the custom matchers, if any are configured.
+5. **Standard redirects**: if enabled, redirect paths containing uppercase letters to the lowercased path.
+
+### Provider Options
+
+- **`WithBlacklistFunc(f BlacklistFunc)`**
+  Replaces the default blacklist. Requests for which `f` returns `true` are not redirected; no lookup,
+  matcher funcs or standard redirects run for them. `f` receives the normalized request.
+- **`WithMatcherFuncs(funcs ...MatcherFunc)`**
+  Custom matchers (e.g. regex based) that run when no exact definition matches.
+- **`WithUseStandardRedirects()`**
+  Enables generic redirects of paths containing uppercase letters to the lowercased path (`301`).
+
+### Blacklist
+
+Without `WithBlacklistFunc`, the provider uses `DefaultBlacklist`, which leaves these requests alone:
+
+- the homepage (`/`, with or without query parameters)
+- request URIs starting with `/services` or `/gateway`
+- request URIs containing `/_next/`
+
+Prefixes are matched as plain strings, so `/services` also matches `/services-foo`.
+
+To build your own blacklist, combine `AnyBlacklist` (blacklisted if any of the funcs matches) with the
+`BlacklistHomepage`, `BlacklistPrefixes(...)` and `BlacklistContains(...)` building blocks. For example,
+the default without `/services`, for setups where `/services/...` are regular pages:
+
+```go
+provider := redirectprovider.NewProvider(
+	l,
+	redirectsProviderFunc,
+	dimensionProviderFunc,
+	updateChannel,
+	redirectprovider.WithBlacklistFunc(redirectprovider.AnyBlacklist(
+		redirectprovider.BlacklistHomepage,
+		redirectprovider.BlacklistPrefixes("/gateway"),
+		redirectprovider.BlacklistContains("/_next/"),
+	)),
+)
+```
+
+To extend the default instead, include it: `AnyBlacklist(redirectprovider.DefaultBlacklist, redirectprovider.BlacklistPrefixes("/api"))`.
+To disable the blacklist completely, pass `func(*http.Request) bool { return false }`.
 
 ## Redirect Processing
 
