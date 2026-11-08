@@ -11,7 +11,7 @@ require (
 	github.com/nats-io/nats.go v1.55.0
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.12.1
-	go.mongodb.org/mongo-driver/v2 v2.9.2
+	go.mongodb.org/mongo-driver/v2 v2.9.3
 	go.opentelemetry.io/otel/trace v1.47.0
 	go.uber.org/zap v1.28.0
 )
