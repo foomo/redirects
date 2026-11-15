@@ -7,7 +7,7 @@
     "preview": "vitepress preview"
   },
   "devDependencies": {
-    "mermaid": "12.2.0",
+    "mermaid": "12.3.0",
     "vitepress": "1.6.4",
 		"@catppuccin/vitepress": "0.1.4",
     "vitepress-plugin-mermaid": "2.0.17"
